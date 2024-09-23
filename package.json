@@ -1,10 +1,14 @@
 {
     "name": "refactoring-discovery",
     "version": "v1.0.1",
+    "main": "electron.js",
     "scripts": {
         "start": "node ./bin/start",
         "build": "webpack --color --config webpack.config.js",
-        "deploy": "npm run build && node writeHtml.js"
+        "deploy": "npm run build && node writeHtml.js",
+        "electron": "cross-env ELECTRON_START_URL=http://localhost:3001 electron .",
+        "electron-build": "npm run build && electron .",
+        "dist": "npm run build && electron-builder"
     },
     "dependencies": {
         "@babel/core": "^7.3.4",
@@ -26,10 +30,30 @@
         "@babel/preset-react": "^7.0.0",
         "babel-loader": "^8.0.6",
         "babel-plugin-import": "^1.13.0",
+        "cross-env": "^7.0.3",
         "css-loader": "^0.28.11",
+        "electron": "^32.1.2",
+        "electron-builder": "^24.6.0",
         "mini-css-extract-plugin": "^0.4.5",
         "source-map-loader": "^1.0.1",
         "webpack": "^4.29.6",
         "webpack-cli": "^3.2.3"
+    },
+    "build": {
+        "appId": "com.refactoring-discovery",
+        "files": [
+            "dist/**/*",
+            "electron.js",
+            "server/**/*"
+        ],
+        "mac": {
+            "category": "public.app-category.utilities"
+        },
+        "win": {
+            "target": "nsis"
+        },
+        "linux": {
+            "target": "AppImage"
+        }
     }
 }
