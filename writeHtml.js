@@ -10,7 +10,7 @@ const FILE_TYPE = {
 var newVersion = require('./package.json').version;
 
 function getTagWithCDN(fileName, type = FILE_TYPE.JS) {
-  const url = `https://cdn.jsdelivr.net/gh/dianluyuanli-wp/diffDist@${newVersion}/${fileName}`;
+  const url = `https://cdn.jsdelivr.net/gh/deeplczzz/Refactoring-Discovery@${newVersion}/${fileName}`;
   return type === FILE_TYPE.JS ? `<script src="${url}" type="text/javascript"></script>` : `<link rel="stylesheet" href="${url}" >`;
 }
 //  读取原始模板内容
