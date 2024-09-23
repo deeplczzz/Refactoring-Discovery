@@ -1,6 +1,6 @@
 {
     "name": "refactoring-discovery",
-    "version": "1.0.0",
+    "version": "v1.0.1",
     "scripts": {
         "start": "node ./bin/start",
         "build": "webpack --color --config webpack.config.js",
