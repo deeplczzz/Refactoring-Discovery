@@ -1,0 +1,38 @@
+/* 自定义 Panel 的容器样式 */
+.custom-collapse .ant-collapse .ant-collapse-header {
+    background-color: #f7f7f7; /* Panel 头部背景色 */
+    border: 1px solid #dcdcdc; /* Panel 边框 */
+    border-radius: 4px; /* Panel 圆角 */
+    padding: 16px; /* Panel 头部内边距 */
+}
+
+/* 自定义 Panel 头部的标题样式 */
+.custom-collapse .ant-collapse .ant-collapse-header {
+    font-size: 18px; /* 更改标题字体大小 */
+    color: #333; /* 更改标题文字颜色 */
+    font-weight: 600; /* 更改标题字体加粗 */
+}
+
+/* 自定义 Panel 内容区域的样式 */
+.custom-collapse .ant-collapse .ant-collapse-content {
+    background-color: #ffffff; /* Panel 内容背景色 */
+    border-top: 1px solid #dcdcdc; /* Panel 顶部边框 */
+    padding: 16px; /* Panel 内容内边距 */
+}
+
+/* 自定义 Panel 的展开和折叠动画效果 */
+.custom-collapse .ant-collapse-content-active {
+    transition: max-height 0.3s ease; /* 展开和折叠动画时间 */
+}
+
+/* 自定义 Panel 的折叠箭头样式 */
+.custom-collapse .ant-collapse-arrow {
+    color: #168cfa; /* 更改箭头颜色 */
+    font-size: 18px; /* 更改箭头字体大小 */
+}
+
+/* 自定义 Panel 的禁用状态样式 */
+.custom-collapse .ant-collapse-disabled .ant-collapse-header {
+    background-color: #e6e6e6; /* 禁用状态背景色 */
+    color: #bfbfbf; /* 禁用状态文字颜色 */
+}
