@@ -1,0 +1,354 @@
+.index__charAdd--2u9EA {
+    color: green;
+    background-color: rgb(236, 253, 240);
+}
+
+.index__charRemoved--2NBzi {
+    color: red;
+    background-color: rgb(251, 233, 235);
+}
+
+.index__wrapper--2L7IR {
+    margin-left: 2%;
+    margin-right: 2%;
+    margin-top: 2%;
+    margin-bottom: 2%;
+    background-color: #ffffff;
+    border-radius: 4px;
+    padding-top: 30px;
+    padding-bottom: 20px;
+}
+
+
+.index__input--2qmtU {
+    width: 45%;
+}
+
+.index__formItem--2BEAH {
+    display: flex;
+    flex-direction: column; /* 垂直排列 label 和 buttonAndText */
+    width: 80%; /* 使 formItem 填满父容器 */
+    position: relative; /* 使用相对定位进行调整 */
+    justify-content:center;
+}
+
+/* 使用 position: relative 和 top 调整 Upload JSON 标签的位置 */
+.index__formItem--2BEAH .index__ant-form-item-label--3lMJ6 {
+    display: flex;
+    align-items: center; /* 垂直居中对齐标签 */
+    position: relative; /* 使用相对定位进行调整 */
+    top: 50px; /* 根据需要调整 top 值 */
+}
+
+.index__bottonandtext--1-eSl {
+    display: flex; /* 使用 flexbox 布局，使按钮和文本在一行显示 */
+    align-items: center; /* 垂直对齐 */
+    margin-right: 2%;
+    margin-left: 2%;
+}
+
+.index__textContent--8AlZF {
+    display: flex; /* 使用 flexbox 布局 */
+    margin-left: 30%; /* 根据需要调整间距 */
+    margin-right: 10%; /* 根据需要调整间距 */
+    flex-direction: column; /* 垂直排列每一行 */
+    align-items: flex-start; /* 对齐每行文本的开始位置 */
+}
+
+.index__textContent--8AlZF p {
+    margin: 0; /* 去掉 p 元素的默认上下外边距 */
+    line-height: 1.1; /* 设置行高，以提高可读性 */
+}
+
+.index__funWrapper--19VTK {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+}
+
+.index__result--3p5uV {
+    font-size: 20px;
+    padding-left: 10%;
+}
+
+.index__preWrap--aXHIE {
+    padding-left: 10%;
+    padding-right: 10%;
+    white-space: pre-wrap;
+}
+
+.index__charPreWrap--31WOt {
+    white-space: pre-wrap;
+}
+
+
+.index__description--3rduU {
+    margin-top: 16px;
+    padding: 12px;
+    background-color: #ffffff;
+    border-radius: 4px;
+    border: 1px solid #dcdcdc;
+    font-size: 16px;
+    line-height: 1.3;
+    color: #333;
+    max-width: 100%;
+    overflow-wrap: break-word; /* Ensures long lines break properly */
+    margin-left: 2%;
+    margin-right: 2%;
+}
+
+.index__description--3rduU strong {
+    font-weight: bold;
+    color: #000;
+}
+
+.index__description--3rduU::before {
+    font-weight: bold;
+    color: #333;
+}
+
+.index__singleLine--3oyVe {
+    display: flex; /* 使用 flexbox 布局 */
+    align-items: center; /* 垂直对齐内容 */
+    white-space: nowrap; /* 防止文本换行 */
+    overflow: hidden; /* 隐藏超出的文本 */
+    text-overflow: ellipsis; /* 溢出文本显示省略号 */
+}
+
+.index__filesDiffs--2_GUo {
+    margin-top: 20px;
+}
+
+.index__fileDiff--oy9MV {
+    margin-bottom: 20px;
+}
+
+.index__diffContent--2GXoV {
+    white-space: pre-wrap; /* Preserve whitespace and line breaks */
+}
+
+.index__diffItem--1_etv {
+    display: block; /* Display each diff item on a new line */
+}
+
+.index__add--5mgHY {
+    background-color: #d4f6d4; /* Green background for added text */
+}
+
+.index__removed--3IFqm {
+    background-color: #f6d4d4; /* Red background for removed text */
+}
+
+.index__filename--3_nv2 {
+    margin-top: 18px;
+    padding: 12px;
+    background-color: #f5f5f5;
+    border: 1px solid #dcdcdc;
+    font-size: 16px;
+    line-height: 1.3;
+    color: #333;
+    max-width: 100%;
+    overflow-wrap: break-word; /* Ensures long lines break properly */
+    margin-left: 2%;
+    margin-right: 2%;
+}
+
+.index__refactoringItem--99Qry{
+    margin-top: 12px;
+    padding: 12px;
+    background-color: #ffffff;
+    font-size: 16px;
+    line-height: 1.3;
+    color: #333;
+    max-width: 100%;
+    overflow-wrap: break-word; /* Ensures long lines break properly */
+    margin-left: 1%;
+    margin-right: 1%;
+}
+
+.index__bottom--2SHKc{
+    margin-bottom: 1%;
+}
+
+.index__botton--2DzR4{
+    border-radius: 8px !important; /* 圆角 */
+    margin-left: 50px;
+    margin-right: 10%;
+    margin-top: 53%;
+}
+
+.index__textarea--3Gn9o {
+    resize: none;          /* 禁止用户调整输入框的大小 */
+    height: 30px !important;          /* 设置固定的高度 */
+    width: 500px !important;          /* 设置固定的宽度 */
+    padding: 8px;          /* 设置内边距，控制文本与边框的距离 */
+    border-radius: 4px;    /* 设置边框圆角 */
+    border: 1px solid #d9d9d9; /* 设置边框颜色 */
+    font-size: 14px;       /* 设置字体大小 */
+}
+
+.index__handleSubmit--1kxBb{
+    display: grid;
+}
+.index__color--2ojbV {
+    color: black;
+    background-color: #fff;
+    border: 1px solid #ddd;
+}
+
+.index__normal--3xN0k {
+    color: black;
+}
+
+.index__add--3fp2b {
+    background-color: rgb(236, 253, 240);
+}
+
+.index__removed--18dBy {
+    background-color: rgb(251,233,235);
+}
+
+.index__pre--3eDFa {
+    margin: 0;
+    vertical-align: top;
+    display: inline-block;
+}
+
+.index__button--2J6G4 {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    text-align: center;
+    color: brown;
+    border: 1px solid brown;
+}
+
+.index__content--3DNR8 {
+    padding-left: 2%;
+    padding-right: 2%;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.index__outerPre--1Pone {
+    width: calc(100% - 88px);
+    display: inline-block;
+}
+
+.index__spanWidth--125bf {
+    width: 20px;
+    display: inline-block;
+    white-space: pre-wrap;
+}
+
+.index__innerPre--1_Bab {
+    margin: 0;
+    word-wrap: break-word;
+    word-break: break-all;
+    white-space: normal;
+}
+
+.index__line--1sUEl {
+    color: rgba(27,31,35,.3);
+    width: 88px;
+}
+
+.index__colLeft--2F2iS {
+    display: inline-block;
+    color: #586069;
+    width: 88px;
+    background-color: #dbedff;
+}
+
+.index__splitWidth--jvhC7 {
+    width: 44px;
+}
+
+.index__collRight--2OaKg {
+    display: inline-block;
+    width: calc(100% - 88px);
+    vertical-align: top;
+}
+
+.index__collRightSplit--2H9r- {
+    width: calc(100% - 44px);
+}
+
+.index__colRContent--3gXOP {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    height: 16px;
+    background-color: #f1f8ff;
+}
+
+.index__octicon--2VVw1 {
+    fill: currentColor;
+}
+
+.index__arrow--1FWUj {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.index__arrow--1FWUj:hover {
+    color: #fff;
+    background-color: rgb(3, 102, 214);
+}
+
+.index__cRHeight--1pHdx {
+    height: 32px;
+}
+
+.index__sPart--1V1XW {
+    display: inline-block;
+    vertical-align: top;
+    width: 50%;
+}
+
+.index__iBlock--3k0eW {
+    display: inline-block;
+    width: 50%;
+}
+
+.index__prBlock--N52o_ {
+    width: 100%;
+}
+
+.index__splitLN--2ci2A {
+    width: 44px;
+    display: inline-block;
+    white-space: pre-wrap;
+    color: rgba(27,31,35,.3);
+    font-family: 'SFMono-Regular', 'Liberation Mono', Menlo, Courier, monospace;
+}
+
+.index__splitCon--15tpv {
+    display: inline-block;
+    white-space: pre-wrap;
+    vertical-align: top;
+    width: calc(100% - 44px);
+}
+
+.index__filled--23P9T {
+    width: calc(100% - 52px);
+}
+
+.index__radioGroup--2E-ih {
+    display: flex;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    justify-content: flex-end;
+    align-items: center;
+    padding-left: 2%;
+    padding-right: 2%;
+}
+
+.index__lBorder--2ClWV {
+    border-right: 1px solid #ddd;
+}
+
+.index__rBorder--3Sx6H {
+    border-left: 1px solid #ddd;
+    position: relative;
+    left: -1px;
+}

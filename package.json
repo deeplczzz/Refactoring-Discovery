@@ -1,6 +1,6 @@
 {
-    "name": "webdiff",
-    "version": "0.0.5",
+    "name": "refactoring-discovery",
+    "version": "1.0.0",
     "scripts": {
         "start": "node ./bin/start",
         "build": "webpack --color --config webpack.config.js",
