@@ -1,0 +1,36 @@
+directories:
+  output: output
+  buildResources: build
+extraResources:
+  - from: server/test-springboot-demo-1.0.0.jar
+    to: server/test-springboot-demo-1.0.0.jar
+appId: com.refactoring-discovery
+productName: Refactoring Discovery
+files:
+  - filter:
+      - dist/**/*
+      - electron.js
+      - server/test-springboot-demo-1.0.0.jar
+mac:
+  target:
+    - dmg
+    - zip
+  category: public.app-category.utilities
+  icon: build/icon.icns
+  entitlements: entitlements.mac.plist
+  entitlementsInherit: entitlements.mac.plist
+  hardenedRuntime: true
+  gatekeeperAssess: false
+win:
+  target:
+    - nsis
+    - portable
+  icon: build/icon.ico
+  requestedExecutionLevel: requireAdministrator
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Utility
+  icon: build
+electronVersion: 32.1.2

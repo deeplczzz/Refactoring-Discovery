@@ -5,34 +5,36 @@ const { exec } = require('child_process');
 
 let mainWindow;
 let springBootProcess;
+let jarPath;
 
 function createWindow() {
-  waitOn({ resources: ['http://localhost:3001'] }, (err) => {
-    if (err) {
-      console.log('React 应用未能成功启动', err);
-      return;
-    }
-    // 创建浏览器窗口
-    mainWindow = new BrowserWindow({
-      width: 800,
-      height: 600,
-      webPreferences: {
-        preload: path.join(__dirname, 'preload.js'),
-      },
-    });
-
-    // 加载前端的入口文件
-    mainWindow.loadURL('http://localhost:3001'); // 确保前端应用正确打包
-    // mainWindow.loadFile(path.join(__dirname, 'dist', 'index.html'));
-
-    // 打开开发者工具（可选）
-    // mainWindow.webContents.openDevTools();
+  // 创建浏览器窗口
+  mainWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+    },
   });
+  // 加载前端的入口文件
+  //mainWindow.loadURL('http://localhost:3001'); // 确保前端应用正确打包
+  mainWindow.loadFile(path.join(app.getAppPath(), 'dist/index.html'));
+
+  // 打开开发者工具（可选）
+  // mainWindow.webContents.openDevTools();
+
 }
 
 function startSpringBootServer() {
-  // 启动 Spring Boot 服务器
-  const jarPath = path.join(__dirname, 'server', 'test-springboot-demo-1.0.0.jar'); // Spring Boot JAR 文件的路径
+  // // 启动 Spring Boot 服务器
+  // const jarPath = path.join(app.getAppPath(), 'server/test-springboot-demo-1.0.0.jar'); // Spring Boot JAR 文件的路径
+  if (app.isPackaged) {
+    // 打包后的路径
+    jarPath = path.join(process.resourcesPath, 'server', 'test-springboot-demo-1.0.0.jar');
+  } else {
+    // 开发模式下的路径
+    jarPath = path.join(app.getAppPath(), 'server', 'test-springboot-demo-1.0.0.jar');
+  }
 
   springBootProcess = exec(`java -jar ${jarPath}`, (error, stdout, stderr) => {
     if (error) {

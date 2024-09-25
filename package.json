@@ -6,8 +6,8 @@
         "start": "node ./bin/start",
         "build": "webpack --color --config webpack.config.js",
         "deploy": "npm run build && node writeHtml.js",
-        "electron": "cross-env ELECTRON_START_URL=http://localhost:3001 electron .",
-        "electron-build": "npm run build && electron .",
+        "electron": "set ELECTRON_START_URL=http://localhost:3001 electron .",
+        "electron-build": "npm run build && electron-builder",
         "dist": "npm run build && electron-builder"
     },
     "dependencies": {
@@ -30,30 +30,54 @@
         "@babel/preset-react": "^7.0.0",
         "babel-loader": "^8.0.6",
         "babel-plugin-import": "^1.13.0",
-        "cross-env": "^7.0.3",
         "css-loader": "^0.28.11",
         "electron": "^32.1.2",
-        "electron-builder": "^24.6.0",
+        "electron-builder": "^25.0.5",
         "mini-css-extract-plugin": "^0.4.5",
         "source-map-loader": "^1.0.1",
         "webpack": "^4.29.6",
         "webpack-cli": "^3.2.3"
     },
     "build": {
+        "extraResources": [
+            {
+                "from": "server/test-springboot-demo-1.0.0.jar",
+                "to": "server/test-springboot-demo-1.0.0.jar"
+            }
+        ],
+        "directories": {
+            "output": "output" 
+        },
         "appId": "com.refactoring-discovery",
+        "productName": "Refactoring Discovery",
         "files": [
             "dist/**/*",
             "electron.js",
-            "server/**/*"
+            "server/test-springboot-demo-1.0.0.jar"
         ],
         "mac": {
-            "category": "public.app-category.utilities"
+            "target": [
+                "dmg", 
+                "zip"   
+            ],
+            "category": "public.app-category.utilities",
+            "icon": "build/icon.icns"
         },
         "win": {
-            "target": "nsis"
+            "target": [
+                "nsis", 
+                "portable" 
+            ],
+            "icon": "build/icon.ico" ,
+            "requestedExecutionLevel": "requireAdministrator"
         },
         "linux": {
-            "target": "AppImage"
+            "target": [
+                "AppImage", 
+                "deb"       
+            ],
+            "category": "Utility",
+            "icon": "build"
         }
     }
 }
