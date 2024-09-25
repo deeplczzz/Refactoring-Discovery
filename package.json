@@ -1,6 +1,6 @@
 {
     "name": "refactoring-discovery",
-    "version": "v1.0.1",
+    "version": "v1.0.2",
     "main": "electron.js",
     "scripts": {
         "start": "node ./bin/start",
@@ -13,7 +13,7 @@
     "dependencies": {
         "@babel/core": "^7.3.4",
         "@babel/preset-env": "^7.3.4",
-        "antd": "^4.24.16",
+        "antd": "^4.24.16", 
         "classnames": "^2.2.6",
         "diff": "^4.0.2",
         "ejs": "^2.4.1",

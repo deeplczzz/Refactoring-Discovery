@@ -190,6 +190,10 @@
 .index__handleSubmit--1kxBb{
     display: grid;
 }
+
+.index__selectbotton--3EOfa{
+    border-radius: 8px !important; /* 圆角 */
+}
 .index__color--2ojbV {
     color: black;
     background-color: #fff;

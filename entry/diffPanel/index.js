@@ -160,6 +160,19 @@ class DiffPanel extends React.Component {
         }
     };
 
+
+    selectDirectoryDialog = async () => {
+        const { ipcRenderer } = window.require('electron');
+
+        // 发送请求到主进程打开选择目录对话框
+        ipcRenderer.send('dialog:selectDirectory');
+
+        // 等待主进程返回选择的目录路径
+        ipcRenderer.on('directory:selected', (event, path) => {
+            this.setState({ repository: path });
+        });
+    };
+
     render() {
         const { diffResults, fileUploaded, repository, commitid} = this.state;
 
@@ -169,13 +182,11 @@ class DiffPanel extends React.Component {
                     <div className={s.bottonandtext}>
                         <div>
                             <FormItem label="Repository:" >
-                                <Input.TextArea
-                                    rows={1}
-                                    value={repository}
-                                    onChange={(e) => this.setState({ repository: e.target.value })}
-                                    className={s.textarea}
-                                    spellcheck="false"
-                                />
+                                <Button type="default" onClick={this.selectDirectoryDialog} className={s.selectbotton}>
+                                    Select Repository Path
+                                </Button>
+                                {/* 显示选择的路径 */}
+                                <span>{repository}</span>
                             </FormItem>
                             <FormItem label="commitid">
                                 <Input.TextArea

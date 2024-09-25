@@ -1,5 +1,5 @@
 // electron.js
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain} = require('electron');
 const path = require('path');
 const { exec } = require('child_process');
 
@@ -44,6 +44,19 @@ function startSpringBootServer() {
     console.log(`Spring Boot 服务器输出: ${stdout}`);
   });
 }
+
+
+// 监听渲染进程发送的选择目录请求
+ipcMain.on('dialog:selectDirectory', async (event) => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['selectDirectory'],
+  });
+
+  if (!result.canceled && result.filePaths.length > 0) {
+      event.reply('directory:selected', result.filePaths[0]); // 返回选择的目录路径
+  }
+});
+
 
 app.on('ready', () => {
   startSpringBootServer(); // 启动 Spring Boot 服务器
