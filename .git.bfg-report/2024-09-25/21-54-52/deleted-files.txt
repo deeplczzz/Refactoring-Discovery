@@ -1,0 +1,4 @@
+4eeb285e9796bd44b77ea9f40a769910453a098a 221266387 Refactoring Discovery 1.0.1.exe
+ba7e28aa8db82173bab4533d55cfd3ab853ab039 221430578 Refactoring Discovery Setup 1.0.1.exe
+d7de95e600376a68ca358817645812692aead732 186598400 Refactoring Discovery.exe
+e635a3065cab452aad1f29a19ca49f05837f1af9 175794747 app.asar
