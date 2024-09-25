@@ -1,15 +1,6 @@
-***
-项目启动步骤:
+网页调试：
+npm i安装依赖
+npm run start localhost:3001
 
-安装依赖
-npm i
-
-打包client端渲染所需内容：
-npm run build
-
-开启服务：
-npm run start
-
-浏览器打开：  
-client端渲染
-http://localhost:3001/
+打包electron应用
+npm run electron-build -- -w
