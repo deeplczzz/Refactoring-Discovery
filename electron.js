@@ -14,6 +14,8 @@ function createWindow() {
     height: 600,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
+      nodeIntegration: true, // 确保启用 nodeIntegration
+      contextIsolation: false, // 确保禁用 contextIsolation
     },
   });
   // 加载前端的入口文件
@@ -49,7 +51,7 @@ function startSpringBootServer() {
 // 监听渲染进程发送的选择目录请求
 ipcMain.on('dialog:selectDirectory', async (event) => {
   const result = await dialog.showOpenDialog(mainWindow, {
-      properties: ['selectDirectory'],
+      properties: ['openDirectory'],
   });
 
   if (!result.canceled && result.filePaths.length > 0) {
