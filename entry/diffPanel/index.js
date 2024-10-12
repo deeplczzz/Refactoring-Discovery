@@ -198,7 +198,7 @@ class DiffPanel extends React.Component {
     
 
     render() {
-        const { diffResults, fileUploaded, repository, commitid, commits, highlightedFiles} = this.state;
+        const { diffResults, fileUploaded, repository, commitid, commits,highlightedFiles, isFilteredByLocation} = this.state;
     
         return (
             <div className={s.wrapper}>
