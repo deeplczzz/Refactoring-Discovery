@@ -1,6 +1,6 @@
 {
     "name": "refactoring-discovery",
-    "version": "v1.0.2",
+    "version": "v1.0.3",
     "main": "electron.js",
     "scripts": {
         "start": "node ./bin/start",
@@ -41,8 +41,8 @@
     "build": {
         "extraResources": [
             {
-                "from": "server/test-springboot-demo-1.0.0.jar",
-                "to": "server/test-springboot-demo-1.0.0.jar"
+                "from": "RefactoringDiscovery-0.0.1-SNAPSHOT.jar",
+                "to": "RefactoringDiscovery-0.0.1-SNAPSHOT.jar"
             }
         ],
         "directories": {
@@ -53,7 +53,7 @@
         "files": [
             "dist/**/*",
             "electron.js",
-            "server/test-springboot-demo-1.0.0.jar"
+            "server/RefactoringDiscovery-0.0.1-SNAPSHOT.jar"
         ],
         "mac": {
             "target": [

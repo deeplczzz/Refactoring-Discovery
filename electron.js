@@ -32,10 +32,10 @@ function startSpringBootServer() {
   // const jarPath = path.join(app.getAppPath(), 'server/test-springboot-demo-1.0.0.jar'); // Spring Boot JAR 文件的路径
   if (app.isPackaged) {
     // 打包后的路径
-    jarPath = path.join(process.resourcesPath, 'server', 'test-springboot-demo-1.0.0.jar');
+    jarPath = path.join(process.resourcesPath, 'server', 'RefactoringDiscovery-0.0.1-SNAPSHOT.jar');
   } else {
     // 开发模式下的路径
-    jarPath = path.join(app.getAppPath(), 'server', 'test-springboot-demo-1.0.0.jar');
+    jarPath = path.join(app.getAppPath(), 'server', 'RefactoringDiscovery-0.0.1-SNAPSHOT.jar');
   }
 
   springBootProcess = exec(`java -jar ${jarPath}`, (error, stdout, stderr) => {
