@@ -62,7 +62,7 @@ class DiffPanel extends React.Component {
     }
 
     handleSubmit = async () => {
-        const { commitid, repository } = this.state;
+        const { commitid, repository} = this.state;
 
         if (!commitid || !repository) {
             message.error('Please provide repository_path and commentid.');
@@ -198,7 +198,7 @@ class DiffPanel extends React.Component {
     
 
     render() {
-        const { diffResults, fileUploaded, repository, commitid, commits,highlightedFiles, isFilteredByLocation} = this.state;
+        const { diffResults, fileUploaded, repository, commitid, commits,highlightedFiles, isFilteredByLocation,refactorings} = this.state;
     
         return (
             <div className={s.wrapper}>
