@@ -137,23 +137,22 @@ export default class ContentDiff extends React.Component {
     }
 
     paintCode = (item, isHead = true) => {
-        const { highlightedLines } = this.props;  // 从 props 中获取多个高亮区域
+        const { highlightedLines } = this.props;  // 从 props 中获取高亮行
+        const { startLine, endLine } = highlightedLines?.[0] || {};  // 获取高亮行的范围
         const { type, content: { head, tail }, leftPos, rightPos } = item;
         const isNormal = type === ' ';
         const cls = cx(s.normal, type === '+' ? s.add : '', type === '-' ? s.removed : '');
         const space = "     ";
-    
+
         return (isHead ? head : tail).map((sitem, sindex) => {
             let posMark = '';
             let isHighlighted = false;
-    
-            // 遍历所有的高亮区域，检查当前行是否需要高亮
-            highlightedLines.forEach(({ startLine, endLine }) => {
-                if (isNormal && leftPos + sindex >= startLine && leftPos + sindex <= endLine) {
-                    isHighlighted = true;
-                }
-            });
-    
+
+            // 判断是否需要高亮
+            if (isNormal && leftPos + sindex >= startLine && leftPos + sindex <= endLine) {
+                isHighlighted = true;
+            }
+
             if (isNormal) {
                 const shift = isHead ? 0 : (head.length + tail.length);
                 posMark = (space + (leftPos + shift + sindex)).slice(-5)
@@ -162,16 +161,11 @@ export default class ContentDiff extends React.Component {
                 posMark = type === '-' ? this.getLineNum(leftPos + sindex) + space
                     : space + this.getLineNum(rightPos + sindex);
             }
-    
+
             return (
                 <div key={(isHead ? 'h-' : 't-') + sindex} className={isHighlighted ? cx(cls, s.highlighted) : cls}>
                     <pre className={cx(s.pre, s.line)}>{posMark}</pre>
-                    <div className={s.outerPre}>
-                        <div className={s.splitCon}>
-                            <div className={s.spanWidth}>{' ' + type + ' '}</div>
-                            {this.getPaddingContent(sitem, true)}
-                        </div>
-                    </div>
+                    <div className={s.outerPre}><div className={s.splitCon}><div className={s.spanWidth}>{' ' + type + ' '}</div>{this.getPaddingContent(sitem, true)}</div></div>
                 </div>
             );
         });

@@ -240,10 +240,12 @@ class DiffPanel extends React.Component {
 
                 {fileUploaded && isFilteredByLocation && diffResults.length > 0 && diffResults.map((result, index) => (
                     <div key={index}>
-                        <div className={s.filename}>
-                            <strong>filePath:&nbsp;&nbsp;</strong> {result.fileName}
-                        </div>
-                        {/* 只渲染高亮的文件 */}
+                        {highlightedFiles.some(f => f.filePath === result.fileName) && (
+                            <div className={s.filename}>
+                                <strong>filePath:&nbsp;&nbsp;</strong> {result.fileName}
+                            </div>
+                        )}
+                        
                         {highlightedFiles.some(f => f.filePath === result.fileName) && (
                             <ContentDiff
                                 isFile={this.isFile}
@@ -251,6 +253,7 @@ class DiffPanel extends React.Component {
                                 highlightedLines={highlightedFiles.filter(f => f.filePath === result.fileName)}
                             />
                         )}
+                        
                     </div>
                 ))}
 
