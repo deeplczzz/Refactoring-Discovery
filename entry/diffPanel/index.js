@@ -1,7 +1,7 @@
 import React from 'react';
 const jsDiff = require('diff');
 import s from './index.css';
-import { Input, Button, Form, message, Collapse} from 'antd';
+import { Input, Button, Form, message, Collapse, Select} from 'antd';
 import ContentDiff from '../contentDiff';
 import cx from 'classnames';
 
@@ -20,6 +20,7 @@ class DiffPanel extends React.Component {
         fileUploaded: false, // 表示文件已上传
         refactorings: [], // 新增用于存储 refactorings
         commitid:'',
+        commits: [],  // 存储从后端获取到的 commit 列表
     }
 
     //计算oldcode和newcode的diff，使用外部库
@@ -163,19 +164,66 @@ class DiffPanel extends React.Component {
 
     selectDirectoryDialog = async () => {
         const { ipcRenderer } = window.require('electron');
-
+    
         // 发送请求到主进程打开选择目录对话框
         ipcRenderer.send('dialog:selectDirectory');
-
+    
         // 等待主进程返回选择的目录路径
-        ipcRenderer.on('directory:selected', (event, path) => {
+        ipcRenderer.on('directory:selected', async (event, path) => {
             this.setState({ repository: path });
+    
+            // 选择目录后，发送请求到后端获取 commit 列表
+            try {
+                const response = await fetch('http://localhost:8080/commit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ repository: path }),
+                });
+    
+                if (!response.ok) {
+                    throw new Error('Failed to fetch commit list.');
+                }
+    
+                const commitList = await response.json();
+                if (commitList.length > 0) {
+                    this.setState({ commits: commitList }); // 将 commit 列表保存到 state
+                } else {
+                    message.error('No commits found.');
+                }
+            } catch (error) {
+                console.error('Error fetching commits:', error);
+                message.error('Error fetching commits.');
+            }
         });
     };
+    
+    renderCommitSelect = () => {
+        const { commits, commitid } = this.state;
+    
+        return (
+            <FormItem label="Select Commit">
+                <Select
+                    value={commitid}
+                    onChange={(value) => this.setState({ commitid: value })}
+                    placeholder="Select a commit"
+                    style={{ width: '100%' }}
+                >
+                    {commits.map((commit, index) => (
+                        <Select.Option key={index} value={commit}>
+                            {commit}
+                        </Select.Option>
+                    ))}
+                </Select>
+            </FormItem>
+        );
+    };
+    
 
     render() {
-        const { diffResults, fileUploaded, repository, commitid} = this.state;
-
+        const { diffResults, fileUploaded, repository, commitid, commits } = this.state;
+    
         return (
             <div className={s.wrapper}>
                 <Form {...layout} onFinish={this.handleSubmit} className={s.handleSubmit}>
@@ -185,29 +233,22 @@ class DiffPanel extends React.Component {
                                 <Button type="default" onClick={this.selectDirectoryDialog} className={s.selectbotton}>
                                     Select Repository Path
                                 </Button>
-                                {/* 显示选择的路径 */}
                                 <span>{repository}</span>
                             </FormItem>
-                            <FormItem label="commitid">
-                                <Input.TextArea
-                                    rows={1}
-                                    value={commitid}
-                                    onChange={(e) => this.setState({ commitid: e.target.value })}
-                                    className={s.textarea}
-                                    spellcheck="false"
-                                />
-                            </FormItem>
+    
+                            {/* 如果有 commits 列表，展示 commit 选择框 */}
+                            {commits.length > 0 && this.renderCommitSelect()}
                         </div>
                         <div>
                             <FormItem>
-                                <Button type="primary" htmlType="submit" className = {s.botton} >
+                                <Button type="primary" htmlType="submit" className={s.botton} disabled={!commitid}>
                                     Detect
                                 </Button>
                             </FormItem>
                         </div>
                     </div>
                 </Form>
-
+    
                 {fileUploaded && diffResults.length > 0 && diffResults.map((result, index) => (
                     <div key={index}>
                         <div className={s.filename}>
@@ -221,11 +262,12 @@ class DiffPanel extends React.Component {
                         }
                     </div>
                 ))}
-
+    
                 {fileUploaded && this.renderRefactorings()}
             </div>
-        )
+        );
     }
+    
 }
 
 export default DiffPanel;
