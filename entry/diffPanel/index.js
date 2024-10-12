@@ -3,6 +3,7 @@ const jsDiff = require('diff');
 import s from './index.css';
 import { Input, Button, Form, message, Collapse, Select} from 'antd';
 import ContentDiff from '../contentDiff';
+import RefactoringList from './RefactoringList'; // 导入新的 RefactoringList 组件
 import cx from 'classnames';
 
 const { Panel } = Collapse;
@@ -21,6 +22,8 @@ class DiffPanel extends React.Component {
         refactorings: [], // 新增用于存储 refactorings
         commitid:'',
         commits: [],  // 存储从后端获取到的 commit 列表
+        highlightedFiles: [], // 用于存储点击 Location 后的文件和行号信息
+        isFilteredByLocation: false, // 标记是否正在根据 Location 过滤文件
     }
 
     //计算oldcode和newcode的diff，使用外部库
@@ -39,57 +42,6 @@ class DiffPanel extends React.Component {
             return [];
         }
     }
-
-    renderRefactorings = () => {
-        const { refactorings } = this.state;
-        if (refactorings.length === 0) {
-            return <p>No refactorings found.</p>;
-        }
-
-        return (
-            <div className={s.description}>
-                <h3>Refactorings:</h3>
-                {refactorings.map((refactoring, index) => (
-                    <div key={index} className={s.refactoringItem}>
-                        <div className={s.bottom}>
-                            <strong>Type:</strong> {refactoring.type}
-                            <br />
-                        </div>
-                        <div className={s.bottom}>
-                            <strong>Description:</strong> {refactoring.description}
-                            <br />
-                        </div>
-                        <Collapse>
-                            <Panel header={"details"} key={index}>
-                                <strong>leftSideLocation:</strong>
-                                    <ul type="none">
-                                        {refactoring.leftSideLocation.map((location, locIndex) => (
-                                            <li key={locIndex}>
-                                                <div><strong>filePath:</strong> {location.filePath}</div> 
-                                                <div><strong> startLine:</strong> {location.startLine}</div>  
-                                                <div><strong> endLine:</strong> {location.endLine}</div> 
-                                                <div><strong> codeEntity:</strong> {location.codeElement}</div> 
-                                            </li>
-                                        ))}
-                                    </ul>
-                                <strong>rightSideLocation:</strong>
-                                    <ul type="none">
-                                        {refactoring.rightSideLocation.map((location, locIndex) => (
-                                            <li>
-                                                <div><strong>filePath:</strong> {location.filePath}</div>
-                                                <div><strong> startLine:</strong> {location.startLine}</div>
-                                                <div><strong> endLine:</strong> {location.endLine}</div>
-                                                <div><strong> codeEntity:</strong> {location.codeElement}</div>
-                                            </li>
-                                        ))}
-                                    </ul>
-                            </Panel>
-                        </Collapse>
-                    </div>
-                ))}
-            </div>
-        );
-    };
 
     getCharDiff = (diffArr) => {
         //暂时没用
@@ -203,7 +155,7 @@ class DiffPanel extends React.Component {
         const { commits, commitid } = this.state;
     
         return (
-            <FormItem label="Select Commit">
+            <FormItem label="Commit">
                 <Select
                     value={commitid}
                     onChange={(value) => this.setState({ commitid: value })}
@@ -219,10 +171,34 @@ class DiffPanel extends React.Component {
             </FormItem>
         );
     };
+
+    handleHighlightDiff = (locations) => {
+        const { isFilteredByLocation } = this.state;
+
+        if (isFilteredByLocation) {
+            // 如果已经在 Location 过滤模式，则重置为显示所有 diff
+            this.setState({
+                highlightedFiles: [],
+                isFilteredByLocation: false,
+            });
+        } else {
+            // 根据 locations 过滤 diffResults 中相关的文件，并高亮指定的行号
+            const highlightedFiles = locations.map(location => ({
+                filePath: location.filePath,
+                startLine: location.startLine,
+                endLine: location.endLine,
+            }));
+
+            this.setState({
+                highlightedFiles,
+                isFilteredByLocation: true,
+            });
+        }
+    };
     
 
     render() {
-        const { diffResults, fileUploaded, repository, commitid, commits } = this.state;
+        const { diffResults, fileUploaded, repository, commitid, commits, highlightedFiles} = this.state;
     
         return (
             <div className={s.wrapper}>
@@ -249,21 +225,37 @@ class DiffPanel extends React.Component {
                     </div>
                 </Form>
     
-                {fileUploaded && diffResults.length > 0 && diffResults.map((result, index) => (
+                {fileUploaded && !isFilteredByLocation && diffResults.length > 0 && diffResults.map((result, index) => (
                     <div key={index}>
                         <div className={s.filename}>
                             <strong>filePath:&nbsp;&nbsp;</strong> {result.fileName}
                         </div>
-                        {this.isDirectPatch ? 
-                            <div className={s.preWrap}>{typeof result.diff === 'string' ? result.diff : ''}</div> 
-                            : this.isWordType ? 
-                                this.getCharDiff(result.diff) 
-                                : <ContentDiff isFile={this.isFile} diffArr={result.diff}/>
-                        }
+                        <ContentDiff
+                            isFile={this.isFile}
+                            diffArr={result.diff}
+                            highlightedLines={[]}  // 初始状态没有高亮
+                        />
                     </div>
                 ))}
-    
-                {fileUploaded && this.renderRefactorings()}
+
+                {fileUploaded && isFilteredByLocation && diffResults.length > 0 && diffResults.map((result, index) => (
+                    <div key={index}>
+                        <div className={s.filename}>
+                            <strong>filePath:&nbsp;&nbsp;</strong> {result.fileName}
+                        </div>
+                        {/* 只渲染高亮的文件 */}
+                        {highlightedFiles.some(f => f.filePath === result.fileName) && (
+                            <ContentDiff
+                                isFile={this.isFile}
+                                diffArr={result.diff}
+                                highlightedLines={highlightedFiles.filter(f => f.filePath === result.fileName)}
+                            />
+                        )}
+                    </div>
+                ))}
+
+                {/* 使用 RefactoringList 来显示重构列表 */}
+                {fileUploaded && <RefactoringList refactorings={refactorings} onHighlightDiff={this.handleHighlightDiff} />}
             </div>
         );
     }

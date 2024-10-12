@@ -137,26 +137,46 @@ export default class ContentDiff extends React.Component {
     }
 
     paintCode = (item, isHead = true) => {
-        const { type, content: { head, tail, hidden }, leftPos, rightPos} = item;
+        const { highlightedLines } = this.props;  // 从 props 中获取多个高亮区域
+        const { type, content: { head, tail }, leftPos, rightPos } = item;
         const isNormal = type === ' ';
         const cls = cx(s.normal, type === '+' ? s.add : '', type === '-' ? s.removed : '');
         const space = "     ";
+    
         return (isHead ? head : tail).map((sitem, sindex) => {
             let posMark = '';
+            let isHighlighted = false;
+    
+            // 遍历所有的高亮区域，检查当前行是否需要高亮
+            highlightedLines.forEach(({ startLine, endLine }) => {
+                if (isNormal && leftPos + sindex >= startLine && leftPos + sindex <= endLine) {
+                    isHighlighted = true;
+                }
+            });
+    
             if (isNormal) {
-                const shift = isHead ? 0: (head.length + hidden.length);
+                const shift = isHead ? 0 : (head.length + tail.length);
                 posMark = (space + (leftPos + shift + sindex)).slice(-5)
                     + (space + (rightPos + shift + sindex)).slice(-5);
             } else {
                 posMark = type === '-' ? this.getLineNum(leftPos + sindex) + space
                     : space + this.getLineNum(rightPos + sindex);
             }
-            return <div key={(isHead ? 'h-' : 't-') + sindex} className={cls}>
-                <pre className={cx(s.pre, s.line)}>{posMark}</pre>
-                <div className={s.outerPre}><div className={s.splitCon}><div className={s.spanWidth}>{' ' + type + ' '}</div>{this.getPaddingContent(sitem, true)}</div></div>
-            </div>
-        })
-    }
+    
+            return (
+                <div key={(isHead ? 'h-' : 't-') + sindex} className={isHighlighted ? cx(cls, s.highlighted) : cls}>
+                    <pre className={cx(s.pre, s.line)}>{posMark}</pre>
+                    <div className={s.outerPre}>
+                        <div className={s.splitCon}>
+                            <div className={s.spanWidth}>{' ' + type + ' '}</div>
+                            {this.getPaddingContent(sitem, true)}
+                        </div>
+                    </div>
+                </div>
+            );
+        });
+    };
+    
 
     getUnifiedRenderContent = () => {
         return this.state.lineGroup.map((item, index) => {

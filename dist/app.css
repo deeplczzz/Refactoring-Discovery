@@ -200,6 +200,10 @@
     border: 1px solid #ddd;
 }
 
+.index__highlighted--1donK {
+    background-color: yellow;
+}
+
 .index__normal--3xN0k {
     color: black;
 }

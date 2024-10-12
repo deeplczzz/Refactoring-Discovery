@@ -4,6 +4,10 @@
     border: 1px solid #ddd;
 }
 
+.highlighted {
+    background-color: yellow;
+}
+
 .normal {
     color: black;
 }
