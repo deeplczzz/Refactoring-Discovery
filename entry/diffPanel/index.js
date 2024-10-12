@@ -181,7 +181,7 @@ class DiffPanel extends React.Component {
                     },
                     body: JSON.stringify({ repository: path }),
                 });
-    
+                console.log(path);
                 if (!response.ok) {
                     throw new Error('Failed to fetch commit list.');
                 }
