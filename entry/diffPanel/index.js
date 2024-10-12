@@ -174,7 +174,7 @@ class DiffPanel extends React.Component {
     
             // 选择目录后，发送请求到后端获取 commit 列表
             try {
-                const response = await fetch('http://localhost:8080/commit', {
+                const response = await fetch('http://localhost:8080/api/commit', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
