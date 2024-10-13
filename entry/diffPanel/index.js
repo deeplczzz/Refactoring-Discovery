@@ -259,7 +259,8 @@ class DiffPanel extends React.Component {
                             background: 'transparent', 
                             border: 'none', 
                             padding: 0, 
-                            marginBottom: '20px' 
+                            marginBottom: '20px', 
+                            marginRight: '30px' 
                         }}
                     >
                         Back to all files

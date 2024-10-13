@@ -201,7 +201,7 @@
 }
 
 .index__highlighted--1donK {
-    background-color: rgb(248, 248, 134) !important;
+    border: 2px solid yellow; /* 使用边框而不是背景 */
 }
 
 .index__normal--3xN0k {

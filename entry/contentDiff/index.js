@@ -138,7 +138,7 @@ export default class ContentDiff extends React.Component {
 
     paintCode = (item, isHead = true) => {
         const { highlightedLines } = this.props;  // 从 props 中获取高亮行数组
-    
+        console.log('highlightedLines:', highlightedLines);  // 检查传入的 highlighedLines 是否为空或有误
         const { type, content: { head, tail }, leftPos, rightPos } = item;
         const isNormal = type === ' ';
         const cls = cx(s.normal, type === '+' ? s.add : '', type === '-' ? s.removed : '');
@@ -151,7 +151,7 @@ export default class ContentDiff extends React.Component {
             // 判断是否需要高亮
             if (isNormal && highlightedLines && highlightedLines.length > 0) {
                 const currentLine = leftPos + sindex;
-    
+                console.log('currentLine',currentLine);  
                 // 遍历所有高亮区域
                 for (let i = 0; i < highlightedLines.length; i++) {
                     const { startLine, endLine } = highlightedLines[i];
@@ -160,6 +160,7 @@ export default class ContentDiff extends React.Component {
                         break; // 一旦匹配到，就可以退出循环
                     }
                 }
+                console.log('isHighlighted',isHighlighted);  
             }
     
             if (isNormal) {
