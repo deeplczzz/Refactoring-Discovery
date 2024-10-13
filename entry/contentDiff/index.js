@@ -145,7 +145,6 @@ export default class ContentDiff extends React.Component {
 
     paintCode = (item, isHead = true) => {
         const { highlightedLines } = this.props;  // 从 props 中获取高亮行数组
-        console.log('highlightedLines:', highlightedLines);  // 检查传入的 highlighedLines 是否为空或有误
         const { type, content: { head, tail }, leftPos, rightPos } = item;
         const isNormal = type === ' ';
         const cls = cx(s.normal, type === '+' ? s.add : '', type === '-' ? s.removed : '');
@@ -154,12 +153,22 @@ export default class ContentDiff extends React.Component {
         return (isHead ? head : tail).map((sitem, sindex) => {
             let posMark = '';
             let isHighlighted = false;
+            let currentLine = null;
     
-            // 判断是否需要高亮
-            if (isNormal && highlightedLines && highlightedLines.length > 0) {
-                const currentLine = leftPos + sindex;
-                console.log('currentLine',currentLine);  
-                // 遍历所有高亮区域
+            // 判断是根据左侧还是右侧行号进行高亮
+            if (type === '-') {
+                // 删除行，使用左侧行号来进行高亮
+                currentLine = leftPos + sindex;
+            } else if (type === '+') {
+                // 新增行，使用右侧行号来进行高亮
+                currentLine = rightPos + sindex;
+            } else {
+                // 未修改的行，检查左右行号
+                currentLine = leftPos + sindex;  // 这里也可以按需求调整为左或右
+            }
+    
+            // 遍历所有高亮区域，检查是否需要高亮
+            if (highlightedLines && highlightedLines.length > 0) {
                 for (let i = 0; i < highlightedLines.length; i++) {
                     const { startLine, endLine } = highlightedLines[i];
                     if (currentLine >= startLine && currentLine <= endLine) {
@@ -167,7 +176,6 @@ export default class ContentDiff extends React.Component {
                         break; // 一旦匹配到，就可以退出循环
                     }
                 }
-                console.log('isHighlighted',isHighlighted);  
             }
     
             if (isNormal) {
@@ -192,6 +200,7 @@ export default class ContentDiff extends React.Component {
             );
         });
     };
+    
     
     
 

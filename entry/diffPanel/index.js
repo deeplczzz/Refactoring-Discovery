@@ -246,8 +246,6 @@ class DiffPanel extends React.Component {
                                 </Button>
                                 <span>{repository}</span>
                             </FormItem>
-    
-                            {/* 如果有 commits 列表，展示 commit 选择框 */}
                             {commits.length > 0 && this.renderCommitSelect()}
                         </div>
                         <div>
@@ -272,7 +270,7 @@ class DiffPanel extends React.Component {
                             border: 'none', 
                             padding: 0, 
                             marginBottom: '20px', 
-                            marginRight: '30px' 
+                            marginLeft: '30px' 
                         }}
                     >
                         Back to all files
