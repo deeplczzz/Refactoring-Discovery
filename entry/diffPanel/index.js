@@ -100,6 +100,7 @@ class DiffPanel extends React.Component {
                         diffResults,
                         refactorings: firstResult.refactorings || [],
                         fileUploaded: true,
+                        isFilteredByLocation: false
                     });
                 } else {
                     message.error('No files found in JSON.');
@@ -122,7 +123,10 @@ class DiffPanel extends React.Component {
     
         // 等待主进程返回选择的目录路径
         ipcRenderer.on('directory:selected', async (event, path) => {
-            this.setState({ repository: path });
+            this.setState({ repository: path ,
+                            fileUploaded:false,
+                            isFilteredByLocation: false
+            });
     
             // 选择目录后，发送请求到后端获取 commit 列表
             try {
@@ -245,7 +249,7 @@ class DiffPanel extends React.Component {
                 </Form>
 
                 {/* 显示 "Back to all files" 的超链接 */}
-                {isFilteredByLocation && (
+                {fileUploaded && isFilteredByLocation && (
                     <a
                         onClick={this.resetToAllFiles}
                         style={{ 
