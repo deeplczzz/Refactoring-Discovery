@@ -13,6 +13,11 @@ const layout = {
     wrapperCol: { span: 20 },
 };
 
+const SHOW_TYPE = {
+    UNIFIED: 0,
+    SPLITED: 1
+}
+
 class DiffPanel extends React.Component {
     state = {
         diffResults: [], // 用于存储所有文件的 diff 结果
@@ -24,6 +29,7 @@ class DiffPanel extends React.Component {
         commits: [],  // 存储从后端获取到的 commit 列表
         highlightedFiles: [], // 用于存储点击 Location 后的文件和行号信息
         isFilteredByLocation: false, // 标记是否正在根据 Location 过滤文件
+        showType: SHOW_TYPE.SPLITED, // 初始为 SPLITED 视图
     }
 
     //计算oldcode和newcode的diff，使用外部库
@@ -179,6 +185,10 @@ class DiffPanel extends React.Component {
     handleHighlightDiff = (locations) => {
         const { highlightedFiles , isFilteredByLocation} = this.state;
     
+        this.setState({
+            showType: SHOW_TYPE.UNIFIED,
+        });
+
         // 检查当前点击的 locations 中的所有文件是否已经高亮
         const areAllLocationsHighlighted = locations.every(location =>
             highlightedFiles.some(
@@ -195,6 +205,7 @@ class DiffPanel extends React.Component {
                     )
                 ),
                 isFilteredByLocation: false,  // 取消高亮时重置过滤状态
+                showType: SHOW_TYPE.SPLITED,
             });
         } else {
             // 如果 locations 中有文件未被高亮，则高亮所有这些文件
@@ -208,6 +219,7 @@ class DiffPanel extends React.Component {
                     ),
                 ],
                 isFilteredByLocation: true,  // 取消高亮时重置过滤状态
+                showType: SHOW_TYPE.UNIFIED,
             });
         }
     };
@@ -215,13 +227,15 @@ class DiffPanel extends React.Component {
     resetToAllFiles = () => {
         this.setState({
             highlightedFiles: [],
+            showType: SHOW_TYPE.SPLITED,
             isFilteredByLocation: false,
         });
+        
     };
     
 
     render() {
-        const { diffResults, fileUploaded, repository, commitid, commits,highlightedFiles, isFilteredByLocation,refactorings} = this.state;
+        const { diffResults, fileUploaded, repository, commitid, commits,highlightedFiles, isFilteredByLocation,refactorings,showType} = this.state;
     
         return (
             <div className={s.wrapper}>
@@ -249,7 +263,7 @@ class DiffPanel extends React.Component {
                 </Form>
 
                 {/* 显示 "Back to all files" 的超链接 */}
-                {fileUploaded && isFilteredByLocation && (
+                {showType === SHOW_TYPE.UNIFIED && fileUploaded && isFilteredByLocation && (
                     <a
                         onClick={this.resetToAllFiles}
                         style={{ 
@@ -276,6 +290,7 @@ class DiffPanel extends React.Component {
                             isFile={this.isFile}
                             diffArr={result.diff}
                             highlightedLines={[]}  // 初始状态没有高亮
+                            showType={showType}
                         />
                     </div>
                 ))}
@@ -293,6 +308,7 @@ class DiffPanel extends React.Component {
                                 isFile={this.isFile}
                                 diffArr={result.diff}
                                 highlightedLines={highlightedFiles.filter(f => f.filePath === result.fileName)}
+                                showType={showType}
                             />
                         )}
                         

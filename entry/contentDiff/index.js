@@ -14,7 +14,14 @@ const BLOCK_LENGTH = 3;
 export default class ContentDiff extends React.Component {
     state = {
         lineGroup: [],
-        showType: SHOW_TYPE.SPLITED
+        showType: this.props.showType || SHOW_TYPE.SPLITED 
+    }
+
+    componentDidUpdate(prevProps) {
+        if (prevProps.showType !== this.props.showType) {
+            // 当 showType props 改变时，更新 state
+            this.setState({ showType: this.props.showType });
+        }
     }
 
     flashContent = (newArr) => {
@@ -286,7 +293,8 @@ export default class ContentDiff extends React.Component {
             <React.Fragment>
                 <Content className={s.content}>
                     <div className={s.color}>
-                        {this.isSplit ? this.getSplitContent()
+                        {showType === SHOW_TYPE.SPLITED 
+                            ? this.getSplitContent()
                             : this.getUnifiedRenderContent()}
                     </div>
                 </Content>
