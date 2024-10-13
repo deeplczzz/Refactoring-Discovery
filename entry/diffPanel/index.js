@@ -106,7 +106,8 @@ class DiffPanel extends React.Component {
                         diffResults,
                         refactorings: firstResult.refactorings || [],
                         fileUploaded: true,
-                        isFilteredByLocation: false
+                        isFilteredByLocation: false,
+                        showType:SHOW_TYPE.SPLITED
                     });
                 } else {
                     message.error('No files found in JSON.');
@@ -131,7 +132,8 @@ class DiffPanel extends React.Component {
         ipcRenderer.on('directory:selected', async (event, path) => {
             this.setState({ repository: path ,
                             fileUploaded:false,
-                            isFilteredByLocation: false
+                            isFilteredByLocation: false,
+                            showType:SHOW_TYPE.SPLITED
             });
     
             // 选择目录后，发送请求到后端获取 commit 列表
@@ -185,10 +187,6 @@ class DiffPanel extends React.Component {
     handleHighlightDiff = (locations) => {
         const { highlightedFiles , isFilteredByLocation} = this.state;
     
-        this.setState({
-            showType: SHOW_TYPE.UNIFIED,
-        });
-
         // 检查当前点击的 locations 中的所有文件是否已经高亮
         const areAllLocationsHighlighted = locations.every(location =>
             highlightedFiles.some(

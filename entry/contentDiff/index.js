@@ -14,7 +14,7 @@ const BLOCK_LENGTH = 3;
 export default class ContentDiff extends React.Component {
     state = {
         lineGroup: [],
-        showType: this.props.showType || SHOW_TYPE.SPLITED 
+        showType: this.props.showType
     }
 
     componentDidUpdate(prevProps) {
