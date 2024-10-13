@@ -173,27 +173,46 @@ class DiffPanel extends React.Component {
     };
 
     handleHighlightDiff = (locations) => {
-        const { isFilteredByLocation } = this.state;
-
-        if (isFilteredByLocation) {
-            // 如果已经在 Location 过滤模式，则重置为显示所有 diff
+        const { highlightedFiles , isFilteredByLocation} = this.state;
+    
+        // 检查当前点击的 locations 中的所有文件是否已经高亮
+        const areAllLocationsHighlighted = locations.every(location =>
+            highlightedFiles.some(
+                file => file.filePath === location.filePath && file.startLine === location.startLine && file.endLine === location.endLine
+            )
+        );
+    
+        if (areAllLocationsHighlighted) {
+            // 如果所有 locations 已经高亮，则取消它们的高亮
             this.setState({
-                highlightedFiles: [],
-                isFilteredByLocation: false,
+                highlightedFiles: highlightedFiles.filter(
+                    file => !locations.some(
+                        location => location.filePath === file.filePath && location.startLine === file.startLine && location.endLine === file.endLine
+                    )
+                ),
+                isFilteredByLocation: false,  // 取消高亮时重置过滤状态
             });
         } else {
-            // 根据 locations 过滤 diffResults 中相关的文件，并高亮指定的行号
-            const highlightedFiles = locations.map(location => ({
-                filePath: location.filePath,
-                startLine: location.startLine,
-                endLine: location.endLine,
-            }));
-
+            // 如果 locations 中有文件未被高亮，则高亮所有这些文件
             this.setState({
-                highlightedFiles,
-                isFilteredByLocation: true,
+                highlightedFiles: [
+                    ...highlightedFiles,
+                    ...locations.filter(location =>
+                        !highlightedFiles.some(
+                            file => file.filePath === location.filePath && file.startLine === location.startLine && file.endLine === location.endLine
+                        )
+                    ),
+                ],
+                isFilteredByLocation: true,  // 取消高亮时重置过滤状态
             });
         }
+    };
+
+    resetToAllFiles = () => {
+        this.setState({
+            highlightedFiles: [],
+            isFilteredByLocation: false,
+        });
     };
     
 
@@ -224,7 +243,25 @@ class DiffPanel extends React.Component {
                         </div>
                     </div>
                 </Form>
-    
+
+                {/* 显示 "Back to all files" 的超链接 */}
+                {isFilteredByLocation && (
+                    <a
+                        onClick={this.resetToAllFiles}
+                        style={{ 
+                            textDecoration: 'underline', 
+                            color: 'blue', 
+                            cursor: 'pointer', 
+                            background: 'transparent', 
+                            border: 'none', 
+                            padding: 0, 
+                            marginBottom: '20px' 
+                        }}
+                    >
+                        Back to all files
+                    </a>
+                )}
+
                 {fileUploaded && !isFilteredByLocation && diffResults.length > 0 && diffResults.map((result, index) => (
                     <div key={index}>
                         <div className={s.filename}>

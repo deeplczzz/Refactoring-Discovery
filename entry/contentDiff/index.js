@@ -137,22 +137,31 @@ export default class ContentDiff extends React.Component {
     }
 
     paintCode = (item, isHead = true) => {
-        const { highlightedLines } = this.props;  // 从 props 中获取高亮行
-        const { startLine, endLine } = highlightedLines?.[0] || {};  // 获取高亮行的范围
+        const { highlightedLines } = this.props;  // 从 props 中获取高亮行数组
+    
         const { type, content: { head, tail }, leftPos, rightPos } = item;
         const isNormal = type === ' ';
         const cls = cx(s.normal, type === '+' ? s.add : '', type === '-' ? s.removed : '');
         const space = "     ";
-
+    
         return (isHead ? head : tail).map((sitem, sindex) => {
             let posMark = '';
             let isHighlighted = false;
-
+    
             // 判断是否需要高亮
-            if (isNormal && leftPos + sindex >= startLine && leftPos + sindex <= endLine) {
-                isHighlighted = true;
+            if (isNormal && highlightedLines && highlightedLines.length > 0) {
+                const currentLine = leftPos + sindex;
+    
+                // 遍历所有高亮区域
+                for (let i = 0; i < highlightedLines.length; i++) {
+                    const { startLine, endLine } = highlightedLines[i];
+                    if (currentLine >= startLine && currentLine <= endLine) {
+                        isHighlighted = true;
+                        break; // 一旦匹配到，就可以退出循环
+                    }
+                }
             }
-
+    
             if (isNormal) {
                 const shift = isHead ? 0 : (head.length + tail.length);
                 posMark = (space + (leftPos + shift + sindex)).slice(-5)
@@ -161,15 +170,21 @@ export default class ContentDiff extends React.Component {
                 posMark = type === '-' ? this.getLineNum(leftPos + sindex) + space
                     : space + this.getLineNum(rightPos + sindex);
             }
-
+    
             return (
                 <div key={(isHead ? 'h-' : 't-') + sindex} className={isHighlighted ? cx(cls, s.highlighted) : cls}>
                     <pre className={cx(s.pre, s.line)}>{posMark}</pre>
-                    <div className={s.outerPre}><div className={s.splitCon}><div className={s.spanWidth}>{' ' + type + ' '}</div>{this.getPaddingContent(sitem, true)}</div></div>
+                    <div className={s.outerPre}>
+                        <div className={s.splitCon}>
+                            <div className={s.spanWidth}>{' ' + type + ' '}</div>
+                            {this.getPaddingContent(sitem, true)}
+                        </div>
+                    </div>
                 </div>
             );
         });
     };
+    
     
 
     getUnifiedRenderContent = () => {

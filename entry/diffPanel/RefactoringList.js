@@ -43,6 +43,8 @@ export default class RefactoringList extends React.Component {
                                             <div><strong>filePath:</strong> {location.filePath}</div>
                                             <div><strong>startLine:</strong> {location.startLine}</div>
                                             <div><strong>endLine:</strong> {location.endLine}</div>
+                                            <div><strong>codeElementType:</strong> {location.codeElementType}</div>
+                                            <div><strong>description:</strong> {location.description}</div>
                                             <div><strong>codeEntity:</strong> {location.codeElement}</div>
                                         </li>
                                     ))}
@@ -55,6 +57,8 @@ export default class RefactoringList extends React.Component {
                                             <div><strong>filePath:</strong> {location.filePath}</div>
                                             <div><strong>startLine:</strong> {location.startLine}</div>
                                             <div><strong>endLine:</strong> {location.endLine}</div>
+                                            <div><strong>codeElementType:</strong> {location.codeElementType}</div>
+                                            <div><strong>description:</strong> {location.description}</div>
                                             <div><strong>codeEntity:</strong> {location.codeElement}</div>
                                         </li>
                                     ))}
