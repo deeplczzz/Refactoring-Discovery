@@ -197,26 +197,15 @@ class DiffPanel extends React.Component {
         if (areAllLocationsHighlighted) {
             // 如果所有 locations 已经高亮，则取消它们的高亮
             this.setState({
-                highlightedFiles: highlightedFiles.filter(
-                    file => !locations.some(
-                        location => location.filePath === file.filePath && location.startLine === file.startLine && location.endLine === file.endLine
-                    )
-                ),
-                isFilteredByLocation: false,  // 取消高亮时重置过滤状态
+                highlightedFiles: [], 
+                isFilteredByLocation: false, 
                 showType: SHOW_TYPE.SPLITED,
             });
         } else {
             // 如果 locations 中有文件未被高亮，则高亮所有这些文件
             this.setState({
-                highlightedFiles: [
-                    ...highlightedFiles,
-                    ...locations.filter(location =>
-                        !highlightedFiles.some(
-                            file => file.filePath === location.filePath && file.startLine === location.startLine && file.endLine === location.endLine
-                        )
-                    ),
-                ],
-                isFilteredByLocation: true,  // 取消高亮时重置过滤状态
+                highlightedFiles: locations,  // 只保留当前 location 相关的文件
+                isFilteredByLocation: true, 
                 showType: SHOW_TYPE.UNIFIED,
             });
         }

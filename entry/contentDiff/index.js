@@ -39,7 +39,7 @@ export default class ContentDiff extends React.Component {
                 value = item.value;
                 count = item.count;
             }
-            const strArr = value?.split('\n').filter(item => item) || [];
+            const strArr = value?.split('\n') || [];
             const type = (added && '+') || (removed && '-') || ' ';
             let head, hidden, tail;
             if (type !== ' ') {
@@ -155,28 +155,22 @@ export default class ContentDiff extends React.Component {
             let isHighlighted = false;
             let currentLine = null;
     
-            // 判断是根据左侧还是右侧行号进行高亮
-            if (type === '-') {
-                // 删除行，使用左侧行号来进行高亮
-                currentLine = leftPos + sindex;
-            } else if (type === '+') {
-                // 新增行，使用右侧行号来进行高亮
-                currentLine = rightPos + sindex;
-            } else {
-                // 未修改的行，检查左右行号
-                currentLine = leftPos + sindex;  // 这里也可以按需求调整为左或右
-            }
+            if (type === '-' || type === '+') {
+                // 根据行类型选择高亮的行号
+                currentLine = type === '-' ? leftPos + sindex : rightPos + sindex;
     
-            // 遍历所有高亮区域，检查是否需要高亮
-            if (highlightedLines && highlightedLines.length > 0) {
-                for (let i = 0; i < highlightedLines.length; i++) {
-                    const { startLine, endLine } = highlightedLines[i];
-                    if (currentLine >= startLine && currentLine <= endLine) {
-                        isHighlighted = true;
-                        break; // 一旦匹配到，就可以退出循环
+                // 遍历所有高亮区域，检查是否需要高亮
+                if (highlightedLines && highlightedLines.length > 0) {
+                    for (let i = 0; i < highlightedLines.length; i++) {
+                        const { startLine, endLine } = highlightedLines[i];
+                        if (currentLine >= startLine && currentLine <= endLine) {
+                            isHighlighted = true;
+                            break; // 一旦匹配到，就可以退出循环
+                        }
                     }
                 }
             }
+            
     
             if (isNormal) {
                 const shift = isHead ? 0 : (head.length + tail.length);
