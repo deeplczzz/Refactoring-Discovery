@@ -5,12 +5,9 @@ import s from './index.css';
 const { Panel } = Collapse;
 
 export default class RefactoringList extends React.Component {
+    
     handleLocationClick = (leftSideLocations, rightSideLocations) => {
-        // 合并 leftSideLocation 和 rightSideLocation 的文件信息
-        const allLocations = [...leftSideLocations, ...rightSideLocations];
-
-        // 调用父组件的回调函数，将所有文件及其行号传递给父组件
-        this.props.onHighlightDiff(allLocations);
+        this.props.onHighlightDiff(leftSideLocations, rightSideLocations);
     };
 
     render() {

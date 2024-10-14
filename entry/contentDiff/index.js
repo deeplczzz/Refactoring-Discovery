@@ -162,8 +162,10 @@ export default class ContentDiff extends React.Component {
                 // 遍历所有高亮区域，检查是否需要高亮
                 if (highlightedLines && highlightedLines.length > 0) {
                     for (let i = 0; i < highlightedLines.length; i++) {
-                        const { startLine, endLine } = highlightedLines[i];
-                        if (currentLine >= startLine && currentLine <= endLine) {
+                        const { startLine, endLine, side} = highlightedLines[i];
+
+                        if ((type === '-' && side === 'left' && currentLine >= startLine && currentLine <= endLine) ||
+                            (type === '+' && side === 'right' && currentLine >= startLine && currentLine <= endLine)) {
                             isHighlighted = true;
                             break; // 一旦匹配到，就可以退出循环
                         }

@@ -193,6 +193,7 @@
 
 .index__selectbotton--3EOfa{
     border-radius: 8px !important; /* 圆角 */
+    margin-left: 20px; /* 增加 margin-left 防止按钮挤压 label */
 }
 .index__color--2ojbV {
     color: black;

@@ -193,4 +193,5 @@
 
 .selectbotton{
     border-radius: 8px !important; /* 圆角 */
+    margin-left: 20px; /* 增加 margin-left 防止按钮挤压 label */
 }

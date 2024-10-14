@@ -184,11 +184,28 @@ class DiffPanel extends React.Component {
         );
     };
 
-    handleHighlightDiff = (locations) => {
-        const { highlightedFiles , isFilteredByLocation} = this.state;
+    handleHighlightDiff = (leftSideLocations, rightSideLocations) => {
+        const { highlightedFiles } = this.state;
+    
+        const leftSideHighlightedFiles = leftSideLocations.map(location => ({
+            filePath: location.filePath,
+            startLine: location.startLine,
+            endLine: location.endLine,
+            side: 'left', // 标记为左侧
+        }));
+    
+        const rightSideHighlightedFiles = rightSideLocations.map(location => ({
+            filePath: location.filePath,
+            startLine: location.startLine,
+            endLine: location.endLine,
+            side: 'right', // 标记为右侧
+        }));
+    
+        // 合并左右侧的高亮信息
+        const newHighlightedFiles = [...leftSideHighlightedFiles, ...rightSideHighlightedFiles];
     
         // 检查当前点击的 locations 中的所有文件是否已经高亮
-        const areAllLocationsHighlighted = locations.every(location =>
+        const areAllLocationsHighlighted = newHighlightedFiles.every(location =>
             highlightedFiles.some(
                 file => file.filePath === location.filePath && file.startLine === location.startLine && file.endLine === location.endLine
             )
@@ -204,7 +221,7 @@ class DiffPanel extends React.Component {
         } else {
             // 如果 locations 中有文件未被高亮，则高亮所有这些文件
             this.setState({
-                highlightedFiles: locations,  // 只保留当前 location 相关的文件
+                highlightedFiles: newHighlightedFiles,  // 只保留当前 location 相关的文件
                 isFilteredByLocation: true, 
                 showType: SHOW_TYPE.UNIFIED,
             });
@@ -247,7 +264,6 @@ class DiffPanel extends React.Component {
                     </div>
                 </Form>
 
-                {/* 显示 "Back to all files" 的超链接 */}
                 {showType === SHOW_TYPE.UNIFIED && fileUploaded && isFilteredByLocation && (
                     <a
                         onClick={this.resetToAllFiles}
@@ -262,7 +278,7 @@ class DiffPanel extends React.Component {
                             marginLeft: '30px' 
                         }}
                     >
-                        Back to all files
+                        ← Back to all files
                     </a>
                 )}
 
