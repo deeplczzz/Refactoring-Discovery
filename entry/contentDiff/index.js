@@ -227,8 +227,17 @@ export default class ContentDiff extends React.Component {
         return (isHead ? head : tail).map((item, index) => {
             const shift = isHead ? 0: (head.length + hidden.length);
             return <div key={(isHead ? 'h-' : 't-') + index}>
-                <div className={cx(s.iBlock, s.lBorder)}>{this.getLNPadding(leftPos + shift + index)}{this.getPaddingContent('    ' + item)}</div>
-                <div className={s.iBlock}>{this.getLNPadding(rightPos + shift +index)}{this.getPaddingContent('    ' + item)}</div>
+
+                <div className={cx(s.iBlock, s.lBorder)}>
+                    {this.getLNPadding(leftPos + shift + index)}
+                    {this.getPaddingContent('    ' + item)}
+                </div>
+
+                <div className={s.iBlock}>
+                    {this.getLNPadding(rightPos + shift +index)}
+                    {this.getPaddingContent('    ' + item)}
+                </div>
+
             </div>
         })
     }
@@ -241,18 +250,21 @@ export default class ContentDiff extends React.Component {
         const lClass = lType === '+' ? s.add : s.removed;
         const rClass = rType === '+' ? s.add : s.removed;
         return <React.Fragment>
+
                 <div className={cx(s.iBlock, s.lBorder)}>{lArr.map((item, index) => {
                     return <div className={cx(s.prBlock, lClass)} key={index}>
                         {this.getLNPadding(lLeftPos + index)}
                         {this.getPaddingContent('-  ' + item)}
                     </div>
                 })}</div>
+
                 <div className={cx(s.iBlock, lArr.length ? '' : s.rBorder)}>{rArr.map((item, index) => {
                     return <div className={cx(s.prBlock, rClass)} key={index}>
                         {this.getLNPadding(rRightPos + index)}
                         {this.getPaddingContent('+  ' + item)}
                     </div>
                 })}</div>
+
             </React.Fragment>
     }
 
@@ -286,11 +298,111 @@ export default class ContentDiff extends React.Component {
         </div>
     }
 
+    getHighlightSpiltContent = () => {
+        const length = this.state.lineGroup.length;
+        const contentList = [];
+        for (let i = 0; i < length; i++) {
+            const targetBlock = this.state.lineGroup[i];
+            const { type, content: { hidden } } = targetBlock;
+            if (type === ' ') {
+                contentList.push(<div key={i}>
+                    {this.getHighlghtSplitCode(targetBlock)}
+                    {hidden.length && this.getHiddenBtn(hidden, i) || null}
+                    {this.getHighlghtSplitCode(targetBlock, false)}
+                </div>)
+            } else if (type === '-') {
+                const nextTarget = this.state.lineGroup[i + 1] || { content: {}};
+                const nextIsPlus = nextTarget.type === '+';
+                contentList.push(<div key={i}>
+                    {this.getHighlightCombinePart(targetBlock, nextIsPlus ? nextTarget : {})}
+                </div>)
+                nextIsPlus ? i = i + 1 : void 0;
+            } else if (type === '+') {
+                contentList.push(<div key={i}>
+                    {this.getHighlightCombinePart({}, targetBlock)}
+                </div>)
+            }
+        }
+        return <div>
+            {contentList}
+        </div>
+    }
+
+    getHighlightCombinePart = (leftPart = {}, rightPart = {}) => {
+        const { type: lType, content: lContent, leftPos: lLeftPos, rightPos: lRightPos } = leftPart;
+        const { type: rType, content: rContent, leftPos: rLeftPos, rightPos: rRightPos } = rightPart;
+        const lArr = lContent?.head || [];
+        const rArr = rContent?.head || [];
+        const lClass = lType === '+' ? s.add : s.removed;
+        const rClass = rType === '+' ? s.add : s.removed;
+        return <React.Fragment>
+
+                <div className={cx(s.iBlock, s.lBorder)}>{lArr.map((item, index) => {
+                    return <div className={cx(s.prBlock, lClass, this.shouldHighlightLine(lLeftPos + index, 'left') ? s.highlighted : '')} key={index}>
+                        {this.getLNPadding(lLeftPos + index)}
+                        {this.getPaddingContent('-  ' + item)}
+                    </div>
+                })}</div>
+
+                <div className={cx(s.iBlock, lArr.length ? '' : s.rBorder)}>{rArr.map((item, index) => {
+                    return <div className={cx(s.prBlock, rClass, this.shouldHighlightLine(rRightPos + index, 'right') ? s.highlighted : '')} key={index}>
+                        {this.getLNPadding(rRightPos + index)}
+                        {this.getPaddingContent('+  ' + item)}
+                    </div>
+                })}</div>
+
+            </React.Fragment>
+    }
+
+    getHighlghtSplitCode = (targetBlock, isHead = true) => {
+        const { highlightedLines } = this.props; // 从 props 中获取高亮行数组
+        const { type, content: { head, hidden, tail }, leftPos, rightPos} = targetBlock;
+
+        return (isHead ? head : tail).map((item, index) => {
+            const shift = isHead ? 0: (head.length + hidden.length);
+
+            // 判断是否需要高亮左侧和右侧的行号
+            const isHighlightedLeft = highlightedLines.some(line =>
+                line.side === 'left' && (leftPos + shift + index) >= line.startLine && (leftPos + shift + index) <= line.endLine
+            );
+            const isHighlightedRight = highlightedLines.some(line =>
+                line.side === 'right' && (rightPos + shift + index) >= line.startLine && (rightPos + shift + index) <= line.endLine
+            );
+
+            // 根据是否高亮设置样式
+            const leftHighlightClass = isHighlightedLeft ? s.highlighted : '';
+            const rightHighlightClass = isHighlightedRight ? s.highlighted : '';
+
+            return <div key={(isHead ? 'h-' : 't-') + index}>
+                
+                <div className={cx(s.iBlock, s.lBorder, leftHighlightClass)}>
+                    {this.getLNPadding(leftPos + shift + index)}
+                    {this.getPaddingContent('    ' + item)}
+                </div>
+
+                <div className={cx(s.iBlock, rightHighlightClass)}>
+                    {this.getLNPadding(rightPos + shift +index)}
+                    {this.getPaddingContent('    ' + item)}
+                </div>
+
+            </div>
+        })
+    }
+
     handleShowTypeChange = (e) => {
         this.setState({
             showType: e.target.value
         })
     }
+
+    shouldHighlightLine = (lineNumber, side) => {
+        const { highlightedLines } = this.props;
+        
+        return highlightedLines.some(({ startLine, endLine, side: lineSide }) => {
+            return lineSide === side && lineNumber >= startLine && lineNumber <= endLine;
+        });
+    }
+    
 
     render() {
         const { showType } = this.state;
@@ -300,7 +412,7 @@ export default class ContentDiff extends React.Component {
                     <div className={s.color}>
                         {showType === SHOW_TYPE.SPLITED 
                             ? this.getSplitContent()
-                            : this.getUnifiedRenderContent()}
+                            : this.getHighlightSpiltContent()}
                     </div>
                 </Content>
             </React.Fragment>
