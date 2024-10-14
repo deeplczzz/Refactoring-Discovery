@@ -37,7 +37,7 @@ export default class ContentDiff extends React.Component {
                 added = item.added;
                 removed = item.removed;
                 value = item.value;
-                count = item.count;
+                count = item.count + 1;
             }
             const strArr = value?.split('\n') || [];
             const type = (added && '+') || (removed && '-') || ' ';
