@@ -26,10 +26,9 @@
 
 .formItem {
     display: flex;
-    flex-direction: column; /* 垂直排列 label 和 buttonAndText */
-    width: 80%; /* 使 formItem 填满父容器 */
-    position: relative; /* 使用相对定位进行调整 */
-    justify-content:center;
+    justify-content: space-between; /* 让内容和 label 在两边 */
+    align-items: center; /* 垂直居中对齐 */
+    width: 100%; /* 使 formItem 填满父容器 */
 }
 
 /* 使用 position: relative 和 top 调整 Upload JSON 标签的位置 */
@@ -41,8 +40,9 @@
 }
 
 .bottonandtext {
-    display: flex; /* 使用 flexbox 布局，使按钮和文本在一行显示 */
-    align-items: center; /* 垂直对齐 */
+    display: flex;
+    flex-direction: column; /* 将子元素垂直排列 */
+    gap: 20px; /* 每行之间添加一些间距 */
     margin-right: 2%;
     margin-left: 2%;
 }
@@ -172,9 +172,9 @@
 
 .botton{
     border-radius: 8px !important; /* 圆角 */
-    margin-left: 50px;
+    margin-left: 0px;
     margin-right: 10%;
-    margin-top: 53%;
+    margin-top: 0%;
 }
 
 .textarea {
@@ -189,9 +189,17 @@
 
 .handleSubmit{
     display: grid;
+    gap: 10px; /* 给每个表单项之间增加间距 */
+    flex-direction: column; /* 垂直排列元素 */
 }
 
 .selectbotton{
     border-radius: 8px !important; /* 圆角 */
-    margin-left: 20px; /* 增加 margin-left 防止按钮挤压 label */
+    margin-left: 10px;
+}
+
+.flexRow {
+    display: flex;
+    align-items: center; /* 垂直居中对齐 */
+    gap: 20px; /* 设置选择框和按钮之间的间距 */
 }

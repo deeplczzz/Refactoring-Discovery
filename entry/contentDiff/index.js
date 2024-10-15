@@ -338,14 +338,14 @@ export default class ContentDiff extends React.Component {
         return <React.Fragment>
 
                 <div className={cx(s.iBlock, s.lBorder)}>{lArr.map((item, index) => {
-                    return <div className={cx(s.prBlock, lClass, this.shouldHighlightLine(lLeftPos + index, 'left') ? s.highlighted : '')} key={index}>
+                    return <div className={cx(s.prBlock, this.shouldHighlightLine(lLeftPos + index, 'left') ? s.highlighted : '')} key={index}>
                         {this.getLNPadding(lLeftPos + index)}
                         {this.getPaddingContent('-  ' + item)}
                     </div>
                 })}</div>
 
                 <div className={cx(s.iBlock, lArr.length ? '' : s.rBorder)}>{rArr.map((item, index) => {
-                    return <div className={cx(s.prBlock, rClass, this.shouldHighlightLine(rRightPos + index, 'right') ? s.highlighted : '')} key={index}>
+                    return <div className={cx(s.prBlock, this.shouldHighlightLine(rRightPos + index, 'right') ? s.highlighted : '')} key={index}>
                         {this.getLNPadding(rRightPos + index)}
                         {this.getPaddingContent('+  ' + item)}
                     </div>

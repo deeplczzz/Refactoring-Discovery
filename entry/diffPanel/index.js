@@ -167,7 +167,10 @@ class DiffPanel extends React.Component {
         const { commits, commitid } = this.state;
     
         return (
-            <FormItem label="Commit">
+            <FormItem label="Commit"
+                labelCol={{ span: 1 }}   // 控制 label 宽度
+                wrapperCol={{ span: 23 }} // 控制内容宽度
+            >
                 <Select
                     value={commitid}
                     onChange={(value) => this.setState({ commitid: value })}
@@ -191,6 +194,7 @@ class DiffPanel extends React.Component {
             filePath: location.filePath,
             startLine: location.startLine,
             endLine: location.endLine,
+            description:location.description,
             side: 'left', // 标记为左侧
         }));
     
@@ -198,6 +202,7 @@ class DiffPanel extends React.Component {
             filePath: location.filePath,
             startLine: location.startLine,
             endLine: location.endLine,
+            description:location.description,
             side: 'right', // 标记为右侧
         }));
     
@@ -207,7 +212,7 @@ class DiffPanel extends React.Component {
         // 检查当前点击的 locations 中的所有文件是否已经高亮
         const areAllLocationsHighlighted = newHighlightedFiles.every(location =>
             highlightedFiles.some(
-                file => file.filePath === location.filePath && file.startLine === location.startLine && file.endLine === location.endLine
+                file => file.filePath === location.filePath && file.startLine === location.startLine && file.endLine === location.endLine && file.description === location.description
             )
         );
     
@@ -245,22 +250,27 @@ class DiffPanel extends React.Component {
             <div className={s.wrapper}>
                 <Form {...layout} onFinish={this.handleSubmit} className={s.handleSubmit}>
                     <div className={s.bottonandtext}>
-                        <div>
-                            <FormItem label="Repository:" >
+                            <FormItem label="Repository:" 
+                            labelCol={{ span: 1 }}   // 控制 label 宽度
+                            wrapperCol={{ span: 23 }} // 控制内容宽度
+                            >
                                 <Button type="default" onClick={this.selectDirectoryDialog} className={s.selectbotton}>
                                     Select Repository Path
                                 </Button>
-                                <span>{repository}</span>
+                                <span style={{ marginLeft: '10px' }}>{repository}</span>
                             </FormItem>
-                            {commits.length > 0 && this.renderCommitSelect()}
-                        </div>
-                        <div>
-                            <FormItem>
-                                <Button type="primary" htmlType="submit" className={s.botton} disabled={!commitid}>
-                                    Detect
-                                </Button>
-                            </FormItem>
-                        </div>
+
+                            {commits.length > 0 && (
+                                <FormItem wrapperCol={{ span: 24 }}>
+                                    <div className={s.flexRow}>
+                                        {this.renderCommitSelect()}
+                                        <Button type="primary" htmlType="submit" className={s.botton} disabled={!commitid}>
+                                            Detect
+                                        </Button>
+                                    </div>
+                                </FormItem>
+                            )}
+   
                     </div>
                 </Form>
 

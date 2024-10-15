@@ -1,12 +1,12 @@
 {
     "name": "refactoring-discovery",
-    "version": "v1.1.9",
+    "version": "v1.2.0",
     "main": "electron.js",
     "scripts": {
         "start": "node ./bin/start",
         "build": "webpack --color --config webpack.config.js",
         "deploy": "npm run build && node writeHtml.js",
-        "electron": "cross-env ELECTRON_START_URL=http://localhost:3001 electron .",
+        "electron": "electron .",
         "electron-build": "npm run build && electron-builder",
         "dist": "npm run build && electron-builder"
     },
