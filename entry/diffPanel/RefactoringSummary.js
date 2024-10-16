@@ -1,7 +1,7 @@
 import React from 'react';
 
 const RefactoringSummary = ({ data }) => {
-    if (data.length === 0) {
+    if (data.length === 0) { //没有检测到重构 返回的值
         return(
             <div style={{ textAlign: 'left', padding: '20px' }}>
                 <h2>Refactoring Summary</h2>
@@ -10,7 +10,6 @@ const RefactoringSummary = ({ data }) => {
         );
     }
     // 计算总的重构数量
-
     const totalRefactorings = data.reduce((acc, item) => acc + item.value, 0);
 
     return (
