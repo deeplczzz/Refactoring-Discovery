@@ -1,6 +1,6 @@
 {
     "name": "refactoring-discovery",
-    "version": "v1.2.2",
+    "version": "v1.2.3",
     "main": "electron.js",
     "scripts": {
         "start": "node ./bin/start",
@@ -11,6 +11,7 @@
         "dist": "npm run build && electron-builder"
     },
     "dependencies": {
+        "@ant-design/charts": "^1.2.5",
         "@babel/core": "^7.3.4",
         "@babel/preset-env": "^7.3.4",
         "antd": "^4.24.16",

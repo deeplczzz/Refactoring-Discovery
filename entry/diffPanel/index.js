@@ -1,10 +1,12 @@
 import React from 'react';
 const jsDiff = require('diff');
 import s from './index.css';
+import { Pie } from '@ant-design/charts'; // 引入饼图组件
 import { Input, Button, Form, message, Collapse, Select} from 'antd';
 import ContentDiff from '../contentDiff';
 import RefactoringList from './RefactoringList'; // 导入新的 RefactoringList 组件
 import cx from 'classnames';
+import RefactoringSummary from './RefactoringSummary'; 
 
 const { Panel } = Collapse;
 const FormItem = Form.Item;
@@ -49,23 +51,6 @@ class DiffPanel extends React.Component {
         }
     }
 
-    getCharDiff = (diffArr) => {
-        //暂时没用
-        /*
-        const charColorMap = {
-            'add': s.charAdd,
-            'removed': s.charRemoved,
-        }
-        return <div className={s.result}>
-            {diffArr.map((item, index) => {
-                const { value, added, removed } = item;
-                const type = added ? 'add' : (removed ? 'removed' : '')
-                return <span key={index} className={cx(charColorMap[type], s.charPreWrap)}>{value}</span>
-                })
-            }
-        </div>
-        */
-    }
 
     handleSubmit = async () => {
         const { commitid, repository} = this.state;
@@ -238,10 +223,64 @@ class DiffPanel extends React.Component {
         });
         
     };
-    
+
+
+    // 计算重构类别的统计数据
+    getRefactoringTypeData = () => {
+        const { refactorings } = this.state;
+        // 如果没有探测到任何重构，返回空数组
+        if (refactorings.length === 0) {
+            return [];
+        }
+        const typeCounts = refactorings.reduce((acc, refactoring) => {
+            const { type } = refactoring;
+            if (acc[type]) {
+                acc[type]++;
+            } else {
+                acc[type] = 1;
+            }
+            return acc;
+        }, {});
+
+        return Object.entries(typeCounts).map(([type, count]) => ({
+            type,
+            value: count,
+        }));
+    }
 
     render() {
         const { diffResults, fileUploaded, repository, commitid, commits,highlightedFiles, isFilteredByLocation,refactorings,showType} = this.state;
+        const refactoringData = this.getRefactoringTypeData();
+        // 饼图配置
+        const pieConfig = {
+            appendPadding: 10,
+            data: refactoringData, // 获取重构类型数据
+            angleField: 'value',
+            colorField: 'type',
+            radius: 0.7, // 调整半径来缩小饼图
+            width: 500, // 设置饼图的宽度
+            height: 500, // 设置饼图的高度
+            label: {
+                type: 'spider',
+                content: '{name}({value})', 
+                style: {
+                    fontSize: 12,     // 标签字体大小
+                },
+            },
+            legend: {
+                position: 'right',
+                item: {
+                    onClick: null,
+                },
+            },
+            interactions: [{ type: 'element-selected' }, { type: 'element-active' }],
+            // 配置 tooltip 自定义内容
+            tooltip: {
+                formatter: (datum) => {
+                    return { name: datum.type, value: datum.value }; // 显示类别名称和其数量
+                },
+            },
+        };
     
         return (
             <div className={s.wrapper}>
@@ -330,7 +369,20 @@ class DiffPanel extends React.Component {
                     </div>
                 ))}
 
-                {/* 使用 RefactoringList 来显示重构列表 */}
+
+                {fileUploaded && (
+                    <div className={s.RefactoringSummary}>
+                        <RefactoringSummary data={refactoringData} />
+                    </div>
+                )}
+
+                {fileUploaded && refactorings.length > 0 && (
+                    <div className={s.pie}>
+                        <Pie {...pieConfig} />
+                    </div>
+                )}
+
+
                 {fileUploaded && <RefactoringList refactorings={refactorings} onHighlightDiff={this.handleHighlightDiff} />}
             </div>
         );
