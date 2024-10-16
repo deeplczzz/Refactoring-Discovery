@@ -39,7 +39,10 @@ export default class ContentDiff extends React.Component {
                 value = item.value;
                 count = item.count;
             }
-            const strArr = value?.split('\n').filter(Boolean) || [];
+            const strArr = value?.split('\n')|| [];
+            if (strArr[strArr.length - 1] === '') {
+                strArr.pop();
+            }
             const type = (added && '+') || (removed && '-') || ' ';
             let head, hidden, tail;
             if (type !== ' ') {
