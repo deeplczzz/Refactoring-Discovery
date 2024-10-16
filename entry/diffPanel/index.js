@@ -167,10 +167,7 @@ class DiffPanel extends React.Component {
         const { commits, commitid } = this.state;
     
         return (
-            <FormItem label="Commit"
-                labelCol={{ span: 1 }}   // 控制 label 宽度
-                wrapperCol={{ span: 23 }} // 控制内容宽度
-            >
+            <FormItem>
                 <Select
                     value={commitid}
                     onChange={(value) => this.setState({ commitid: value })}
@@ -249,28 +246,35 @@ class DiffPanel extends React.Component {
         return (
             <div className={s.wrapper}>
                 <Form {...layout} onFinish={this.handleSubmit} className={s.handleSubmit}>
-                    <div className={s.bottonandtext}>
-                            <FormItem label="Repository:" 
-                            labelCol={{ span: 1 }}   // 控制 label 宽度
-                            wrapperCol={{ span: 23 }} // 控制内容宽度
-                            >
+                    <div>
+                        <div className={s.bottonandtext}>
+                            <div className={s.Repositorylabel}>Repository :</div>
+                            <div>
                                 <Button type="default" onClick={this.selectDirectoryDialog} className={s.selectbotton}>
                                     Select Repository Path
                                 </Button>
+                            </div>
+                            <div>
                                 <span style={{ marginLeft: '10px' }}>{repository}</span>
-                            </FormItem>
+                            </div>
+                        </div>
+                    </div>
 
-                            {commits.length > 0 && (
-                                <FormItem wrapperCol={{ span: 24 }}>
-                                    <div className={s.flexRow}>
+                    <div>
+                        {commits.length > 0 &&(
+                                <div  className={s.CommitselectAndBotton}>
+                                    <div className={s.Commitlabel}>Commit_id :</div>
+                                    <div className ={s.commitselect}>
                                         {this.renderCommitSelect()}
+                                    </div>
+                                    <div>
                                         <Button type="primary" htmlType="submit" className={s.botton} disabled={!commitid}>
                                             Detect
                                         </Button>
                                     </div>
-                                </FormItem>
-                            )}
+                                </div>
    
+                        )}
                     </div>
                 </Form>
 
