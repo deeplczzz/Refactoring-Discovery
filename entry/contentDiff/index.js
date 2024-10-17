@@ -336,19 +336,17 @@ export default class ContentDiff extends React.Component {
         const { type: rType, content: rContent, leftPos: rLeftPos, rightPos: rRightPos } = rightPart;
         const lArr = lContent?.head || [];
         const rArr = rContent?.head || [];
-        const lClass = lType === '+' ? s.add : s.removed;
-        const rClass = rType === '+' ? s.add : s.removed;
         return <React.Fragment>
 
                 <div className={cx(s.iBlock, s.lBorder)}>{lArr.map((item, index) => {
-                    return <div className={cx(s.prBlock, this.shouldHighlightLine(lLeftPos + index, 'left') ? s.highlighted : '')} key={index}>
+                    return <div className={cx(s.prBlock, this.shouldHighlightLine(lLeftPos + index, 'left') ? s.removed : '')} key={index}>
                         {this.getLNPadding(lLeftPos + index)}
                         {this.getPaddingContent('-  ' + item)}
                     </div>
                 })}</div>
 
                 <div className={cx(s.iBlock, lArr.length ? '' : s.rBorder)}>{rArr.map((item, index) => {
-                    return <div className={cx(s.prBlock, this.shouldHighlightLine(rRightPos + index, 'right') ? s.highlighted : '')} key={index}>
+                    return <div className={cx(s.prBlock, this.shouldHighlightLine(rRightPos + index, 'right') ? s.add : '')} key={index}>
                         {this.getLNPadding(rRightPos + index)}
                         {this.getPaddingContent('+  ' + item)}
                     </div>
@@ -373,8 +371,8 @@ export default class ContentDiff extends React.Component {
             );
 
             // 根据是否高亮设置样式
-            const leftHighlightClass = isHighlightedLeft ? s.highlighted : '';
-            const rightHighlightClass = isHighlightedRight ? s.highlighted : '';
+            const leftHighlightClass = isHighlightedLeft ? s.removed : '';
+            const rightHighlightClass = isHighlightedRight ? s.add : '';
 
             return <div key={(isHead ? 'h-' : 't-') + index}>
                 

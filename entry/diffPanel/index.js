@@ -7,6 +7,7 @@ import ContentDiff from '../contentDiff';
 import RefactoringList from './RefactoringList'; // 导入新的 RefactoringList 组件
 import cx from 'classnames';
 import RefactoringSummary from './RefactoringSummary'; 
+import DiffTabs from './DiffTabs';
 
 const { Panel } = Collapse;
 const FormItem = Form.Item;
@@ -31,16 +32,11 @@ class DiffPanel extends React.Component {
         commits: [],  // 存储从后端获取到的 commit 列表
         highlightedFiles: [], // 用于存储点击 Location 后的文件和行号信息
         isFilteredByLocation: false, // 标记是否正在根据 Location 过滤文件
-        showType: SHOW_TYPE.SPLITED, // 初始为 SPLITED 视图
+        showType: SHOW_TYPE.SPLITED,
+        isDetect: false, //表示还没有点击detect按钮
     }
 
-    //计算oldcode和newcode的diff，使用外部库
-    /*
-    diff 库提供了多种方法来比较文本，例如：
-    jsDiff.diffChars(oldStr, newStr)：比较两个字符串的字符差异。
-    jsDiff.diffWords(oldStr, newStr)：比较两个字符串的单词差异。
-    jsDiff.diffLines(oldStr, newStr)：比较两个字符串的行差异。
-    */
+    //比较两个代码的diff
     actDiff = (oldCode, newCode) => {
         try {
             return jsDiff.diffLines(oldCode, newCode);
@@ -384,6 +380,7 @@ class DiffPanel extends React.Component {
 
 
                 {fileUploaded && <RefactoringList refactorings={refactorings} onHighlightDiff={this.handleHighlightDiff} />}
+                
             </div>
         );
     }
