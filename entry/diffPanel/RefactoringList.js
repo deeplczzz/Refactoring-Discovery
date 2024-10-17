@@ -6,8 +6,8 @@ const { Panel } = Collapse;
 
 export default class RefactoringList extends React.Component {
     
-    handleLocationClick = (leftSideLocations, rightSideLocations) => {
-        this.props.onHighlightDiff(leftSideLocations, rightSideLocations);
+    handleLocationClick = (leftSideLocations, rightSideLocations, Description) => {
+        this.props.onHighlightDiff(leftSideLocations, rightSideLocations, Description);
     };
 
     render() {
@@ -22,7 +22,7 @@ export default class RefactoringList extends React.Component {
                             <strong>Type:</strong> {refactoring.type}
                             &nbsp;
                             {/* 当点击 Location 时，传递所有涉及的文件信息 */}
-                            <a href="#" onClick={() => this.handleLocationClick(refactoring.leftSideLocation, refactoring.rightSideLocation)}>
+                            <a href="#" onClick={() => this.handleLocationClick(refactoring.leftSideLocation, refactoring.rightSideLocation, refactoring.description)}>
                                 Location
                             </a>
                             <br />

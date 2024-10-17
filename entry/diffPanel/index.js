@@ -1,10 +1,10 @@
 import React from 'react';
 const jsDiff = require('diff');
 import s from './index.css';
-import { Pie } from '@ant-design/charts'; // 引入饼图组件
+import { Pie } from '@ant-design/charts'; 
 import { Input, Button, Form, message, Collapse, Select} from 'antd';
 import ContentDiff from '../contentDiff';
-import RefactoringList from './RefactoringList'; // 导入新的 RefactoringList 组件
+import RefactoringList from './RefactoringList'; 
 import cx from 'classnames';
 import RefactoringSummary from './RefactoringSummary'; 
 import DiffTabs from './DiffTabs';
@@ -17,8 +17,8 @@ const layout = {
 };
 
 const SHOW_TYPE = {
-    UNIFIED: 0,
-    SPLITED: 1
+    HIGHLIGHT: 0,
+    NORMAL: 1
 }
 
 class DiffPanel extends React.Component {
@@ -32,8 +32,9 @@ class DiffPanel extends React.Component {
         commits: [],  // 存储从后端获取到的 commit 列表
         highlightedFiles: [], // 用于存储点击 Location 后的文件和行号信息
         isFilteredByLocation: false, // 标记是否正在根据 Location 过滤文件
-        showType: SHOW_TYPE.SPLITED,
-        isDetect: false, //表示还没有点击detect按钮
+        showType: SHOW_TYPE.NORMAL,
+        isDetect: false, //表示有没有点击detect按钮
+        filteredRefactoring:[],
     }
 
     //比较两个代码的diff
@@ -49,60 +50,16 @@ class DiffPanel extends React.Component {
 
 
     handleSubmit = async () => {
-        const { commitid, repository} = this.state;
-
-        if (!commitid || !repository) {
-            message.error('Please provide repository_path and commentid.');
-            return;
-        }
-
-        try {
-            // 发送 POST 请求到后端
-            const response = await fetch('http://localhost:8080/api/diff', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({repository, commitid }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Network response was not ok.');
-            }
-
-            const json = await response.json();
-
-            // 处理返回的 JSON 数据
-            if (json.results && json.results.length > 0) {
-                const firstResult = json.results[0];
-                const files = firstResult.files;
-
-                if (files && files.length > 0) {
-                    const diffResults = files.map((file) => ({
-                        fileName: file.name,
-                        diff: this.actDiff(file.oldCode, file.newCode),
-                    }));
-
-                    this.setState({
-                        diffResults,
-                        refactorings: firstResult.refactorings || [],
-                        fileUploaded: true,
-                        isFilteredByLocation: false,
-                        showType:SHOW_TYPE.SPLITED
-                    });
-                } else {
-                    message.error('No files found in JSON.');
-                }
-            } else {
-                message.error('Invalid JSON format: Missing results array.');
-            }
-        } catch (error) {
-            console.error('Error fetching diff:', error);
-            message.error('Error fetching diff.');
-        }
+        const { refactorings } = this.state;
+        this.setState({
+            showType: SHOW_TYPE.HIGHLIGHT,
+            isFilteredByLocation: false,
+            isDetect: true, 
+        });
+        
     };
 
-
+    //选择仓库目录
     selectDirectoryDialog = async () => {
         const { ipcRenderer } = window.require('electron');
     
@@ -144,14 +101,14 @@ class DiffPanel extends React.Component {
         });
     };
     
+    //commit选择框
     renderCommitSelect = () => {
         const { commits, commitid } = this.state;
-    
         return (
             <FormItem>
                 <Select
                     value={commitid}
-                    onChange={(value) => this.setState({ commitid: value })}
+                    onSelect={(value) => {this.setState({ commitid: value }, this.fetchData);}}
                     placeholder="Select a commit"
                     style={{ width: '100%' }}
                 >
@@ -165,8 +122,66 @@ class DiffPanel extends React.Component {
         );
     };
 
-    handleHighlightDiff = (leftSideLocations, rightSideLocations) => {
-        const { highlightedFiles } = this.state;
+    // 负责从后端获取数据
+    fetchData = async () => {
+        const { commitid, repository } = this.state;
+    
+        if (!commitid || !repository) {
+            message.error('Please provide repository_path and commitid.');
+            return;
+        }
+    
+        try {
+            // 发送 POST 请求到后端获取文件 diff 和 refactorings
+            const response = await fetch('http://localhost:8080/api/diff', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ repository, commitid }),
+            });
+    
+            if (!response.ok) {
+                throw new Error('Network response was not ok.');
+            }
+    
+            const json = await response.json();
+    
+            if (json.results && json.results.length > 0) {
+                const firstResult = json.results[0];
+                const files = firstResult.files;
+    
+                if (files && files.length > 0) {
+                    const diffResults = files.map((file) => ({
+                        fileName: file.name,
+                        diff: this.actDiff(file.oldCode, file.newCode),
+                    }));
+    
+                    this.setState({
+                        diffResults,
+                        refactorings: firstResult.refactorings || [],
+                        fileUploaded: true ,
+                        isFilteredByLocation: false ,
+                        showType: SHOW_TYPE.NORMAL,
+                        isDetect:false,
+                    });
+                } else {
+                    message.error('No files found in JSON.');
+                }
+            } else {
+                message.error('Invalid JSON format: Missing results array.');
+            }
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            message.error('Error fetching data.');
+        }
+    };
+
+    
+
+    handleHighlightDiff = (leftSideLocations, rightSideLocations, Description) => {
+        const { highlightedFiles, refactorings } = this.state;
+        //console.log(Description);
     
         const leftSideHighlightedFiles = leftSideLocations.map(location => ({
             filePath: location.filePath,
@@ -193,31 +208,32 @@ class DiffPanel extends React.Component {
                 file => file.filePath === location.filePath && file.startLine === location.startLine && file.endLine === location.endLine && file.description === location.description
             )
         );
-    
+
         if (areAllLocationsHighlighted) {
-            // 如果所有 locations 已经高亮，则取消它们的高亮
             this.setState({
                 highlightedFiles: [], 
                 isFilteredByLocation: false, 
-                showType: SHOW_TYPE.SPLITED,
+                filteredRefactoring: [],
+
             });
         } else {
-            // 如果 locations 中有文件未被高亮，则高亮所有这些文件
+            const matchRefactoring = refactorings.find(ref => ref.description === Description);
+            const HighlightRefactoring = matchRefactoring ? [matchRefactoring] : [];
             this.setState({
-                highlightedFiles: newHighlightedFiles,  // 只保留当前 location 相关的文件
+                highlightedFiles: newHighlightedFiles,
                 isFilteredByLocation: true, 
-                showType: SHOW_TYPE.UNIFIED,
+                filteredRefactoring : HighlightRefactoring,
             });
         }
     };
 
+    //返回所有文件
     resetToAllFiles = () => {
         this.setState({
             highlightedFiles: [],
-            showType: SHOW_TYPE.SPLITED,
             isFilteredByLocation: false,
+            filteredRefactoring: [], //根据location过滤的重构信息
         });
-        
     };
 
 
@@ -245,7 +261,7 @@ class DiffPanel extends React.Component {
     }
 
     render() {
-        const { diffResults, fileUploaded, repository, commitid, commits,highlightedFiles, isFilteredByLocation,refactorings,showType} = this.state;
+        const { diffResults, fileUploaded, repository, commitid, commits,highlightedFiles, isFilteredByLocation,refactorings,showType,isDetect,filteredRefactoring} = this.state;
         const refactoringData = this.getRefactoringTypeData();
         // 饼图配置
         const pieConfig = {
@@ -313,7 +329,7 @@ class DiffPanel extends React.Component {
                     </div>
                 </Form>
 
-                {showType === SHOW_TYPE.UNIFIED && fileUploaded && isFilteredByLocation && (
+                {isDetect && fileUploaded && isFilteredByLocation && (
                     <a
                         onClick={this.resetToAllFiles}
                         style={{ 
@@ -327,11 +343,11 @@ class DiffPanel extends React.Component {
                             marginLeft: '30px' 
                         }}
                     >
-                        ← Back to all files
+                        ← Back to all refactorings
                     </a>
                 )}
 
-                {fileUploaded && !isFilteredByLocation && diffResults.length > 0 && diffResults.map((result, index) => (
+                {!isDetect && fileUploaded && diffResults.length > 0 && diffResults.map((result, index) => (
                     <div key={index}>
                         <div className={s.filename}>
                             <strong>filePath:&nbsp;&nbsp;</strong> {result.fileName}
@@ -345,7 +361,7 @@ class DiffPanel extends React.Component {
                     </div>
                 ))}
 
-                {fileUploaded && isFilteredByLocation && diffResults.length > 0 && diffResults.map((result, index) => (
+                {isDetect && fileUploaded && isFilteredByLocation && diffResults.length > 0 && diffResults.map((result, index) => (
                     <div key={index}>
                         {highlightedFiles.some(f => f.filePath === result.fileName) && (
                             <div className={s.filename}>
@@ -365,21 +381,20 @@ class DiffPanel extends React.Component {
                     </div>
                 ))}
 
-
-                {fileUploaded && (
+                {isDetect && !isFilteredByLocation && fileUploaded && (
                     <div className={s.RefactoringSummary}>
                         <RefactoringSummary data={refactoringData} />
                     </div>
                 )}
 
-                {fileUploaded && refactorings.length > 0 && (
+                {isDetect && !isFilteredByLocation && fileUploaded && refactorings.length > 0 && (
                     <div className={s.pie}>
                         <Pie {...pieConfig} />
                     </div>
                 )}
 
-
-                {fileUploaded && <RefactoringList refactorings={refactorings} onHighlightDiff={this.handleHighlightDiff} />}
+                {isDetect && !isFilteredByLocation && fileUploaded && <RefactoringList refactorings={refactorings} onHighlightDiff={this.handleHighlightDiff} />}
+                {isDetect && isFilteredByLocation && fileUploaded && <RefactoringList refactorings={filteredRefactoring} onHighlightDiff={this.handleHighlightDiff} />}
                 
             </div>
         );

@@ -1,12 +1,12 @@
 import React from 'react';
-import { Upload, Button, Layout, Menu, Radio } from 'antd';
+import {Layout} from 'antd';
 import s from './index.css';
 import cx from 'classnames';
 const { Content } = Layout;
 
 const SHOW_TYPE = {
-    UNIFIED: 0,
-    SPLITED: 1
+    HIGHLIGHT: 0,
+    NORMAL: 1
 }
 
 const BLOCK_LENGTH = 3;
@@ -144,75 +144,6 @@ export default class ContentDiff extends React.Component {
 
     getLineNum = (number) => {
         return ('     ' + number).slice(-5);
-    }
-
-    paintCode = (item, isHead = true) => {
-        const { highlightedLines } = this.props;  // 从 props 中获取高亮行数组
-        const { type, content: { head, tail }, leftPos, rightPos } = item;
-        const isNormal = type === ' ';
-        const cls = cx(s.normal, type === '+' ? s.add : '', type === '-' ? s.removed : '');
-        const space = "     ";
-    
-        return (isHead ? head : tail).map((sitem, sindex) => {
-            let posMark = '';
-            let isHighlighted = false;
-            let currentLine = null;
-    
-            if (type === '-' || type === '+') {
-                // 根据行类型选择高亮的行号
-                currentLine = type === '-' ? leftPos + sindex : rightPos + sindex;
-    
-                // 遍历所有高亮区域，检查是否需要高亮
-                if (highlightedLines && highlightedLines.length > 0) {
-                    for (let i = 0; i < highlightedLines.length; i++) {
-                        const { startLine, endLine, side} = highlightedLines[i];
-
-                        if ((type === '-' && side === 'left' && currentLine >= startLine && currentLine <= endLine) ||
-                            (type === '+' && side === 'right' && currentLine >= startLine && currentLine <= endLine)) {
-                            isHighlighted = true;
-                            break; // 一旦匹配到，就可以退出循环
-                        }
-                    }
-                }
-            }
-            
-    
-            if (isNormal) {
-                const shift = isHead ? 0 : (head.length + tail.length);
-                posMark = (space + (leftPos + shift + sindex)).slice(-5)
-                    + (space + (rightPos + shift + sindex)).slice(-5);
-            } else {
-                posMark = type === '-' ? this.getLineNum(leftPos + sindex) + space
-                    : space + this.getLineNum(rightPos + sindex);
-            }
-    
-            return (
-                <div key={(isHead ? 'h-' : 't-') + sindex} className={isHighlighted ? cx(cls, s.highlighted) : cls}>
-                    <pre className={cx(s.pre, s.line)}>{posMark}</pre>
-                    <div className={s.outerPre}>
-                        <div className={s.splitCon}>
-                            <div className={s.spanWidth}>{' ' + type + ' '}</div>
-                            {this.getPaddingContent(sitem, true)}
-                        </div>
-                    </div>
-                </div>
-            );
-        });
-    };
-    
-    
-    
-
-    getUnifiedRenderContent = () => {
-        return this.state.lineGroup.map((item, index) => {
-            const { type, content: { hidden }} = item;
-            const isNormal = type === ' ';
-            return <div key={index}>
-                {this.paintCode(item)}
-                {hidden.length && isNormal && this.getHiddenBtn(hidden, index) || null}
-                {this.paintCode(item, false)}
-            </div>
-        })
     }
 
     //  获取split下的页码node
@@ -411,7 +342,7 @@ export default class ContentDiff extends React.Component {
             <React.Fragment>
                 <Content className={s.content}>
                     <div className={s.color}>
-                        {showType === SHOW_TYPE.SPLITED 
+                        {showType === SHOW_TYPE.NORMAL
                             ? this.getSplitContent()
                             : this.getHighlightSpiltContent()}
                     </div>
