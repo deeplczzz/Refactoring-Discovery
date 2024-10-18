@@ -363,17 +363,21 @@ class DiffPanel extends React.Component {
 
                 {isDetect && fileUploaded && isFilteredByLocation && diffResults.length > 0 && diffResults.map((result, index) => (
                     <div key={index}>
-                        {highlightedFiles.some(f => f.filePath === result.fileName) && (
+                        {highlightedFiles.some(f => (f.filePath === result.fileName) || (result.fileName.split(" --> ").length > 1 &&
+                                    (f.filePath === result.fileName.split(" --> ")[0].trim() || f.filePath === result.fileName.split(" --> ")[1].trim()))) && (
                             <div className={s.filename}>
                                 <strong>filePath:&nbsp;&nbsp;</strong> {result.fileName}
                             </div>
                         )}
                         
-                        {highlightedFiles.some(f => f.filePath === result.fileName) && (
+                        {highlightedFiles.some(f => (f.filePath === result.fileName) || (result.fileName.split(" --> ").length > 1 &&
+                                    (f.filePath === result.fileName.split(" --> ")[0].trim() || f.filePath === result.fileName.split(" --> ")[1].trim()))) && (
                             <ContentDiff
                                 isFile={this.isFile}
                                 diffArr={result.diff}
-                                highlightedLines={highlightedFiles.filter(f => f.filePath === result.fileName)}
+                                highlightedLines={highlightedFiles.filter(f => (f.filePath === result.fileName) || (result.fileName.split(" --> ").length > 1 &&
+                                    (f.filePath === result.fileName.split(" --> ")[0].trim() || f.filePath === result.fileName.split(" --> ")[1].trim()))
+                                )}
                                 showType={showType}
                             />
                         )}
