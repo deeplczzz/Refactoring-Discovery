@@ -294,6 +294,12 @@ class DiffPanel extends React.Component {
             },
         };
     
+        const isFileMatched = (filePath, resultFileName) => {
+            if (filePath === resultFileName) return true;
+            const [oldPath, newPath] = resultFileName.split(" --> ").map(p => p.trim());
+            return filePath === oldPath || filePath === newPath;
+        };
+
         return (
             <div className={s.wrapper}>
                 <Form {...layout} onFinish={this.handleSubmit} className={s.handleSubmit}>
@@ -361,40 +367,36 @@ class DiffPanel extends React.Component {
                     </div>
                 ))}
 
-                {isDetect && fileUploaded && isFilteredByLocation && diffResults.length > 0 && diffResults.map((result, index) => (
-                    <div key={index}>
-                        {highlightedFiles.some(f => (f.filePath === result.fileName) || (result.fileName.split(" --> ").length > 1 &&
-                                    (f.filePath === result.fileName.split(" --> ")[0].trim() || f.filePath === result.fileName.split(" --> ")[1].trim()))) && (
+                {isDetect && fileUploaded && isFilteredByLocation && diffResults.length > 0 && diffResults.map((result, index) => {
+                    const matchedFiles = highlightedFiles.filter(f => isFileMatched(f.filePath, result.fileName));
+                    const shouldRender = matchedFiles.length > 0;
+
+                    return shouldRender && (
+                        <div key={index}>
                             <div className={s.filename}>
                                 <strong>filePath:&nbsp;&nbsp;</strong> {result.fileName}
                             </div>
-                        )}
-                        
-                        {highlightedFiles.some(f => (f.filePath === result.fileName) || (result.fileName.split(" --> ").length > 1 &&
-                                    (f.filePath === result.fileName.split(" --> ")[0].trim() || f.filePath === result.fileName.split(" --> ")[1].trim()))) && (
                             <ContentDiff
                                 isFile={this.isFile}
                                 diffArr={result.diff}
-                                highlightedLines={highlightedFiles.filter(f => (f.filePath === result.fileName) || (result.fileName.split(" --> ").length > 1 &&
-                                    (f.filePath === result.fileName.split(" --> ")[0].trim() || f.filePath === result.fileName.split(" --> ")[1].trim()))
-                                )}
+                                highlightedLines={matchedFiles}
                                 showType={showType}
                             />
-                        )}
-                        
-                    </div>
-                ))}
+                        </div>
+                    );
+                })}
 
                 {isDetect && !isFilteredByLocation && fileUploaded && (
-                    <div className={s.RefactoringSummary}>
-                        <RefactoringSummary data={refactoringData} />
-                    </div>
-                )}
-
-                {isDetect && !isFilteredByLocation && fileUploaded && refactorings.length > 0 && (
-                    <div className={s.pie}>
-                        <Pie {...pieConfig} />
-                    </div>
+                    <>
+                        <div className={s.RefactoringSummary}>
+                            <RefactoringSummary data={refactoringData} />
+                        </div>
+                        {refactorings.length > 0 && (
+                            <div className={s.pie}>
+                                <Pie {...pieConfig} />
+                            </div>
+                        )}
+                    </>
                 )}
 
                 {isDetect && !isFilteredByLocation && fileUploaded && <RefactoringList refactorings={refactorings} onHighlightDiff={this.handleHighlightDiff} />}
