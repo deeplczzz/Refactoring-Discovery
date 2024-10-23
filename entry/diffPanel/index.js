@@ -35,6 +35,7 @@ class DiffPanel extends React.Component {
         showType: SHOW_TYPE.NORMAL,
         isDetect: false, //表示有没有点击detect按钮
         filteredRefactoring:[],
+        PieSelectedTypes:[],//存储饼图的选中类
     }
 
     //比较两个代码的diff
@@ -48,18 +49,18 @@ class DiffPanel extends React.Component {
         }
     }
 
-
+    //处理点击detect按钮的事件
     handleSubmit = async () => {
-        const { refactorings } = this.state;
         this.setState({
             showType: SHOW_TYPE.HIGHLIGHT,
             isFilteredByLocation: false,
             isDetect: true, 
+            PieSelectedTypes: [], // 重置选中的类型
         });
         
     };
 
-    //选择仓库目录
+    //选择仓库目录按钮的事件
     selectDirectoryDialog = async () => {
         const { ipcRenderer } = window.require('electron');
     
@@ -177,11 +178,9 @@ class DiffPanel extends React.Component {
         }
     };
 
-    
 
     handleHighlightDiff = (leftSideLocations, rightSideLocations, Description) => {
         const { highlightedFiles, refactorings } = this.state;
-        //console.log(Description);
     
         const leftSideHighlightedFiles = leftSideLocations.map(location => ({
             filePath: location.filePath,
@@ -214,7 +213,6 @@ class DiffPanel extends React.Component {
                 highlightedFiles: [], 
                 isFilteredByLocation: false, 
                 filteredRefactoring: [],
-
             });
         } else {
             const matchRefactoring = refactorings.find(ref => ref.description === Description);
@@ -235,7 +233,6 @@ class DiffPanel extends React.Component {
             filteredRefactoring: [], //根据location过滤的重构信息
         });
     };
-
 
     // 计算重构类别的统计数据
     getRefactoringTypeData = () => {
@@ -260,18 +257,54 @@ class DiffPanel extends React.Component {
         }));
     }
 
+    //处理饼图点击事件
+    handlePieSelect = (event) => {
+        const { data } = event.data || {};
+        if (!data || !data.type) return;
+
+        this.setState(prevState => {
+            let newSelectedTypes;
+            if (prevState.PieSelectedTypes.includes(data.type)) {
+                // 如果类型已被选中,则取消选择
+                newSelectedTypes = prevState.PieSelectedTypes.filter(type => type !== data.type);
+            } else {
+                // 如果类型未被选中,则添加到选中列表
+                newSelectedTypes = [...prevState.PieSelectedTypes, data.type];
+            }
+            console.log('New selected types:', newSelectedTypes);
+            return { PieSelectedTypes: newSelectedTypes };
+        });
+    }
+
+    //获取重构列表应该显示的重构信息
+    getFilteredRefactorings = () => {
+        const { refactorings, PieSelectedTypes, isFilteredByLocation, filteredRefactoring } = this.state;
+
+        if (isFilteredByLocation) {
+            return filteredRefactoring;
+        }
+
+        if (PieSelectedTypes.length === 0) {
+            return refactorings;
+        }
+
+        return refactorings.filter(refactoring => PieSelectedTypes.includes(refactoring.type));
+    }
+
+
     render() {
-        const { diffResults, fileUploaded, repository, commitid, commits,highlightedFiles, isFilteredByLocation,refactorings,showType,isDetect,filteredRefactoring} = this.state;
+        const { diffResults, fileUploaded, repository, commitid, commits,highlightedFiles, isFilteredByLocation, refactorings, showType, isDetect, filteredRefactoring} = this.state;
         const refactoringData = this.getRefactoringTypeData();
-        // 饼图配置
+        //饼图配置
         const pieConfig = {
             appendPadding: 10,
             data: refactoringData, // 获取重构类型数据
             angleField: 'value',
             colorField: 'type',
             radius: 0.7, // 调整半径来缩小饼图
-            width: 500, // 设置饼图的宽度
-            height: 500, // 设置饼图的高度
+            width: 400, // 设置饼图的宽度
+            height: 400, // 设置饼图的高度
+            animation: false,
             label: {
                 type: 'spider',
                 content: '{name}({value})', 
@@ -282,15 +315,25 @@ class DiffPanel extends React.Component {
             legend: {
                 position: 'right',
                 item: {
-                    onClick: null,
+                    onClick: null, // 禁用图例项的点击事件
                 },
             },
-            interactions: [{ type: 'element-selected' }, { type: 'element-active' }],
-            // 配置 tooltip 自定义内容
+            interactions: [
+                        { type: 'element-selected' }, 
+                        { type: 'element-active' },
+                        { type: 'legend-filter', enable: false },
+            ],
             tooltip: {
                 formatter: (datum) => {
                     return { name: datum.type, value: datum.value }; // 显示类别名称和其数量
                 },
+            },
+            pieStyle: (data) => {
+                const isSelected = this.state.PieSelectedTypes.includes(data.type);
+                return {
+                    stroke: isSelected ? 'blue' : 'white',
+                    lineWidth: isSelected ? 3 : 1,
+                };
             },
         };
     
@@ -330,11 +373,11 @@ class DiffPanel extends React.Component {
                                         </Button>
                                     </div>
                                 </div>
-   
                         )}
                     </div>
                 </Form>
 
+                {/* 高亮时的返回键 */}
                 {isDetect && fileUploaded && isFilteredByLocation && (
                     <a
                         onClick={this.resetToAllFiles}
@@ -353,6 +396,7 @@ class DiffPanel extends React.Component {
                     </a>
                 )}
 
+                {/* 显示未高亮文件 */}
                 {!isDetect && fileUploaded && diffResults.length > 0 && diffResults.map((result, index) => (
                     <div key={index}>
                         <div className={s.filename}>
@@ -367,6 +411,7 @@ class DiffPanel extends React.Component {
                     </div>
                 ))}
 
+                {/* 显示高亮文件 */}
                 {isDetect && fileUploaded && isFilteredByLocation && diffResults.length > 0 && diffResults.map((result, index) => {
                     const matchedFiles = highlightedFiles.filter(f => isFileMatched(f.filePath, result.fileName));
                     const shouldRender = matchedFiles.length > 0;
@@ -386,6 +431,7 @@ class DiffPanel extends React.Component {
                     );
                 })}
 
+                {/* 显示重构总结和饼图 */}
                 {isDetect && !isFilteredByLocation && fileUploaded && (
                     <>
                         <div className={s.RefactoringSummary}>
@@ -393,19 +439,27 @@ class DiffPanel extends React.Component {
                         </div>
                         {refactorings.length > 0 && (
                             <div className={s.pie}>
-                                <Pie {...pieConfig} />
+                                <Pie {...pieConfig} onEvent={(chart, event) => {
+                                    if (event.type === 'element:click') {
+                                        this.handlePieSelect(event);
+                                    }
+                                }}/>
                             </div>
                         )}
                     </>
                 )}
 
-                {isDetect && !isFilteredByLocation && fileUploaded && <RefactoringList refactorings={refactorings} onHighlightDiff={this.handleHighlightDiff} />}
-                {isDetect && isFilteredByLocation && fileUploaded && <RefactoringList refactorings={filteredRefactoring} onHighlightDiff={this.handleHighlightDiff} />}
+                {/* 显示重构列表 */}
+                {isDetect && fileUploaded && (
+                    <RefactoringList 
+                        refactorings={this.getFilteredRefactorings()} 
+                        onHighlightDiff={this.handleHighlightDiff} 
+                    />
+                )}
                 
             </div>
         );
     }
-    
 }
 
 export default DiffPanel;

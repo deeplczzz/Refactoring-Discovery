@@ -1,6 +1,6 @@
 {
     "name": "refactoring-discovery",
-    "version": "v1.2.5",
+    "version": "v1.2.6",
     "main": "electron.js",
     "scripts": {
         "start": "node ./bin/start",
@@ -13,7 +13,7 @@
     "dependencies": {
         "@ant-design/charts": "^1.2.5",
         "@babel/core": "^7.3.4",
-        "@babel/preset-env": "^7.3.4",
+        "@babel/preset-env": "^7.25.8",
         "antd": "^4.24.16",
         "classnames": "^2.2.6",
         "diff": "^4.0.2",
@@ -70,7 +70,8 @@
                 "portable"
             ],
             "icon": "build/icon.ico",
-            "requestedExecutionLevel": "requireAdministrator"
+            "requestedExecutionLevel": "requireAdministrator",
+            "compression": "maximum"
         },
         "linux": {
             "target": [
