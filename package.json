@@ -1,6 +1,6 @@
 {
     "name": "refactoring-discovery",
-    "version": "v1.2.6",
+    "version": "v1.2.7",
     "main": "electron.js",
     "scripts": {
         "start": "node ./bin/start",

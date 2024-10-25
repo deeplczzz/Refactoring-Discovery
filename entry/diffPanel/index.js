@@ -2,13 +2,15 @@ import React from 'react';
 const jsDiff = require('diff');
 import s from './index.css';
 import { Pie } from '@ant-design/charts'; 
-import { Input, Button, Form, message, Collapse, Select} from 'antd';
+import {Button, Form, message, Collapse, Select, DatePicker} from 'antd';
 import ContentDiff from '../contentDiff';
 import RefactoringList from './RefactoringList'; 
 import cx from 'classnames';
 import RefactoringSummary from './RefactoringSummary'; 
 import DiffTabs from './DiffTabs';
+import moment from 'moment';
 
+const { RangePicker } = DatePicker;
 const { Panel } = Collapse;
 const FormItem = Form.Item;
 const layout = {
@@ -36,6 +38,10 @@ class DiffPanel extends React.Component {
         isDetect: false, //表示有没有点击detect按钮
         filteredRefactoring:[],
         PieSelectedTypes:[],//存储饼图的选中类
+        dateRange: null, //存储选择的日期范围
+        latestDate: moment(), //记录最晚时间
+        earliestDate: null, //记录最早时间
+        filteredCommits: [], //存储过滤后的 commits
     }
 
     //比较两个代码的diff
@@ -72,7 +78,7 @@ class DiffPanel extends React.Component {
             this.setState({ repository: path ,
                             fileUploaded:false,
                             isFilteredByLocation: false,
-                            showType:SHOW_TYPE.SPLITED
+                            showType:SHOW_TYPE.NORMAL
             });
     
             // 选择目录后，发送请求到后端获取 commit 列表
@@ -91,9 +97,15 @@ class DiffPanel extends React.Component {
     
                 const commitList = await response.json();
                 if (commitList.length > 0) {
-                    this.setState({ commits: commitList }); // 将 commit 列表保存到 state
+                    const earliestDate = moment(commitList[commitList.length - 1].commitTime, 'YYYY-MM-DD'); // 假设 commitList 按照时间顺序排列
+                    this.setState({ 
+                        commits: commitList,
+                        filteredCommits: commitList,
+                        earliestDate,
+                        dateRange: [earliestDate, this.state.latestDate],
+                    }, this.filterCommits);
                 } else {
-                    message.error('No commits found.');
+                    message.warning('没有找到提交记录。');
                 }
             } catch (error) {
                 console.error('Error fetching commits:', error);
@@ -101,10 +113,32 @@ class DiffPanel extends React.Component {
             }
         });
     };
+
+    //处理时间范围的函数
+    handleDateRangeChange = (dates, dateStrings) => {
+        this.setState({ dateRange:dates }, this.filterCommits);
+    }
+
+    //根据时间范围过滤commits
+    filterCommits = () => {
+        const { commits, dateRange } = this.state;
+        if (!dateRange || dateRange.length !== 2) {
+            this.setState({ filteredCommits: commits });
+            return;
+        }
+
+        const [startDate, endDate] = dateRange;
+        const filteredCommits = commits.filter(commit => {
+            const commitDate = moment(commit.commitTime, 'YYYY-MM-DD');
+            return commitDate.isBetween(startDate, endDate, null, '[]');
+        });
+
+        this.setState({ filteredCommits, commitid: '' }); // 重置选中的 commitid
+    }
     
     //commit选择框
     renderCommitSelect = () => {
-        const { commits, commitid } = this.state;
+        const { filteredCommits, commitid } = this.state;
         return (
             <FormItem>
                 <Select
@@ -113,9 +147,9 @@ class DiffPanel extends React.Component {
                     placeholder="Select a commit"
                     style={{ width: '100%' }}
                 >
-                    {commits.map((commit, index) => (
-                        <Select.Option key={index} value={commit}>
-                            {commit}
+                    {filteredCommits.map((commit, index) => (
+                        <Select.Option key={index} value={commit.commitId}>
+                            {commit.commitId} ({commit.commitTime})
                         </Select.Option>
                     ))}
                 </Select>
@@ -291,9 +325,17 @@ class DiffPanel extends React.Component {
         return refactorings.filter(refactoring => PieSelectedTypes.includes(refactoring.type));
     }
 
+    // 禁用超出范围的日期
+    disabledDate = (current) => {
+        const { earliestDate, latestDate } = this.state;
+        if (!current) return false;
+        return current.isBefore(earliestDate, 'day') || current.isAfter(latestDate, 'day');
+    };
+
 
     render() {
-        const { diffResults, fileUploaded, repository, commitid, commits,highlightedFiles, isFilteredByLocation, refactorings, showType, isDetect, filteredRefactoring} = this.state;
+        const { diffResults, fileUploaded, repository, commitid, commits,highlightedFiles, 
+            isFilteredByLocation, refactorings, showType, isDetect, dateRange,} = this.state;
         const refactoringData = this.getRefactoringTypeData();
         //饼图配置
         const pieConfig = {
@@ -358,6 +400,21 @@ class DiffPanel extends React.Component {
                                 <span style={{ marginLeft: '10px' }}>{repository}</span>
                             </div>
                         </div>
+                    </div>
+
+                    <div>
+                        {commits.length > 0 &&(
+                            <div className={s.dataSelect}>
+                                <div className={s.dataSelectlabel}>DateRange :</div>
+                                <div className={s.dataSelectPicker}>
+                                    <RangePicker 
+                                        onChange={this.handleDateRangeChange}
+                                        value={dateRange}
+                                        disabledDate={this.disabledDate}
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div>

@@ -22,7 +22,7 @@ export default class RefactoringList extends React.Component {
                             <strong>Type:</strong> {refactoring.type}
                             &nbsp;
                             {/* 当点击 Location 时，传递所有涉及的文件信息 */}
-                            <a href="#" onClick={() => this.handleLocationClick(refactoring.leftSideLocation, refactoring.rightSideLocation, refactoring.description)}>
+                            <a href="#" onClick={() => this.handleLocationClick(refactoring.leftSideLocation.slice(0, 1), refactoring.rightSideLocation.slice(0, 1), refactoring.description)}>
                                 Location
                             </a>
                             <br />
@@ -31,7 +31,7 @@ export default class RefactoringList extends React.Component {
                             <strong>Description:</strong> {refactoring.description}
                             <br />
                         </div>
-                        <Collapse>
+                        <Collapse key={`collapse-${refactoring.id}-${Date.now()}`}>
                             <Panel header={"details"} key={index}>
                                 <strong>Left Side Location:</strong>
                                 <ul type="none">

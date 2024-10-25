@@ -181,7 +181,7 @@
 
 .handleSubmit{
     display: grid;
-    grid-template-rows: 60px 60px;
+    grid-template-rows: 60px 60px 60px;
 }
 
 .selectbotton{
@@ -202,7 +202,7 @@
 
 .CommitselectAndBotton{
     display: grid;
-    grid-template-columns: 90px 500px auto;
+    grid-template-columns: 90px 550px auto;
     margin-left: 2%;
     margin-right: 2%;
 }
@@ -228,4 +228,19 @@
 
 .RefactoringSummary{
     margin-left: 2%;
+}
+
+.dataSelect{
+    display: grid;
+    grid-template-columns: 90px 250px;
+    margin-right: 2%;
+    margin-left: 2%;
+}
+
+.dataSelectlabel{
+    margin-left: 2%;
+}
+
+.dataSelectPicker{
+    margin-left: 20px;
 }

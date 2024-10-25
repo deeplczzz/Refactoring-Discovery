@@ -181,7 +181,7 @@
 
 .index__handleSubmit--1kxBb{
     display: grid;
-    grid-template-rows: 60px 60px;
+    grid-template-rows: 60px 60px 60px;
 }
 
 .index__selectbotton--3EOfa{
@@ -202,7 +202,7 @@
 
 .index__CommitselectAndBotton--1siZm{
     display: grid;
-    grid-template-columns: 90px 500px auto;
+    grid-template-columns: 90px 550px auto;
     margin-left: 2%;
     margin-right: 2%;
 }
@@ -228,6 +228,21 @@
 
 .index__RefactoringSummary--36I4L{
     margin-left: 2%;
+}
+
+.index__dataSelect--Sa2nn{
+    display: grid;
+    grid-template-columns: 90px 250px;
+    margin-right: 2%;
+    margin-left: 2%;
+}
+
+.index__dataSelectlabel--3ebuM{
+    margin-left: 2%;
+}
+
+.index__dataSelectPicker--2S_-N{
+    margin-left: 20px;
 }
 .index__color--2ojbV {
     color: black;
