@@ -1,12 +1,12 @@
 {
     "name": "refactoring-discovery",
-    "version": "v1.2.7",
+    "version": "v1.2.8",
     "main": "electron.js",
     "scripts": {
         "start": "node ./bin/start",
         "build": "webpack --color --config webpack.config.js",
         "deploy": "npm run build && node writeHtml.js",
-        "electron": "electron .",
+        "electron": "cross-env NODE_ENV=development ./node_modules/.bin/electron .",
         "electron-build": "npm run build && electron-builder",
         "dist": "npm run build && electron-builder"
     },
@@ -54,32 +54,16 @@
         "productName": "Refactoring Discovery",
         "files": [
             "dist/**/*",
-            "electron.js"
+            "electron.js",
+            "preload.js"
         ],
-        "mac": {
-            "target": [
-                "dmg",
-                "zip"
-            ],
-            "category": "public.app-category.utilities",
-            "icon": "build/icon.icns"
-        },
         "win": {
             "target": [
                 "nsis",
                 "portable"
             ],
             "icon": "build/icon.ico",
-            "requestedExecutionLevel": "requireAdministrator",
             "compression": "maximum"
-        },
-        "linux": {
-            "target": [
-                "AppImage",
-                "deb"
-            ],
-            "category": "Utility",
-            "icon": "build"
         }
     }
 }

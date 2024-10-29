@@ -1,17 +1,13 @@
 import React from 'react';
-const jsDiff = require('diff');
 import s from './index.css';
 import { Pie } from '@ant-design/charts'; 
-import {Button, Form, message, Collapse, Select, DatePicker} from 'antd';
+import {Button, Form, message, Select, DatePicker} from 'antd';
 import ContentDiff from '../contentDiff';
 import RefactoringList from './RefactoringList'; 
-import cx from 'classnames';
 import RefactoringSummary from './RefactoringSummary'; 
-import DiffTabs from './DiffTabs';
 import moment from 'moment';
 
 const { RangePicker } = DatePicker;
-const { Panel } = Collapse;
 const FormItem = Form.Item;
 const layout = {
     labelCol: { span: 4 },
@@ -45,9 +41,9 @@ class DiffPanel extends React.Component {
     }
 
     //比较两个代码的diff
-    actDiff = (oldCode, newCode) => {
+    actDiff = async (oldCode, newCode) => {
         try {
-            return jsDiff.diffLines(oldCode, newCode);
+            return await window.electronAPI.performDiff(oldCode, newCode);
         } catch (error) {
             console.error('Error computing diff:', error);
             message.error('Error computing diff.');
@@ -68,50 +64,51 @@ class DiffPanel extends React.Component {
 
     //选择仓库目录按钮的事件
     selectDirectoryDialog = async () => {
-        const { ipcRenderer } = window.require('electron');
+        console.log('Opening directory selection dialog');
+        window.electronAPI.selectDirectory();
     
-        // 发送请求到主进程打开选择目录对话框
-        ipcRenderer.send('dialog:selectDirectory');
-    
-        // 等待主进程返回选择的目录路径
-        ipcRenderer.on('directory:selected', async (event, path) => {
+        window.electronAPI.onDirectorySelected((path) => {
+            console.log('Directory selected:', path);  // 调试日志
             this.setState({ repository: path ,
                             fileUploaded:false,
                             isFilteredByLocation: false,
                             showType:SHOW_TYPE.NORMAL
             });
-    
-            // 选择目录后，发送请求到后端获取 commit 列表
-            try {
-                const response = await fetch('http://localhost:8080/api/commit', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ repository: path }),
-                });
-                console.log(path);
-                if (!response.ok) {
-                    throw new Error('Failed to fetch commit list.');
-                }
-    
-                const commitList = await response.json();
-                if (commitList.length > 0) {
-                    const earliestDate = moment(commitList[commitList.length - 1].commitTime, 'YYYY-MM-DD'); // 假设 commitList 按照时间顺序排列
-                    this.setState({ 
-                        commits: commitList,
-                        filteredCommits: commitList,
-                        earliestDate,
-                        dateRange: [earliestDate, this.state.latestDate],
-                    }, this.filterCommits);
-                } else {
-                    message.warning('没有找到提交记录。');
-                }
-            } catch (error) {
-                console.error('Error fetching commits:', error);
-                message.error('Error fetching commits.');
-            }
+            this.fetchCommits(path);
         });
+    };
+
+    //获取 commit 列表
+    fetchCommits = async (path) => {
+        try {
+            const response = await fetch('http://localhost:8080/api/commit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ repository: path }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch commit list.');
+            }
+
+            const commitList = await response.json();
+            if (commitList.length > 0) {
+                const earliestDate = moment(commitList[commitList.length - 1].commitTime, 'YYYY-MM-DD'); // 假设 commitList 按照时间顺序排列
+                this.setState({ 
+                    commits: commitList,
+                    filteredCommits: commitList,
+                    earliestDate,
+                    dateRange: [earliestDate, this.state.latestDate],
+                }, this.filterCommits);
+            } else {
+                message.warning('没有找到提交记录。');
+            }
+        } catch (error) {
+            console.error('Error fetching commits:', error);
+            message.error('Error fetching commits.');
+        }
     };
 
     //处理时间范围的函数
@@ -187,10 +184,10 @@ class DiffPanel extends React.Component {
                 const files = firstResult.files;
     
                 if (files && files.length > 0) {
-                    const diffResults = files.map((file) => ({
+                    const diffResults = await Promise.all(files.map(async (file) => ({
                         fileName: file.name,
-                        diff: this.actDiff(file.oldCode, file.newCode),
-                    }));
+                        diff: await this.actDiff(file.oldCode, file.newCode),
+                    })));
     
                     this.setState({
                         diffResults,
@@ -271,24 +268,13 @@ class DiffPanel extends React.Component {
     // 计算重构类别的统计数据
     getRefactoringTypeData = () => {
         const { refactorings } = this.state;
-        // 如果没有探测到任何重构，返回空数组
-        if (refactorings.length === 0) {
-            return [];
-        }
-        const typeCounts = refactorings.reduce((acc, refactoring) => {
-            const { type } = refactoring;
-            if (acc[type]) {
-                acc[type]++;
-            } else {
-                acc[type] = 1;
-            }
-            return acc;
-        }, {});
-
-        return Object.entries(typeCounts).map(([type, count]) => ({
-            type,
-            value: count,
-        }));
+        if (refactorings.length === 0) return [];
+        const typeMap = new Map();
+        refactorings.forEach(({ type }) => {
+            typeMap.set(type, (typeMap.get(type) || 0) + 1);
+        });
+        
+        return Array.from(typeMap, ([type, value]) => ({ type, value }));
     }
 
     //处理饼图点击事件

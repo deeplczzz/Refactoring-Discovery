@@ -2,6 +2,10 @@ const path = require('path');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = {
+    target: 'web',
+    externals: {
+        electron: 'require("electron")'
+    },
     context: path.resolve(__dirname),
     entry: {
         app: ['./entry/index.js']
@@ -87,6 +91,5 @@ module.exports = {
             }
         ]
     },
-    //  mode:"development",
     mode:"production",
 }
