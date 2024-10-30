@@ -41,7 +41,7 @@ const lazyModules = {
 
 //启动 Spring Boot 服务器
 function startSpringBootServer() {
-  const { exec } = lazyModules.loadChildProcess();
+  const { spawn } = lazyModules.loadChildProcess(); 
   if (app.isPackaged) {
     // 打包后的路径
     jarPath = path.join(process.resourcesPath, 'server', 'RefactoringDiscovery-0.0.1-SNAPSHOT.jar');
@@ -50,12 +50,13 @@ function startSpringBootServer() {
     jarPath = path.join(app.getAppPath(), 'server', 'RefactoringDiscovery-0.0.1-SNAPSHOT.jar');
   }
 
-  springBootProcess = exec(`java -jar ${jarPath}`, (error, stdout, stderr) => {
-    if (error) {
-      console.error(`Spring Boot 服务器错误: ${error}`);
-      return;
-    }
-    console.log(`Spring Boot 服务器输出: ${stdout}`);
+  springBootProcess = spawn('java', ['-jar', jarPath], {
+    stdio: ['ignore', 'pipe', 'pipe'],
+    detached: false
+  });
+
+  springBootProcess.stderr.on('data', (data) => {
+    console.error(`Spring Boot error: ${data}`);
   });
 }
 
@@ -81,6 +82,29 @@ ipcMain.handle('perform-diff', (event, oldCode, newCode) => {
   }
 });
 
+function terminateSpringBoot() {
+  return new Promise((resolve) => {
+    if (springBootProcess) {
+      const timeout = setTimeout(() => {
+        springBootProcess.kill('SIGKILL');
+        resolve();
+      }, 3000);
+
+      springBootProcess.once('exit', () => {
+        clearTimeout(timeout);
+        resolve();
+      });
+
+      const killed = springBootProcess.kill();
+      if (!killed) {
+        springBootProcess.kill('SIGKILL');
+      }
+    } else {
+      resolve();
+    }
+  });
+}
+
 app.on('ready', () => {
   startSpringBootServer(); // 启动 Spring Boot 服务器
   createWindow(); // 创建 Electron 窗口
@@ -94,4 +118,9 @@ app.on('will-quit', () => {
       springBootProcess.kill('SIGKILL');// 如果正常结束失败，强制结束进程
     }
   }
+});
+
+app.on('window-all-closed', async() => {
+  await terminateSpringBoot();
+  app.quit();
 });

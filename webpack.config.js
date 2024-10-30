@@ -2,6 +2,7 @@ const path = require('path');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = {
+    mode:"production",
     target: 'web',
     externals: {
         electron: 'require("electron")'
@@ -40,36 +41,9 @@ module.exports = {
             {
                 test: /\.(js|jsx)$/,
                 exclude: /node_modules/,
-                use: [
-                    {
+                use: {
                         loader: 'babel-loader',
-                        query: {
-                            presets: [
-                                '@babel/react', 
-                                '@babel/preset-env'
-                            ],
-                            plugins: [
-                                //  给antd做按需加载
-                                ["import", {
-                                    "libraryName": "antd",
-                                    //"libraryDirectory": "es",
-                                    "style": 'css' // `style: true` 会加载 less 文件
-                                }],
-                                //  这个拿来做注入代码优化的
-                                ['@babel/plugin-transform-runtime',
-                                {
-                                    "corejs": false,
-                                    "helpers": true,
-                                    "regenerator": true,
-                                    "useESModules": false
-                                }],
-                                //  支持类写法
-                                "@babel/plugin-proposal-class-properties",
-                                '@babel/plugin-proposal-optional-chaining'
-                            ]
-                        }
-                    }
-                ]
+                },
             },
             {
                 //  专门处理antd的css样式
@@ -91,5 +65,4 @@ module.exports = {
             }
         ]
     },
-    mode:"production",
 }

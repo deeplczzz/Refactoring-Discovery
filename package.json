@@ -7,24 +7,23 @@
         "build": "webpack --color --config webpack.config.js",
         "deploy": "npm run build && node writeHtml.js",
         "electron": "cross-env NODE_ENV=development ./node_modules/.bin/electron .",
-        "electron-build": "npm run build && electron-builder",
-        "dist": "npm run build && electron-builder"
+        "electron-dev" :"npm run build && npm run electron",
+        "electron-build": "npm run build && electron-builder"
     },
     "dependencies": {
         "@ant-design/charts": "^1.2.5",
-        "@babel/core": "^7.3.4",
-        "@babel/preset-env": "^7.25.8",
         "antd": "^4.24.16",
         "classnames": "^2.2.6",
         "diff": "^4.0.2",
-        "ejs": "^2.4.1",
         "express": "^4.16.4",
-        "http-errors": "^1.6.2",
-        "morgan": "^1.9.1",
         "react": "^16.8.3",
         "react-dom": "^16.8.3"
     },
     "devDependencies": {
+        "http-errors": "^1.6.2",
+        "ejs": "^2.4.1",
+        "@babel/core": "^7.3.4",
+        "@babel/preset-env": "^7.25.8",
         "@babel/plugin-proposal-class-properties": "^7.8.3",
         "@babel/plugin-proposal-optional-chaining": "^7.10.4",
         "@babel/plugin-transform-runtime": "^7.3.4",
@@ -38,9 +37,11 @@
         "mini-css-extract-plugin": "^0.4.5",
         "source-map-loader": "^1.0.1",
         "webpack": "^4.29.6",
-        "webpack-cli": "^3.2.3"
+        "webpack-cli": "^3.2.3",
+        "morgan": "^1.9.1"
     },
     "build": {
+        "asar": true,
         "extraResources": [
             {
                 "from": "server/RefactoringDiscovery-0.0.1-SNAPSHOT.jar",
