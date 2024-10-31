@@ -14,8 +14,8 @@ const RefactoringSummary = ({ data }) => {
 
     return (
         <div style={{ textAlign: 'left', padding: '20px' }}>
-        <h2>Refactoring Summary</h2>
-        <p>Total Refactorings Detected:
+        <h2>Summary</h2>
+        <p>Total Refactorings Detected:{' '}
             <span style={{ fontSize: '24px', color: 'red', fontWeight: 'bold' }}>
                 {totalRefactorings}
             </span>

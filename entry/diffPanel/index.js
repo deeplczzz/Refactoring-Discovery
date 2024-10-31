@@ -3,9 +3,10 @@ import s from './index.css';
 import { Pie } from '@ant-design/charts'; 
 import {Button, Form, message, Select, DatePicker} from 'antd';
 import ContentDiff from '../contentDiff';
-import RefactoringList from './RefactoringList'; 
+import NewRefactoringList from './NewRefactoringList'; 
 import RefactoringSummary from './RefactoringSummary'; 
 import moment from 'moment';
+import {ArrowLeftOutlined} from '@ant-design/icons'; 
 
 const { RangePicker } = DatePicker;
 const FormItem = Form.Item;
@@ -35,7 +36,7 @@ class DiffPanel extends React.Component {
         filteredRefactoring:[],
         PieSelectedTypes:[],//存储饼图的选中类
         dateRange: null, //存储选择的日期范围
-        latestDate: moment(), //记录最晚时间
+        latestDate: null, //记录最晚时间
         earliestDate: null, //记录最早时间
         filteredCommits: [], //存储过滤后的 commits
     }
@@ -96,11 +97,13 @@ class DiffPanel extends React.Component {
             const commitList = await response.json();
             if (commitList.length > 0) {
                 const earliestDate = moment(commitList[commitList.length - 1].commitTime, 'YYYY-MM-DD'); // 假设 commitList 按照时间顺序排列
+                const latestDate = moment(commitList[0].commitTime, 'YYYY-MM-DD'); // 假设 commitList 按照时间顺序排列
                 this.setState({ 
                     commits: commitList,
                     filteredCommits: commitList,
                     earliestDate,
-                    dateRange: [earliestDate, this.state.latestDate],
+                    latestDate,
+                    dateRange: [earliestDate, latestDate],
                 }, this.filterCommits);
             } else {
                 message.warning('没有找到提交记录。');
@@ -143,6 +146,11 @@ class DiffPanel extends React.Component {
                     onSelect={(value) => {this.setState({ commitid: value }, this.fetchData);}}
                     placeholder="Select a commit"
                     style={{ width: '100%' }}
+                    showSearch
+                    filterOption={(input, option) => {
+                        const commitInfo = option?.children?.toString().toLowerCase() || '';
+                        return commitInfo.indexOf(input.toLowerCase()) >= 0;
+                    }}
                 >
                     {filteredCommits.map((commit, index) => (
                         <Select.Option key={index} value={commit.commitId}>
@@ -422,34 +430,36 @@ class DiffPanel extends React.Component {
 
                 {/* 高亮时的返回键 */}
                 {isDetect && fileUploaded && isFilteredByLocation && (
-                    <a
+                    <Button
+                        icon={<ArrowLeftOutlined />}
                         onClick={this.resetToAllFiles}
                         style={{ 
-                            textDecoration: 'underline', 
-                            color: 'blue', 
-                            cursor: 'pointer', 
-                            background: 'transparent', 
-                            border: 'none', 
-                            padding: 0, 
-                            marginBottom: '20px', 
-                            marginLeft: '30px' 
+                            marginBottom: '15px', 
+                            marginLeft: '30px',
+                            color: '#666',
+                            fontSize: '14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            backgroundColor: '#f5f5f5',
+                            border: '1px solid #e8e8e8',
+                            boxShadow: 'none'
                         }}
+                        className={s.backButton}
                     >
-                        ← Back to all refactorings
-                    </a>
+                        BACK
+                    </Button>
                 )}
 
                 {/* 显示未高亮文件 */}
                 {!isDetect && fileUploaded && diffResults.length > 0 && diffResults.map((result, index) => (
                     <div key={index}>
-                        <div className={s.filename}>
-                            <strong>filePath:&nbsp;&nbsp;</strong> {result.fileName}
-                        </div>
                         <ContentDiff
                             isFile={this.isFile}
                             diffArr={result.diff}
                             highlightedLines={[]}  // 初始状态没有高亮
                             showType={showType}
+                            fileName={result.fileName}  
+                            commitId = {commitid} 
                         />
                     </div>
                 ))}
@@ -461,14 +471,13 @@ class DiffPanel extends React.Component {
 
                     return shouldRender && (
                         <div key={index}>
-                            <div className={s.filename}>
-                                <strong>filePath:&nbsp;&nbsp;</strong> {result.fileName}
-                            </div>
                             <ContentDiff
                                 isFile={this.isFile}
                                 diffArr={result.diff}
                                 highlightedLines={matchedFiles}
                                 showType={showType}
+                                fileName={result.fileName}
+                                commitId = {commitid}   
                             />
                         </div>
                     );
@@ -494,12 +503,11 @@ class DiffPanel extends React.Component {
 
                 {/* 显示重构列表 */}
                 {isDetect && fileUploaded && (
-                    <RefactoringList 
+                    <NewRefactoringList 
                         refactorings={this.getFilteredRefactorings()} 
                         onHighlightDiff={this.handleHighlightDiff} 
                     />
                 )}
-                
             </div>
         );
     }

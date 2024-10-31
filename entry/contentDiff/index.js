@@ -1,5 +1,6 @@
 import React from 'react';
-import {Layout} from 'antd';
+import {Layout, Button, message} from 'antd';
+import { CaretRightOutlined, CaretDownOutlined, CopyOutlined, VerticalAlignMiddleOutlined, ColumnHeightOutlined} from '@ant-design/icons'; 
 import s from './index.css';
 import cx from 'classnames';
 const { Content } = Layout;
@@ -14,10 +15,119 @@ const BLOCK_LENGTH = 3;
 export default class ContentDiff extends React.Component {
     state = {
         lineGroup: [],
-        showType: this.props.showType
+        originalLineGroup: [], // 新增：保存原始的行组数据
+        showType: this.props.showType,
+        selectedText: '',
+        isExpanded: true,
+        isHiddenVisible: false,
+        stats: {
+            additions: 0,
+            deletions: 0
+        }
     }
 
+    // 渲染文件统计信息的方法
+    renderFileStats = () => {
+        const { stats } = this.state;
+        const total = stats.additions + stats.deletions;
+        const blocks = 5; // 总共显示5个方块
+        const additionBlocks = Math.round((stats.additions / total) * blocks) || 0;
+        const deletionBlocks = blocks - additionBlocks;
+
+        return (
+            <div className={s.fileStats}>
+                <span className={s.statsText}>
+                    {stats.additions > 0 && <span className={s.additions}>+{stats.additions}</span>}
+                    {stats.deletions > 0 && <span className={s.deletions}>-{stats.deletions}</span>}
+                </span>
+                <div className={s.statsBlocks}>
+                    {[...Array(additionBlocks)].map((_, i) => (
+                        <span key={`add-${i}`} className={s.additionBlock} />
+                    ))}
+                    {[...Array(deletionBlocks)].map((_, i) => (
+                        <span key={`del-${i}`} className={s.deletionBlock} />
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    checkAllContentExpanded = (lineGroup = this.state.lineGroup) => {
+        return lineGroup.every(line => 
+            line.content.hidden.length === 0 && line.content.tail.length === 0
+        );
+    }
+
+    toggleHiddenCode = () => {
+        this.setState(prevState => {
+            if (prevState.isHiddenVisible) {
+                // 如果当前是显示状态，恢复到原始状态
+                return {
+                    lineGroup: JSON.parse(JSON.stringify(prevState.originalLineGroup)),
+                    isHiddenVisible: false
+                };
+            } else {
+                // 如果当前是隐藏状态，展开所有内容
+                const newLineGroup = prevState.lineGroup.map(line => {
+                    if (line.content.hidden.length > 0) {
+                        return {
+                            ...line,
+                            content: {
+                                ...line.content,
+                                head: [...line.content.head, ...line.content.hidden, ...line.content.tail],
+                                hidden: [],
+                                tail: []
+                            }
+                        };
+                    }
+                    return line;
+                });
+    
+                return {
+                    lineGroup: newLineGroup,
+                    isHiddenVisible: true
+                };
+            }
+        });
+    }
+
+    //复制文件名
+    copyFileName = () => {
+        const { fileName } = this.props;
+        navigator.clipboard.writeText(fileName).then(() => {
+            message.success('文件名已复制到剪贴板');
+        }).catch(() => {
+            message.error('复制失败');
+        });
+    }
+
+    // 切换展开/折叠的方法
+    toggleExpand = () => {
+        this.setState(prevState => ({
+            isExpanded: !prevState.isExpanded
+        }));
+    }
+
+    //选中文本高亮
+    handleTextSelection = (e) => {
+        const selection = window.getSelection();
+        const selectedText = selection.toString().trim();
+
+        if (selectedText) {
+            this.setState({ selectedText });
+        }
+        else {
+            this.setState({ selectedText: '' });
+        }
+    }
+
+
     componentDidUpdate(prevProps) {
+        if (prevProps.commitId !== this.props.commitId) {
+            this.setState({
+                isExpanded: true
+            });
+        }
         if (prevProps.showType !== this.props.showType) {
             // 当 showType props 改变时，更新 state
             this.setState({ showType: this.props.showType });
@@ -80,8 +190,20 @@ export default class ContentDiff extends React.Component {
             lStartNum += type === '+' ? 0 : count;
             rStartNum += type === '-' ? 0 : count;
         })
+
+        const stats = initLineGroup.reduce((acc, item) => {
+            if (item.type === '+') {
+                acc.additions += item.content.head.length + item.content.hidden.length + item.content.tail.length;
+            } else if (item.type === '-') {
+                acc.deletions += item.content.head.length + item.content.hidden.length + item.content.tail.length;
+            }
+            return acc;
+        }, { additions: 0, deletions: 0 });
+
         this.setState({
-            lineGroup: initLineGroup
+            lineGroup: initLineGroup,
+            originalLineGroup: JSON.parse(JSON.stringify(initLineGroup)), // 深拷贝保存原始数据
+            stats
         });
     }
     
@@ -98,6 +220,7 @@ export default class ContentDiff extends React.Component {
         const copyOfLG = this.state.lineGroup.slice();
         const targetGroup = copyOfLG[index];
         const { head, tail, hidden } = targetGroup.content;
+
         if (type === 'head') {
             targetGroup.content.head = head.concat(hidden.slice(0, BLOCK_LENGTH));
             targetGroup.content.hidden = hidden.slice(BLOCK_LENGTH);
@@ -106,17 +229,19 @@ export default class ContentDiff extends React.Component {
             targetGroup.content.tail = hidden.slice(hLength - BLOCK_LENGTH).concat(tail);
             targetGroup.content.hidden = hidden.slice(0, hLength - BLOCK_LENGTH);
         } else {
-            targetGroup.content.head = head.concat(hidden);
+            targetGroup.content.head = head.concat(hidden, tail);
             targetGroup.content.hidden = [];
+            targetGroup.content.tail = [];
         }
         copyOfLG[index] = targetGroup;
+
+        const isAllExpanded = this.checkAllContentExpanded(copyOfLG);
         this.setState({
-            lineGroup: copyOfLG
+            lineGroup: copyOfLG,
+            isHiddenVisible: isAllExpanded
         });
     }
     
-    
-
     get isSplit() {
         return this.state.showType === SHOW_TYPE.SPLITED;
     }
@@ -149,11 +274,29 @@ export default class ContentDiff extends React.Component {
     //  获取split下的页码node
     getLNPadding = (origin) => {
         const item = ('     ' + origin).slice(-5);
-        return <div className={cx(s.splitLN)}>{item}</div>
+        return <div className={cx(s.splitLN)} style={{ userSelect: 'none' }}>{item}</div>
     }
-    //  获取split下的内容node
+
     getPaddingContent = (item) => {
-        return <div className={cx(s.splitCon)}>{item}</div>
+        const { selectedText } = this.state;
+        const parts = selectedText ? item.split(new RegExp(`(${this.escapeRegExp(selectedText)})`, 'gi')) : [item];
+    
+        return (
+            <span 
+                className={cx(s.splitCon)} 
+                onMouseUp={this.handleTextSelection}
+            >
+                {parts.map((part, index) => 
+                    part.toLowerCase() === selectedText.toLowerCase() ? 
+                    <span key={index} className={s.textHighlight}>{part}</span> : 
+                    <span key={index}>{part}</span>
+                )}
+            </span>
+        );
+    }
+    
+    escapeRegExp = (string) => {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
     getSplitCode = (targetBlock, isHead = true) => {
@@ -246,12 +389,12 @@ export default class ContentDiff extends React.Component {
                 </div>)
             } else if (type === '-') {
                 const nextTarget = this.state.lineGroup[i + 1] || { content: {}};
-                const nextIsPlus = nextTarget.type === '+';
+                const nextIsPlus = nextTarget.type === '+'; //如果下一个是+，则合并显示
                 contentList.push(<div key={i}>
                     {this.getHighlightCombinePart(targetBlock, nextIsPlus ? nextTarget : {})}
                 </div>)
                 nextIsPlus ? i = i + 1 : void 0;
-            } else if (type === '+') {
+            } else if (type === '+') {  //+的只在右边显示
                 contentList.push(<div key={i}>
                     {this.getHighlightCombinePart({}, targetBlock)}
                 </div>)
@@ -337,16 +480,43 @@ export default class ContentDiff extends React.Component {
     
 
     render() {
-        const { showType } = this.state;
+        const { showType, isExpanded, isHiddenVisible } = this.state;
+        const { fileName } = this.props;
         return (
             <React.Fragment>
-                <Content className={s.content}>
-                    <div className={s.color}>
-                        {showType === SHOW_TYPE.NORMAL
-                            ? this.getSplitContent()
-                            : this.getHighlightSpiltContent()}
+                <div className={cx(s.filename, {[s.expanded]: isExpanded})}>
+                    <div className={s.fileHeader}>
+                        <Button 
+                            type="text"
+                            icon={isExpanded ? <CaretDownOutlined /> : <CaretRightOutlined />}
+                            onClick={this.toggleExpand}
+                            className={s.expandButton}
+                        />
+                        {fileName}
+                        <Button
+                            type="text"
+                            icon={<CopyOutlined />}
+                            onClick={this.copyFileName}
+                            className={s.copyButton}
+                        />
+                        <Button
+                            type="text"
+                            icon={isHiddenVisible ? <VerticalAlignMiddleOutlined /> : <ColumnHeightOutlined />}
+                            onClick={this.toggleHiddenCode}
+                            className={s.showHiddenButton}
+                        />
+                        {showType === SHOW_TYPE.NORMAL && this.renderFileStats()}
                     </div>
-                </Content>
+                </div>
+                {isExpanded && (
+                    <Content className={s.content}>
+                        <div className={s.color}>
+                            {showType === SHOW_TYPE.NORMAL
+                                ? this.getSplitContent()
+                                : this.getHighlightSpiltContent()}
+                        </div>
+                    </Content>
+                )}
             </React.Fragment>
         )
     }
