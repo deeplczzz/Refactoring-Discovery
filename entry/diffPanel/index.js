@@ -1,12 +1,13 @@
 import React from 'react';
 import s from './index.css';
 import { Pie } from '@ant-design/charts'; 
-import {Button, Form, message, Select, DatePicker} from 'antd';
+import {Button, Form, message, Select, DatePicker, Affix} from 'antd';
 import ContentDiff from '../contentDiff';
 import NewRefactoringList from './NewRefactoringList'; 
 import RefactoringSummary from './RefactoringSummary'; 
 import moment from 'moment';
-import {ArrowLeftOutlined} from '@ant-design/icons'; 
+import {ArrowLeftOutlined, ArrowUpOutlined} from '@ant-design/icons'; 
+import { PieConfig } from './pieChartConfig';
 
 const { RangePicker } = DatePicker;
 const FormItem = Form.Item;
@@ -39,6 +40,61 @@ class DiffPanel extends React.Component {
         latestDate: null, //记录最晚时间
         earliestDate: null, //记录最早时间
         filteredCommits: [], //存储过滤后的 commits
+        isScrollVisible: false, // 是否显示回到顶部按钮
+    }
+    
+    //计算所有文件的增删行数
+    calculateTotalChanges = () => {
+        const { diffResults } = this.state;
+        return diffResults.reduce((total, result) => {
+            const changes = result.diff.reduce((acc, line) => {
+                // 如果是单行变更
+                if (typeof line === 'string') {
+                    if (line.startsWith('+')) acc.additions++;
+                    if (line.startsWith('-')) acc.deletions++;
+                } 
+                // 如果是对象形式的变更
+                else {
+                    if (line.value) {
+                        const lines = line.value.split('\n');
+                        // 计算实际的行数（去掉最后一个空行）
+                        const lineCount = lines[lines.length - 1] === '' ? lines.length - 1 : lines.length;
+                        if (line.added) acc.additions += lineCount;
+                        if (line.removed) acc.deletions += lineCount;
+                    }
+                }
+                return acc;
+            }, { additions: 0, deletions: 0 });
+            
+            return {
+                additions: total.additions + changes.additions,
+                deletions: total.deletions + changes.deletions
+            };
+        }, { additions: 0, deletions: 0 });
+    }
+
+    // 添加滚动监听
+    componentDidMount() {
+        window.addEventListener('scroll', this.handleScroll);
+    }
+
+    // 清理滚动监听
+    componentWillUnmount() {
+        window.removeEventListener('scroll', this.handleScroll);
+    }
+
+    // 处理滚动事件
+    handleScroll = () => {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        this.setState({ isScrollVisible: scrollTop > 300 });
+    }
+
+    // 滚动到顶部
+    scrollToTop = () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'  // 平滑滚动
+        });
     }
 
     //比较两个代码的diff
@@ -331,53 +387,14 @@ class DiffPanel extends React.Component {
         const { diffResults, fileUploaded, repository, commitid, commits,highlightedFiles, 
             isFilteredByLocation, refactorings, showType, isDetect, dateRange,} = this.state;
         const refactoringData = this.getRefactoringTypeData();
-        //饼图配置
-        const pieConfig = {
-            appendPadding: 10,
-            data: refactoringData, // 获取重构类型数据
-            angleField: 'value',
-            colorField: 'type',
-            radius: 0.7, // 调整半径来缩小饼图
-            width: 400, // 设置饼图的宽度
-            height: 400, // 设置饼图的高度
-            animation: false,
-            label: {
-                type: 'spider',
-                content: '{name}({value})', 
-                style: {
-                    fontSize: 12,     // 标签字体大小
-                },
-            },
-            legend: {
-                position: 'right',
-                item: {
-                    onClick: null, // 禁用图例项的点击事件
-                },
-            },
-            interactions: [
-                        { type: 'element-selected' }, 
-                        { type: 'element-active' },
-                        { type: 'legend-filter', enable: false },
-            ],
-            tooltip: {
-                formatter: (datum) => {
-                    return { name: datum.type, value: datum.value }; // 显示类别名称和其数量
-                },
-            },
-            pieStyle: (data) => {
-                const isSelected = this.state.PieSelectedTypes.includes(data.type);
-                return {
-                    stroke: isSelected ? 'blue' : 'white',
-                    lineWidth: isSelected ? 3 : 1,
-                };
-            },
-        };
+        const pieConfig = PieConfig(refactoringData, this.state.PieSelectedTypes); //饼图配置
     
         const isFileMatched = (filePath, resultFileName) => {
             if (filePath === resultFileName) return true;
             const [oldPath, newPath] = resultFileName.split(" --> ").map(p => p.trim());
             return filePath === oldPath || filePath === newPath;
         };
+        const totalChanges = this.calculateTotalChanges();
 
         return (
             <div className={s.wrapper}>
@@ -435,7 +452,7 @@ class DiffPanel extends React.Component {
                         onClick={this.resetToAllFiles}
                         style={{ 
                             marginBottom: '15px', 
-                            marginLeft: '30px',
+                            marginLeft: '2%',
                             color: '#666',
                             fontSize: '14px',
                             display: 'flex',
@@ -451,18 +468,45 @@ class DiffPanel extends React.Component {
                 )}
 
                 {/* 显示未高亮文件 */}
-                {!isDetect && fileUploaded && diffResults.length > 0 && diffResults.map((result, index) => (
-                    <div key={index}>
-                        <ContentDiff
-                            isFile={this.isFile}
-                            diffArr={result.diff}
-                            highlightedLines={[]}  // 初始状态没有高亮
-                            showType={showType}
-                            fileName={result.fileName}  
-                            commitId = {commitid} 
-                        />
-                    </div>
-                ))}
+                {!isDetect && fileUploaded && diffResults.length > 0 && (
+                    <>
+                        <Affix offsetTop={0}>
+                            <div className={s.affixContainer}>
+                                <div>
+                                    <span className={s.fileCount}>
+                                        {diffResults.length} files changed
+                                    </span>
+                                    <span className={s.additionsline}>+{totalChanges.additions}</span>
+                                    <span className={s.deletionsline}>-{totalChanges.deletions}</span>
+                                    <span className={s.lineschanged}>lines changed</span>
+                                </div>
+                                {this.state.isScrollVisible && (
+                                    <Button 
+                                        type="text" 
+                                        icon={<ArrowUpOutlined />}
+                                        className={s.backTopButton}
+                                        onClick={this.scrollToTop}
+                                    >
+                                        Top
+                                    </Button>
+                                )}
+                            </div>
+                        </Affix>
+
+                        {diffResults.map((result, index) => (
+                            <div key={index}>
+                                <ContentDiff
+                                    isFile={this.isFile}
+                                    diffArr={result.diff}
+                                    highlightedLines={[]}  // 初始状态没有高亮
+                                    showType={showType}
+                                    fileName={result.fileName}  
+                                    commitId = {commitid} 
+                                />
+                            </div>
+                        ))}
+                    </> 
+                )}
 
                 {/* 显示高亮文件 */}
                 {isDetect && fileUploaded && isFilteredByLocation && diffResults.length > 0 && diffResults.map((result, index) => {

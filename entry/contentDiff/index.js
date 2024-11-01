@@ -1,5 +1,5 @@
-import React from 'react';
-import {Layout, Button, message} from 'antd';
+import React, { memo } from 'react';
+import {Layout, Button, message, Tooltip} from 'antd';
 import { CaretRightOutlined, CaretDownOutlined, CopyOutlined, VerticalAlignMiddleOutlined, ColumnHeightOutlined} from '@ant-design/icons'; 
 import s from './index.css';
 import cx from 'classnames';
@@ -12,7 +12,7 @@ const SHOW_TYPE = {
 
 const BLOCK_LENGTH = 3;
 
-export default class ContentDiff extends React.Component {
+class ContentDiff extends React.Component {
     state = {
         lineGroup: [],
         originalLineGroup: [], // 新增：保存原始的行组数据
@@ -23,16 +23,31 @@ export default class ContentDiff extends React.Component {
         stats: {
             additions: 0,
             deletions: 0
-        }
+        },
     }
+
+    generateBlocks = (count, type) => {
+        return Array.from({ length: count }, (_, i) => (
+            <span key={`${type}-${i}`} className={type === 'add' ? s.additionBlock : s.deletionBlock} />
+        ));
+    };
 
     // 渲染文件统计信息的方法
     renderFileStats = () => {
         const { stats } = this.state;
         const total = stats.additions + stats.deletions;
-        const blocks = 5; // 总共显示5个方块
-        const additionBlocks = Math.round((stats.additions / total) * blocks) || 0;
-        const deletionBlocks = blocks - additionBlocks;
+        const additionBlocks = Math.round((stats.additions / total) * 5) || 0;
+        const deletionBlocks = 5 - additionBlocks;
+        const tooltipText = `${total} changes; ${stats.additions} additions & ${stats.deletions} deletions`;
+        const tooltipStyle = {
+            fontSize: '12px',
+            whiteSpace: 'nowrap',
+            maxWidth: 'none',
+            lineHeight: '1',
+            minHeight: 'auto',
+            userSelect: 'none',
+            borderRadius: '6px'   
+        };
 
         return (
             <div className={s.fileStats}>
@@ -40,14 +55,18 @@ export default class ContentDiff extends React.Component {
                     {stats.additions > 0 && <span className={s.additions}>+{stats.additions}</span>}
                     {stats.deletions > 0 && <span className={s.deletions}>-{stats.deletions}</span>}
                 </span>
-                <div className={s.statsBlocks}>
-                    {[...Array(additionBlocks)].map((_, i) => (
-                        <span key={`add-${i}`} className={s.additionBlock} />
-                    ))}
-                    {[...Array(deletionBlocks)].map((_, i) => (
-                        <span key={`del-${i}`} className={s.deletionBlock} />
-                    ))}
-                </div>
+                <Tooltip 
+                    title={tooltipText} 
+                    placement="bottomLeft" 
+                    overlayInnerStyle={tooltipStyle}  
+                    autoAdjustOverflow={true}
+                    mouseLeaveDelay={0}
+                >
+                    <div className={s.statsBlocks}>
+                        {this.generateBlocks(additionBlocks, 'add')}
+                        {this.generateBlocks(deletionBlocks, 'del')}
+                    </div>
+                </Tooltip>
             </div>
         );
     }
@@ -207,7 +226,6 @@ export default class ContentDiff extends React.Component {
         });
     }
     
-
     componentDidMount() {
         this.flashContent();
     }
@@ -271,21 +289,19 @@ export default class ContentDiff extends React.Component {
         return ('     ' + number).slice(-5);
     }
 
-    //  获取split下的页码node
+    // 获取split下的页码
     getLNPadding = (origin) => {
         const item = ('     ' + origin).slice(-5);
         return <div className={cx(s.splitLN)} style={{ userSelect: 'none' }}>{item}</div>
     }
 
+    // 获取split下的内容
     getPaddingContent = (item) => {
         const { selectedText } = this.state;
         const parts = selectedText ? item.split(new RegExp(`(${this.escapeRegExp(selectedText)})`, 'gi')) : [item];
     
         return (
-            <span 
-                className={cx(s.splitCon)} 
-                onMouseUp={this.handleTextSelection}
-            >
+            <span className={cx(s.splitCon)} onMouseUp={this.handleTextSelection}>
                 {parts.map((part, index) => 
                     part.toLowerCase() === selectedText.toLowerCase() ? 
                     <span key={index} className={s.textHighlight}>{part}</span> : 
@@ -480,7 +496,7 @@ export default class ContentDiff extends React.Component {
     
 
     render() {
-        const { showType, isExpanded, isHiddenVisible } = this.state;
+        const { showType, isExpanded, isHiddenVisible} = this.state;
         const { fileName } = this.props;
         return (
             <React.Fragment>
@@ -521,3 +537,13 @@ export default class ContentDiff extends React.Component {
         )
     }
 }
+
+export default memo(ContentDiff, (prevProps, nextProps) => {
+    return (
+        prevProps.diffArr === nextProps.diffArr &&
+        prevProps.fileName === nextProps.fileName &&
+        prevProps.commitId === nextProps.commitId &&
+        prevProps.showType === nextProps.showType &&
+        JSON.stringify(prevProps.highlightedLines) === JSON.stringify(nextProps.highlightedLines)
+    );
+});

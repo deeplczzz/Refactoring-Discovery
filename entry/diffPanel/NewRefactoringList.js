@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { List, Button, Drawer, Space } from 'antd';
-import s from './index.css';
+import React from 'react';
+import { List, Button, Drawer} from 'antd';
+import s from './refactoringlist.css';
 
 export default class NewRefactoringList extends React.Component {
     state = {
@@ -62,48 +62,51 @@ export default class NewRefactoringList extends React.Component {
     );
 
     render() {
-        const { refactorings } = this.props;
+        const { refactorings} = this.props;
         const { currentPage, pageSize, detailVisible, currentRefactoring } = this.state;
 
         return (
-            <div className={s.description}>
-                <h3>Refactorings:</h3>
-                <List
-                    dataSource={refactorings}
-                    pagination={{
-                        current: currentPage,
-                        pageSize: pageSize,
-                        total: refactorings.length,
-                        onChange: (page) => this.setState({ currentPage: page })
-                    }}
-                    renderItem={(refactoring) => (
-                        <List.Item
-                            actions={[
-                                <Button 
-                                    type="link"
-                                    onClick={() => this.handleLocationClick(
-                                        refactoring.leftSideLocation.slice(0, 1),
-                                        refactoring.rightSideLocation.slice(0, 1),
-                                        refactoring.description
-                                    )}
-                                >
-                                    Location
-                                </Button>,
-                                <Button 
-                                    type="link"
-                                    onClick={() => this.showDetail(refactoring)}
-                                >
-                                    Detail
-                                </Button>
-                            ]}
-                        >
-                            <List.Item.Meta
-                                title={`Type: ${refactoring.type}`}
-                                description={refactoring.description}
-                            />
-                        </List.Item>
-                    )}
-                />
+            <div className={s.list}>
+                <div className={s.listtitle}>Refactorings</div>
+                <div className={s.listbody}>
+                    <List
+                        dataSource={refactorings}
+                        pagination={{
+                            current: currentPage,
+                            pageSize: pageSize,
+                            total: refactorings.length,
+                            onChange: (page) => this.setState({ currentPage: page })
+                        }}
+                        renderItem={(refactoring) => (
+                            <List.Item
+                                actions={[
+                                    <Button 
+                                        type="link"
+                                        onClick={() => this.handleLocationClick(
+                                            refactoring.leftSideLocation.slice(0, 1),
+                                            refactoring.rightSideLocation.slice(0, 1),
+                                            refactoring.description
+                                        )}
+                                    >
+                                        Location
+                                    </Button>,
+                                    <Button 
+                                        type="link"
+                                        onClick={() => this.showDetail(refactoring)}
+                                    >
+                                        Detail
+                                    </Button>
+                                ]}
+                            >
+                                <List.Item.Meta
+                                    title={`Type: ${refactoring.type}`}
+                                    description={refactoring.description}
+                                />
+                            </List.Item>
+                        )}
+                    />
+                </div>
+
 
                 <Drawer
                     title="Refactoring Details"

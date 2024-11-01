@@ -40,6 +40,7 @@
     padding-right: 2%;
     background-color: rgba(255, 255, 255, 0.2);
     border-top: none;
+    margin-bottom: 10px;
 }
 
 .outerPre {
@@ -175,7 +176,7 @@
 .filename {
     margin-top: 18px;
     padding: 10px;
-    background-color: #f5f5f5;
+    background-color: #f8f7f7;
     border: 1px solid #dcdcdc;
     font-size: 14px;
     line-height: 0.9;
