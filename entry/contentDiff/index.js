@@ -1,5 +1,7 @@
 import React, { memo } from 'react';
 import {Layout, Button, message, Tooltip} from 'antd';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { prism } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { CaretRightOutlined, CaretDownOutlined, CopyOutlined, VerticalAlignMiddleOutlined, ColumnHeightOutlined} from '@ant-design/icons'; 
 import s from './index.css';
 import cx from 'classnames';
@@ -298,15 +300,32 @@ class ContentDiff extends React.Component {
     // 获取split下的内容
     getPaddingContent = (item) => {
         const { selectedText } = this.state;
+        let prefix = '';  
+
+        if (item && (item[0] === '+' || item[0] === '-')) {
+            prefix = item[0];      
+            item = item.slice(1);
+        }
+
         const parts = selectedText ? item.split(new RegExp(`(${this.escapeRegExp(selectedText)})`, 'gi')) : [item];
+
+        // <span className={cx(s.splitCon)} onMouseUp={this.handleTextSelection}>
+        //     {prefix && <span key="prefix">{prefix}</span>}
+        //     {parts.map((part, index) => 
+        //         part.toLowerCase() === selectedText.toLowerCase() ? 
+        //         <span key={index} className={s.textHighlight}>
+        //             <SyntaxHighlighter language="java" style={prism} className={s.customsyntax}>{part}</SyntaxHighlighter>
+        //         </span> : 
+        //         <span key={index}>
+        //             <SyntaxHighlighter language="java" style={prism} className={s.customsyntax}>{part}</SyntaxHighlighter>
+        //         </span>
+        //     )}
+        // </span>
     
         return (
             <span className={cx(s.splitCon)} onMouseUp={this.handleTextSelection}>
-                {parts.map((part, index) => 
-                    part.toLowerCase() === selectedText.toLowerCase() ? 
-                    <span key={index} className={s.textHighlight}>{part}</span> : 
-                    <span key={index}>{part}</span>
-                )}
+                {prefix && <span key="prefix">{prefix}</span>}
+                <SyntaxHighlighter language="java" style={prism} className={s.customsyntax}>{item}</SyntaxHighlighter>
             </span>
         );
     }
