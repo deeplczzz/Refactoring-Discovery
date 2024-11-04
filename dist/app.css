@@ -402,6 +402,7 @@
     user-select: text;
     font-family: 'Consolas', monospace;
     font-size: 13px;
+    font-weight: 600;
 }
 
 .index__filled--23P9T {
@@ -532,16 +533,32 @@
 }
 
 .index__customsyntax---zUOS {
-    background-color: transparent !important; /* 去除背景色 */
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+
     padding: 0 !important;                    /* 去除内边距 */
     margin: 0 !important;                     /* 去除外边距 */
+
     display: inline !important;               /* 设置为内联显示，防止换行 */
+
     font-family: inherit !important;          /* 使用继承的字体 */
     font-size: inherit !important;            /* 使用继承的字体大小 */
     line-height: inherit !important;          /* 使用继承的行高 */
     text-shadow: none !important;             /* 去除文字阴影 */
+
+    border: none !important;
+    outline: none !important;
 }
 
+.index__ShowTypeButton--1-eGr{
+    padding: 0 4px !important;
+    height: 16px !important;
+    min-height: 16px !important;
+    font-size: 12px !important;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
 .refactoringlist__listbody--3O5C8 {
     margin-top: 16px;
     padding: 12px;
@@ -589,3 +606,45 @@
     margin-bottom: 20px;
 }
 
+.refactoringdetail__detailtitle--2te6r {
+    font-family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+    margin-left: 2%;
+    margin-right: 2%;
+    font-size: 26px;
+    font-weight: 600;
+    padding-bottom: 1px;
+    margin-top: 20px;
+}
+
+.refactoringdetail__content--32kRs{
+    font-size: 18px;
+    margin-left: 2%;
+    margin-bottom: 10px;
+    margin-right: 2%;
+}
+
+.refactoringdetail__list--FfkXW{
+    margin-left: 2%;
+    margin-right: 2%;
+    border-radius: 6px;
+    border: 1px solid #dcdcdc;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.refactoringdetail__leftSide--iLITg, .refactoringdetail__rightSide--awvQy {
+    flex: 1;
+    padding: 0 20px;
+    margin-top: 10px;
+}
+
+.refactoringdetail__sidelocation--1vIt4{
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.refactoringdetail__detailblock--iQUTr{
+    margin-left: 20px;
+    margin-bottom: 5px;
+}

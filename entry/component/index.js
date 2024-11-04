@@ -32,10 +32,6 @@ class ShowComponent extends React.Component {
     //渲染方法
     render() {
         return <Layout>
-            <Menu onClick={this.navChange} mode='horizontal' selectedKeys={[this.state.currentTab]}>
-                <Menu.Item key={TAB.MainPage}>Refactoring Discovery</Menu.Item>
-                <Menu.Item key={TAB.More}>More</Menu.Item>
-            </Menu>
             {this.getContent()}
         </Layout>
     }

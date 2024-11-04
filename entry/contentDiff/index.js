@@ -1,15 +1,16 @@
 import React, { memo } from 'react';
 import {Layout, Button, message, Tooltip} from 'antd';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { prism } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { CaretRightOutlined, CaretDownOutlined, CopyOutlined, VerticalAlignMiddleOutlined, ColumnHeightOutlined} from '@ant-design/icons'; 
+import  SyntaxHighlighter  from 'react-syntax-highlighter';
+import { githubGist } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import { CaretRightOutlined, CaretDownOutlined, CopyOutlined, VerticalAlignMiddleOutlined, ColumnHeightOutlined, SwapOutlined} from '@ant-design/icons'; 
 import s from './index.css';
 import cx from 'classnames';
 const { Content } = Layout;
 
 const SHOW_TYPE = {
     HIGHLIGHT: 0,
-    NORMAL: 1
+    NORMAL: 1,
+    UNIFIED: 2
 }
 
 const BLOCK_LENGTH = 3;
@@ -116,9 +117,9 @@ class ContentDiff extends React.Component {
     copyFileName = () => {
         const { fileName } = this.props;
         navigator.clipboard.writeText(fileName).then(() => {
-            message.success('文件名已复制到剪贴板');
+            message.success('File name copied');
         }).catch(() => {
-            message.error('复制失败');
+            message.error('Copy failed');
         });
     }
 
@@ -141,7 +142,6 @@ class ContentDiff extends React.Component {
             this.setState({ selectedText: '' });
         }
     }
-
 
     componentDidUpdate(prevProps) {
         if (prevProps.commitId !== this.props.commitId) {
@@ -300,14 +300,16 @@ class ContentDiff extends React.Component {
     // 获取split下的内容
     getPaddingContent = (item) => {
         const { selectedText } = this.state;
-        let prefix = '';  
+        let prefix = null;
+        let taborspace = null;
 
-        if (item && (item[0] === '+' || item[0] === '-')) {
-            prefix = item[0];      
-            item = item.slice(1);
-        }
 
-        const parts = selectedText ? item.split(new RegExp(`(${this.escapeRegExp(selectedText)})`, 'gi')) : [item];
+
+        // if (!prefix) {
+        //     item = item.replace(/^ {4}/gm, ''); // 移除每行开头的四个空格
+        // }
+
+        //const parts = selectedText ? item.split(new RegExp(`(${this.escapeRegExp(selectedText)})`, 'gi')) : [item];
 
         // <span className={cx(s.splitCon)} onMouseUp={this.handleTextSelection}>
         //     {prefix && <span key="prefix">{prefix}</span>}
@@ -325,13 +327,47 @@ class ContentDiff extends React.Component {
         return (
             <span className={cx(s.splitCon)} onMouseUp={this.handleTextSelection}>
                 {prefix && <span key="prefix">{prefix}</span>}
-                <SyntaxHighlighter language="java" style={prism} className={s.customsyntax}>{item}</SyntaxHighlighter>
+                <SyntaxHighlighter language="java" style={githubGist} className={s.customsyntax}>{item}</SyntaxHighlighter>
             </span>
         );
     }
     
     escapeRegExp = (string) => {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    paintCode = (item, isHead = true) => {
+        const { type, content: { head, tail, hidden }, leftPos, rightPos} = item;
+        const isNormal = type === ' ';
+        const cls = cx(s.normal, type === '+' ? s.add : '', type === '-' ? s.removed : '');
+        const space = "     ";
+        return (isHead ? head : tail).map((sitem, sindex) => {
+            let posMark = '';
+            if (isNormal) {
+                const shift = isHead ? 0: (head.length + hidden.length);
+                posMark = (space + (leftPos + shift + sindex)).slice(-5)
+                    + (space + (rightPos + shift + sindex)).slice(-5);
+            } else {
+                posMark = type === '-' ? this.getLineNum(leftPos + sindex) + space
+                    : space + this.getLineNum(rightPos + sindex);
+            }
+            return <div key={(isHead ? 'h-' : 't-') + sindex} className={cls}>
+                <pre className={cx(s.pre, s.line)}>{posMark}</pre>
+                <div className={s.outerPre}><div className={s.splitCon}><div className={s.spanWidth}>{' ' + type + ' '}</div>{this.getPaddingContent(sitem, true)}</div></div>
+            </div>
+        })
+    }
+
+    getUnifiedRenderContent = () => {
+        return this.state.lineGroup.map((item, index) => {
+            const { type, content: { hidden }} = item;
+            const isNormal = type === ' ';
+            return <div key={index}>
+                {this.paintCode(item)}
+                {hidden.length && isNormal && this.getHiddenBtn(hidden, index) || null}
+                {this.paintCode(item, false)}
+            </div>
+        })
     }
 
     getSplitCode = (targetBlock, isHead = true) => {
@@ -540,7 +576,16 @@ class ContentDiff extends React.Component {
                             onClick={this.toggleHiddenCode}
                             className={s.showHiddenButton}
                         />
-                        {showType === SHOW_TYPE.NORMAL && this.renderFileStats()}
+                        {showType !== SHOW_TYPE.HIGHLIGHT && this.renderFileStats()}
+                        {showType !== SHOW_TYPE.HIGHLIGHT && (
+                            <Button
+                                type="text"
+                                icon={<SwapOutlined />}
+                                onClick={() => this.setState({ showType: showType === SHOW_TYPE.NORMAL ? SHOW_TYPE.UNIFIED : SHOW_TYPE.NORMAL })}
+                                className={s.ShowTypeButton}
+                            >
+                            </Button>
+                        )}
                     </div>
                 </div>
                 {isExpanded && (
@@ -548,7 +593,10 @@ class ContentDiff extends React.Component {
                         <div className={s.color}>
                             {showType === SHOW_TYPE.NORMAL
                                 ? this.getSplitContent()
-                                : this.getHighlightSpiltContent()}
+                                : showType === SHOW_TYPE.HIGHLIGHT 
+                                ? this.getHighlightSpiltContent()
+                                :this.getUnifiedRenderContent()
+                            }
                         </div>
                     </Content>
                 )}

@@ -14,6 +14,7 @@ export const PieConfig = (refactoringData, selectedTypes) => ({
         content: '{name}({value})',
         style: {
             fontSize: 12,
+            fill: 'black',
         },
     },
     legend: {
@@ -35,9 +36,9 @@ export const PieConfig = (refactoringData, selectedTypes) => ({
     pieStyle: (data) => {
         const isSelected = selectedTypes.includes(data.type);
         return {
-            stroke: isSelected ? '#ff4d4f' : 'white',
+            stroke: isSelected ? '#0056b3' : 'white',
             lineWidth: isSelected ? 3 : 1,
-            shadowColor: isSelected ? '#ff4d4f' : null, // 添加阴影效果
+            shadowColor: isSelected ? '#0056b3' : null, // 添加阴影效果
             shadowBlur: isSelected ? 10 : 0,           // 设置阴影模糊度
         };
     },

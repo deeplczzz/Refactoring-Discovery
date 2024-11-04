@@ -5,7 +5,7 @@ import s from './refactoringlist.css';
 export default class NewRefactoringList extends React.Component {
     state = {
         currentPage: 1,
-        pageSize: 20,
+        pageSize: 10,
         detailVisible: false,
         currentRefactoring: null
     };
@@ -99,7 +99,7 @@ export default class NewRefactoringList extends React.Component {
                                 ]}
                             >
                                 <List.Item.Meta
-                                    title={`Type: ${refactoring.type}`}
+                                    title={`${refactoring.type}`}
                                     description={refactoring.description}
                                 />
                             </List.Item>

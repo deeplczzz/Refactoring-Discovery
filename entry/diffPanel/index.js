@@ -5,6 +5,7 @@ import {Button, Form, message, Select, DatePicker, Affix} from 'antd';
 import ContentDiff from '../contentDiff';
 import NewRefactoringList from './NewRefactoringList'; 
 import RefactoringSummary from './RefactoringSummary'; 
+import RefactoringDetail from './RefactoringDetail';
 import moment from 'moment';
 import {ArrowLeftOutlined, ArrowUpOutlined} from '@ant-design/icons'; 
 import { PieConfig } from './pieChartConfig';
@@ -508,25 +509,6 @@ class DiffPanel extends React.Component {
                     </> 
                 )}
 
-                {/* 显示高亮文件 */}
-                {isDetect && fileUploaded && isFilteredByLocation && diffResults.length > 0 && diffResults.map((result, index) => {
-                    const matchedFiles = highlightedFiles.filter(f => isFileMatched(f.filePath, result.fileName));
-                    const shouldRender = matchedFiles.length > 0;
-
-                    return shouldRender && (
-                        <div key={index}>
-                            <ContentDiff
-                                isFile={this.isFile}
-                                diffArr={result.diff}
-                                highlightedLines={matchedFiles}
-                                showType={showType}
-                                fileName={result.fileName}
-                                commitId = {commitid}   
-                            />
-                        </div>
-                    );
-                })}
-
                 {/* 显示重构总结和饼图 */}
                 {isDetect && !isFilteredByLocation && fileUploaded && (
                     <>
@@ -546,12 +528,38 @@ class DiffPanel extends React.Component {
                 )}
 
                 {/* 显示重构列表 */}
-                {isDetect && fileUploaded && (
+                {isDetect && fileUploaded && !isFilteredByLocation &&(
                     <NewRefactoringList 
                         refactorings={this.getFilteredRefactorings()} 
                         onHighlightDiff={this.handleHighlightDiff} 
                     />
                 )}
+
+                {/* 显示location之后的重构细节 */}
+                {isDetect && fileUploaded && isFilteredByLocation &&(
+                    <RefactoringDetail
+                        refactorings={this.getFilteredRefactorings()} 
+                    />
+                )}
+
+                {/* 显示高亮文件 */}
+                {isDetect && fileUploaded && isFilteredByLocation && diffResults.length > 0 && diffResults.map((result, index) => {
+                    const matchedFiles = highlightedFiles.filter(f => isFileMatched(f.filePath, result.fileName));
+                    const shouldRender = matchedFiles.length > 0;
+
+                    return shouldRender && (
+                        <div key={index}>
+                            <ContentDiff
+                                isFile={this.isFile}
+                                diffArr={result.diff}
+                                highlightedLines={matchedFiles}
+                                showType={showType}
+                                fileName={result.fileName}
+                                commitId = {commitid}   
+                            />
+                        </div>
+                    );
+                })}
             </div>
         );
     }

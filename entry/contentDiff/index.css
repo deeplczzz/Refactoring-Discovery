@@ -145,6 +145,7 @@
     user-select: text;
     font-family: 'Consolas', monospace;
     font-size: 13px;
+    font-weight: 600;
 }
 
 .filled {
@@ -275,12 +276,29 @@
 }
 
 .customsyntax {
-    background-color: transparent !important; /* 去除背景色 */
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+
     padding: 0 !important;                    /* 去除内边距 */
     margin: 0 !important;                     /* 去除外边距 */
+
     display: inline !important;               /* 设置为内联显示，防止换行 */
+
     font-family: inherit !important;          /* 使用继承的字体 */
     font-size: inherit !important;            /* 使用继承的字体大小 */
     line-height: inherit !important;          /* 使用继承的行高 */
     text-shadow: none !important;             /* 去除文字阴影 */
+
+    border: none !important;
+    outline: none !important;
+}
+
+.ShowTypeButton{
+    padding: 0 4px !important;
+    height: 16px !important;
+    min-height: 16px !important;
+    font-size: 12px !important;
+    opacity: 0.6;
+    transition: opacity 0.2s;
 }
