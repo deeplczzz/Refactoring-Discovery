@@ -16,14 +16,13 @@ export default class RefactoringDetail extends React.Component {
                     <div className={s.leftSide}>
                         <div className={s.sidelocation}>Left Side Location:</div>
                             {refactoring.leftSideLocation.map((location, locIndex) => (
-                                <div key={locIndex} className={s.detailblock}>
+                                <div key={locIndex} className={locIndex === 0 ? s.removedetailblock : s.detailblock}>
                                     <div>filePath: {location.filePath}</div>
                                     <div>startLine: {location.startLine}</div>
                                     <div>endLine: {location.endLine}</div>
                                     <div>codeElementType: {location.codeElementType}</div>
                                     <div>description: {location.description}</div>
                                     <div>codeEntity: {location.codeElement}</div>
-                                    <div>----</div>
                                 </div>
                             ))}
                     </div>
@@ -32,14 +31,13 @@ export default class RefactoringDetail extends React.Component {
                     <div className={s.rightSide}>
                         <div className={s.sidelocation}>Right Side Location:</div>
                             {refactoring.rightSideLocation.map((location, locIndex) => (
-                                <div key={locIndex} className={s.detailblock}>
+                                <div key={locIndex} className={locIndex === 0 ? s.adddetailblock : s.detailblock}>
                                     <div>filePath: {location.filePath}</div>
                                     <div>startLine: {location.startLine}</div>
                                     <div>endLine: {location.endLine}</div>
                                     <div>codeElementType: {location.codeElementType}</div>
                                     <div>description: {location.description}</div>
                                     <div>codeEntity: {location.codeElement}</div>
-                                    <div>----</div>
                                 </div> 
                             ))}
                     </div>

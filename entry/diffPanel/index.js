@@ -432,7 +432,7 @@ class DiffPanel extends React.Component {
                     <div>
                         {commits.length > 0 &&(
                                 <div  className={s.CommitselectAndBotton}>
-                                    <div className={s.Commitlabel}>Commit_id :</div>
+                                    <div className={s.Commitlabel}>Commit ID :</div>
                                     <div className ={s.commitselect}>
                                         {this.renderCommitSelect()}
                                     </div>

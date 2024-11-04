@@ -146,7 +146,8 @@ class ContentDiff extends React.Component {
     componentDidUpdate(prevProps) {
         if (prevProps.commitId !== this.props.commitId) {
             this.setState({
-                isExpanded: true
+                isExpanded: true,
+                showType: SHOW_TYPE.NORMAL
             });
         }
         if (prevProps.showType !== this.props.showType) {

@@ -34,9 +34,24 @@
 .sidelocation{
     font-size: 16px;
     font-weight: 600;
+    margin-bottom: 5px;
 }
 
 .detailblock{
     margin-left: 20px;
-    margin-bottom: 5px;
+    margin-bottom: 10px;
+}
+
+.removedetailblock{
+    border-left: 5px solid rgb(255,206,203);
+    margin-left: 5;
+    margin-bottom: 10px;
+    padding-left: 10px;
+}
+
+.adddetailblock{
+    border-left: 5px solid rgb(172,238,187);
+    margin-left: 5;
+    padding-left: 10px;
+    margin-bottom: 10px;
 }

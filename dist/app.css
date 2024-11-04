@@ -271,11 +271,11 @@
 }
 
 .index__add--3fp2b {
-    background-color: rgb(236, 253, 240);
+    background-color: rgb(218,251,225);
 }
 
 .index__removed--18dBy {
-    background-color: rgb(251,233,235);
+    background-color: rgb(255,235,233);
 }
 
 .index__pre--3eDFa {
@@ -402,7 +402,6 @@
     user-select: text;
     font-family: 'Consolas', monospace;
     font-size: 13px;
-    font-weight: 600;
 }
 
 .index__filled--23P9T {
@@ -642,9 +641,24 @@
 .refactoringdetail__sidelocation--1vIt4{
     font-size: 16px;
     font-weight: 600;
+    margin-bottom: 5px;
 }
 
 .refactoringdetail__detailblock--iQUTr{
     margin-left: 20px;
-    margin-bottom: 5px;
+    margin-bottom: 10px;
+}
+
+.refactoringdetail__removedetailblock--2DUZS{
+    border-left: 5px solid rgb(255,206,203);
+    margin-left: 5;
+    margin-bottom: 10px;
+    padding-left: 10px;
+}
+
+.refactoringdetail__adddetailblock--3zYPI{
+    border-left: 5px solid rgb(172,238,187);
+    margin-left: 5;
+    padding-left: 10px;
+    margin-bottom: 10px;
 }

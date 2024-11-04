@@ -14,11 +14,11 @@
 }
 
 .add {
-    background-color: rgb(236, 253, 240);
+    background-color: rgb(218,251,225);
 }
 
 .removed {
-    background-color: rgb(251,233,235);
+    background-color: rgb(255,235,233);
 }
 
 .pre {
@@ -145,7 +145,6 @@
     user-select: text;
     font-family: 'Consolas', monospace;
     font-size: 13px;
-    font-weight: 600;
 }
 
 .filled {
