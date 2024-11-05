@@ -1,14 +1,14 @@
 import React from 'react';
 import s from './index.css';
 import { Pie } from '@ant-design/charts'; 
-import {Button, Form, message, Select, DatePicker, Affix} from 'antd';
+import {Button, Form, message, Select, DatePicker, Affix, Input, ConfigProvider} from 'antd';
 import ContentDiff from '../contentDiff';
-import NewRefactoringList from './NewRefactoringList'; 
-import RefactoringSummary from './RefactoringSummary'; 
-import RefactoringDetail from './RefactoringDetail';
+import NewRefactoringList from '../RefactoringList/NewRefactoringList'; 
+import RefactoringSummary from '../RefactoringSummary/RefactoringSummary'; 
+import RefactoringDetail from '../RefactoringDetail/RefactoringDetail';
 import moment from 'moment';
-import {ArrowLeftOutlined, ArrowUpOutlined} from '@ant-design/icons'; 
-import { PieConfig } from './pieChartConfig';
+import {ArrowLeftOutlined, ArrowUpOutlined, FolderOpenOutlined} from '@ant-design/icons'; 
+import { PieConfig } from '../Pie-Chart/PieChart-Config';
 
 const { RangePicker } = DatePicker;
 const FormItem = Form.Item;
@@ -22,10 +22,9 @@ const SHOW_TYPE = {
     NORMAL: 1
 }
 
-class DiffPanel extends React.Component {
+class MainPage extends React.Component {
     state = {
         diffResults: [], // 用于存储所有文件的 diff 结果
-        method: this.props.type === 'words' ? 'diffChars' : 'diffLines',
         repository:'',
         fileUploaded: false, // 表示文件已上传
         refactorings: [], // 新增用于存储 refactorings
@@ -42,6 +41,7 @@ class DiffPanel extends React.Component {
         earliestDate: null, //记录最早时间
         filteredCommits: [], //存储过滤后的 commits
         isScrollVisible: false, // 是否显示回到顶部按钮
+        currentPage: 1, //用于存储list当前页码
     }
     
     //计算所有文件的增删行数
@@ -201,8 +201,7 @@ class DiffPanel extends React.Component {
                 <Select
                     value={commitid}
                     onSelect={(value) => {this.setState({ commitid: value }, this.fetchData);}}
-                    placeholder="Select a commit"
-                    style={{ width: '100%' }}
+                    style={{ width: '100%'}}
                     showSearch
                     filterOption={(input, option) => {
                         const commitInfo = option?.children?.toString().toLowerCase() || '';
@@ -211,7 +210,7 @@ class DiffPanel extends React.Component {
                 >
                     {filteredCommits.map((commit, index) => (
                         <Select.Option key={index} value={commit.commitId}>
-                            {commit.commitId} ({commit.commitTime})
+                            [{commit.commitTime}]{" "}{commit.commitId}
                         </Select.Option>
                     ))}
                 </Select>
@@ -282,6 +281,8 @@ class DiffPanel extends React.Component {
             filePath: location.filePath,
             startLine: location.startLine,
             endLine: location.endLine,
+            startColumn: location.startColumn,
+            endColumn: location.endColumn,
             description:location.description,
             side: 'left', // 标记为左侧
         }));
@@ -290,6 +291,8 @@ class DiffPanel extends React.Component {
             filePath: location.filePath,
             startLine: location.startLine,
             endLine: location.endLine,
+            startColumn: location.startColumn,
+            endColumn: location.endColumn,
             description:location.description,
             side: 'right', // 标记为右侧
         }));
@@ -386,7 +389,7 @@ class DiffPanel extends React.Component {
 
     render() {
         const { diffResults, fileUploaded, repository, commitid, commits,highlightedFiles, 
-            isFilteredByLocation, refactorings, showType, isDetect, dateRange,} = this.state;
+            isFilteredByLocation, refactorings, showType, isDetect, dateRange,currentPage} = this.state;
         const refactoringData = this.getRefactoringTypeData();
         const pieConfig = PieConfig(refactoringData, this.state.PieSelectedTypes); //饼图配置
     
@@ -400,19 +403,25 @@ class DiffPanel extends React.Component {
         return (
             <div className={s.wrapper}>
                 <Form {...layout} onFinish={this.handleSubmit} className={s.handleSubmit}>
-                    <div>
-                        <div className={s.bottonandtext}>
-                            <div className={s.Repositorylabel}>Repository :</div>
+                    
+                    <div className={s.bottonandtext}>
+                        <div className={s.repositorylabel}>Repository :</div>
+                        <div className={s.inputandbutton}>
                             <div>
-                                <Button type="default" onClick={this.selectDirectoryDialog} className={s.selectbotton}>
-                                    Select Repository Path
-                                </Button>
+                                <Input 
+                                    value={this.state.repository} 
+                                    className={s.repositoryinput} 
+                                    disabled
+                                    placeholder='Select a repository'
+                                />
                             </div>
                             <div>
-                                <span style={{ marginLeft: '10px' }}>{repository}</span>
+                                <Button type="default" onClick={this.selectDirectoryDialog} className={s.selectbotton} icon={<FolderOpenOutlined />}>
+                                </Button>
                             </div>
                         </div>
                     </div>
+                    
 
                     <div>
                         {commits.length > 0 &&(
@@ -532,6 +541,8 @@ class DiffPanel extends React.Component {
                     <NewRefactoringList 
                         refactorings={this.getFilteredRefactorings()} 
                         onHighlightDiff={this.handleHighlightDiff} 
+                        currentPage={currentPage}
+                        onPageChange={(page) => this.setState({ currentPage: page })}
                     />
                 )}
 
@@ -565,4 +576,4 @@ class DiffPanel extends React.Component {
     }
 }
 
-export default DiffPanel;
+export default MainPage;

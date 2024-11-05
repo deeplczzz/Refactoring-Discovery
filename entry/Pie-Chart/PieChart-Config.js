@@ -38,8 +38,8 @@ export const PieConfig = (refactoringData, selectedTypes) => ({
         return {
             stroke: isSelected ? '#0056b3' : 'white',
             lineWidth: isSelected ? 3 : 1,
-            shadowColor: isSelected ? '#0056b3' : null, // 添加阴影效果
-            shadowBlur: isSelected ? 10 : 0,           // 设置阴影模糊度
+            shadowColor: isSelected ? '#0056b3' : null,
+            shadowBlur: isSelected ? 10 : 0,         
         };
     },
 });

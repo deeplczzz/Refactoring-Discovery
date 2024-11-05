@@ -2,13 +2,20 @@ import React from 'react';
 import { List, Button, Drawer} from 'antd';
 import s from './refactoringlist.css';
 
-export default class NewRefactoringList extends React.Component {
+export default class RefactoringList extends React.Component {
     state = {
-        currentPage: 1,
+        currentPage: this.props.currentPage,
         pageSize: 10,
         detailVisible: false,
         currentRefactoring: null
     };
+
+    // 在组件更新时，确保更新当前页码
+    componentDidUpdate(prevProps) {
+        if (prevProps.currentPage !== this.props.currentPage) {
+            this.setState({ currentPage: this.props.currentPage });
+        }
+    }
 
     handleLocationClick = (leftSideLocations, rightSideLocations, Description) => {
         window.scrollTo(0, 0);
@@ -62,7 +69,7 @@ export default class NewRefactoringList extends React.Component {
     );
 
     render() {
-        const { refactorings} = this.props;
+        const { refactorings, onPageChange} = this.props;
         const { currentPage, pageSize, detailVisible, currentRefactoring } = this.state;
 
         return (
@@ -75,7 +82,10 @@ export default class NewRefactoringList extends React.Component {
                             current: currentPage,
                             pageSize: pageSize,
                             total: refactorings.length,
-                            onChange: (page) => this.setState({ currentPage: page })
+                            onChange: (page) => {
+                                this.setState({ currentPage: page });
+                                onPageChange(page);
+                            }
                         }}
                         renderItem={(refactoring) => (
                             <List.Item

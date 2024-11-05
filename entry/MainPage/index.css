@@ -159,8 +159,15 @@
 }
 
 .selectbotton{
-    border-radius: 8px !important; /* 圆角 */
-    margin-left: 20px;
+    border-radius: 0 4px 4px 0 !important;
+    width: 50px !important;
+}
+
+.repositoryinput{
+    border-radius: 4px 0 0 4px !important;
+    width: 370px !important;
+    border-right: none !important;
+    background-color: white !important;
 }
 
 .flexRow {
@@ -168,10 +175,20 @@
 }
 
 .bottonandtext {
-    display: grid;
-    grid-template-columns: 90px 250px auto;
+    display: flex;
     margin-right: 2%;
     margin-left: 2%;
+}
+
+.repositorylabel{
+    width: 90px;
+}
+
+.inputandbutton{
+    display: flex;
+    margin-left: 20px;
+    margin-right: 2%;
+
 }
 
 .CommitselectAndBotton{
@@ -186,9 +203,7 @@
     margin-left: 20px;
 }
 
-.Repositorylabel{
-    margin-left: 2%;
-}
+
 .Commitlabel{
     margin-left: 2%;
     margin-right: 10px;

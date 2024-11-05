@@ -1,14 +1,14 @@
-.index__charAdd--2u9EA {
+.index__charAdd--3CTlM {
     color: green;
     background-color: rgb(236, 253, 240);
 }
 
-.index__charRemoved--2NBzi {
+.index__charRemoved--288lK {
     color: red;
     background-color: rgb(251, 233, 235);
 }
 
-.index__wrapper--2L7IR {
+.index__wrapper--1xbQY {
     margin-left: 2%;
     margin-right: 2%;
     margin-top: 2%;
@@ -20,11 +20,11 @@
 }
 
 
-.index__input--2qmtU {
+.index__input--1KQhj {
     width: 45%;
 }
 
-.index__formItem--2BEAH {
+.index__formItem--1pMJq {
     display: flex;
     justify-content: space-between; /* 让内容和 label 在两边 */
     align-items: center; /* 垂直居中对齐 */
@@ -32,14 +32,14 @@
 }
 
 /* 使用 position: relative 和 top 调整 Upload JSON 标签的位置 */
-.index__formItem--2BEAH .index__ant-form-item-label--3lMJ6 {
+.index__formItem--1pMJq .index__ant-form-item-label--TwOlJ {
     display: flex;
     align-items: center; /* 垂直居中对齐标签 */
     position: relative; /* 使用相对定位进行调整 */
     top: 50px; /* 根据需要调整 top 值 */
 }
 
-.index__textContent--8AlZF {
+.index__textContent--LWZkL {
     display: flex; /* 使用 flexbox 布局 */
     margin-left: 30%; /* 根据需要调整间距 */
     margin-right: 10%; /* 根据需要调整间距 */
@@ -47,33 +47,33 @@
     align-items: flex-start; /* 对齐每行文本的开始位置 */
 }
 
-.index__textContent--8AlZF p {
+.index__textContent--LWZkL p {
     margin: 0; /* 去掉 p 元素的默认上下外边距 */
     line-height: 1.1; /* 设置行高，以提高可读性 */
 }
 
-.index__funWrapper--19VTK {
+.index__funWrapper--2SrA- {
     display: flex;
     justify-content: space-around;
     align-items: flex-start;
 }
 
-.index__result--3p5uV {
+.index__result--2V2wA {
     font-size: 20px;
     padding-left: 10%;
 }
 
-.index__preWrap--aXHIE {
+.index__preWrap--xCUTe {
     padding-left: 10%;
     padding-right: 10%;
     white-space: pre-wrap;
 }
 
-.index__charPreWrap--31WOt {
+.index__charPreWrap--EyRfI {
     white-space: pre-wrap;
 }
 
-.index__singleLine--3oyVe {
+.index__singleLine--2Pdjq {
     display: flex; /* 使用 flexbox 布局 */
     align-items: center; /* 垂直对齐内容 */
     white-space: nowrap; /* 防止文本换行 */
@@ -81,31 +81,31 @@
     text-overflow: ellipsis; /* 溢出文本显示省略号 */
 }
 
-.index__filesDiffs--2_GUo {
+.index__filesDiffs--17gN1 {
     margin-top: 20px;
 }
 
-.index__fileDiff--oy9MV {
+.index__fileDiff--26aW7 {
     margin-bottom: 20px;
 }
 
-.index__diffContent--2GXoV {
+.index__diffContent--14sKg {
     white-space: pre-wrap; /* Preserve whitespace and line breaks */
 }
 
-.index__diffItem--1_etv {
+.index__diffItem--2Eix1 {
     display: block; /* Display each diff item on a new line */
 }
 
-.index__add--5mgHY {
+.index__add--2m8TR {
     background-color: #d4f6d4; /* Green background for added text */
 }
 
-.index__removed--3IFqm {
+.index__removed--1SuC9 {
     background-color: #f6d4d4; /* Red background for removed text */
 }
 
-.index__filename--3_nv2 {
+.index__filename--3awAA {
     margin-top: 10px;
     padding: 12px;
     background-color: #f5f5f5;
@@ -119,7 +119,7 @@
     margin-right: 2%;
 }
 
-.index__refactoringItem--99Qry{
+.index__refactoringItem--1f56l{
     margin-top: 12px;
     padding: 12px;
     background-color: #ffffff;
@@ -132,18 +132,18 @@
     margin-right: 1%;
 }
 
-.index__bottom--2SHKc{
+.index__bottom--3GIYV{
     margin-bottom: 1%;
 }
 
-.index__botton--2DzR4{
+.index__botton--DyzH5{
     border-radius: 8px !important; /* 圆角 */
     margin-left: 0px;
     margin-right: 10%;
     margin-top: 0%;
 }
 
-.index__textarea--3Gn9o {
+.index__textarea--3_ddX {
     resize: none;          /* 禁止用户调整输入框的大小 */
     height: 30px !important;          /* 设置固定的高度 */
     width: 500px !important;          /* 设置固定的宽度 */
@@ -153,73 +153,88 @@
     font-size: 14px;       /* 设置字体大小 */
 }
 
-.index__handleSubmit--1kxBb{
+.index__handleSubmit--2lzLt{
     display: grid;
     grid-template-rows: 60px 60px 60px;
 }
 
-.index__selectbotton--3EOfa{
-    border-radius: 8px !important; /* 圆角 */
-    margin-left: 20px;
+.index__selectbotton--1uzr2{
+    border-radius: 0 4px 4px 0 !important;
+    width: 50px !important;
 }
 
-.index__flexRow--RzYNl {
+.index__repositoryinput--3soJG{
+    border-radius: 4px 0 0 4px !important;
+    width: 370px !important;
+    border-right: none !important;
+    background-color: white !important;
+}
+
+.index__flexRow--3LtbZ {
     gap: 20px; /* 设置选择框和按钮之间的间距 */
 }
 
-.index__bottonandtext--1-eSl {
-    display: grid;
-    grid-template-columns: 90px 250px auto;
+.index__bottonandtext--2fDlN {
+    display: flex;
     margin-right: 2%;
     margin-left: 2%;
 }
 
-.index__CommitselectAndBotton--1siZm{
+.index__repositorylabel--1eZYy{
+    width: 90px;
+}
+
+.index__inputandbutton--wmeJP{
+    display: flex;
+    margin-left: 20px;
+    margin-right: 2%;
+
+}
+
+.index__CommitselectAndBotton--15zK0{
     display: grid;
     grid-template-columns: 90px 550px auto;
     margin-left: 2%;
     margin-right: 2%;
 }
 
-.index__commitselect--23Fb4{
+.index__commitselect--1bVNQ{
     margin-right: 0px;
     margin-left: 20px;
 }
 
-.index__Repositorylabel--1NQ2T{
-    margin-left: 2%;
-}
-.index__Commitlabel--oPtGI{
+
+.index__Commitlabel--3CrKN{
     margin-left: 2%;
     margin-right: 10px;
 }
 
-.index__pie--FCg2s{
+.index__pie--YbGNm{
     margin-left: 2%;
     margin-top: 20px;
     margin-bottom: 20px;
 }
 
-.index__RefactoringSummary--36I4L{
+.index__RefactoringSummary--2HMGu{
     margin-left: 2%;
 }
 
-.index__dataSelect--Sa2nn{
+.index__dataSelect--Gr3q9{
     display: grid;
     grid-template-columns: 90px 250px;
     margin-right: 2%;
     margin-left: 2%;
 }
 
-.index__dataSelectlabel--3ebuM{
+.index__dataSelectlabel--1MgiM{
     margin-left: 2%;
 }
 
-.index__dataSelectPicker--2S_-N{
+.index__dataSelectPicker--1EhGx{
     margin-left: 20px;
 }
 
-.index__affixContainer--14a3G {
+.index__affixContainer--2jIgb {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -230,29 +245,29 @@
     margin-right: 2%;
 }
 
-.index__fileCount--1WfI- {
+.index__fileCount--193t1 {
     font-family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
     color: #000000;
     font-size: 16px;
     font-weight: 400;
 }
 
-.index__backTopButton--YF6WX{
+.index__backTopButton--3uOqS{
     border-radius: 6px;
 }
 
-.index__additionsline--xDVEY{
+.index__additionsline--1PH83{
     color: #28a745;
     margin-left: 10px;
     margin-right: 4px;
 }
 
-.index__deletionsline--md0Xu{
+.index__deletionsline--1qPcD{
     color: #d73a49;
     margin-right: 4px;
 }
 
-.index__lineschanged--17D0o{
+.index__lineschanged--27JqV{
     color: #6c757d;
 }
 .index__color--2ojbV {
@@ -558,7 +573,7 @@
     opacity: 0.6;
     transition: opacity 0.2s;
 }
-.refactoringlist__listbody--3O5C8 {
+.refactoringlist__listbody--1MduH {
     margin-top: 16px;
     padding: 12px;
     background-color: #ffffff;
@@ -572,7 +587,7 @@
     margin-right: 2%;
 }
 
-.refactoringlist__listtitle--1Mss0 {
+.refactoringlist__listtitle--S-u_X {
     font-family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
     margin-right: 2%;
     margin-left: 2%;
@@ -582,10 +597,10 @@
     padding-bottom: 10px;
 }
 
-.refactoringlist__list--1k0MT{
+.refactoringlist__list--cYpYG{
     margin-top: 30px;
 }
-.summary__summarytitle--vIbuc {
+.summary__summarytitle--2KvLW {
     font-family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
     margin-right: 2%;
     font-size: 28px;
@@ -594,18 +609,18 @@
     padding-bottom: 10px;
 }
 
-.summary__totaldetected--2L7fS{
+.summary__totaldetected--2ZsDe{
     font-family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
     font-size: 20px;
     padding-top: 20px;
     padding-bottom: 20px;
 }
 
-.summary__totaldetectedandvalue--31vIr{
+.summary__totaldetectedandvalue--1I6wz{
     margin-bottom: 20px;
 }
 
-.refactoringdetail__detailtitle--2te6r {
+.refactoringdetail__detailtitle--2htdL {
     font-family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
     margin-left: 2%;
     margin-right: 2%;
@@ -615,14 +630,14 @@
     margin-top: 20px;
 }
 
-.refactoringdetail__content--32kRs{
+.refactoringdetail__content--2ghng{
     font-size: 18px;
     margin-left: 2%;
     margin-bottom: 10px;
     margin-right: 2%;
 }
 
-.refactoringdetail__list--FfkXW{
+.refactoringdetail__list--IIY2n{
     margin-left: 2%;
     margin-right: 2%;
     border-radius: 6px;
@@ -632,31 +647,31 @@
     align-items: flex-start;
 }
 
-.refactoringdetail__leftSide--iLITg, .refactoringdetail__rightSide--awvQy {
+.refactoringdetail__leftSide--ui2Yw, .refactoringdetail__rightSide--1gr6c {
     flex: 1;
     padding: 0 20px;
     margin-top: 10px;
 }
 
-.refactoringdetail__sidelocation--1vIt4{
+.refactoringdetail__sidelocation--256y7{
     font-size: 16px;
     font-weight: 600;
     margin-bottom: 5px;
 }
 
-.refactoringdetail__detailblock--iQUTr{
+.refactoringdetail__detailblock--1_tsU{
     margin-left: 20px;
     margin-bottom: 10px;
 }
 
-.refactoringdetail__removedetailblock--2DUZS{
+.refactoringdetail__removedetailblock--2DLwH{
     border-left: 5px solid rgb(255,206,203);
     margin-left: 5;
     margin-bottom: 10px;
     padding-left: 10px;
 }
 
-.refactoringdetail__adddetailblock--3zYPI{
+.refactoringdetail__adddetailblock--3lfvC{
     border-left: 5px solid rgb(172,238,187);
     margin-left: 5;
     padding-left: 10px;

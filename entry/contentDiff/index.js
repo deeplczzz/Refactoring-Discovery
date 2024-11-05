@@ -303,9 +303,6 @@ class ContentDiff extends React.Component {
         const { selectedText } = this.state;
         let prefix = null;
         let taborspace = null;
-
-
-
         // if (!prefix) {
         //     item = item.replace(/^ {4}/gm, ''); // 移除每行开头的四个空格
         // }
@@ -379,12 +376,12 @@ class ContentDiff extends React.Component {
 
                 <div className={cx(s.iBlock, s.lBorder)}>
                     {this.getLNPadding(leftPos + shift + index)}
-                    {this.getPaddingContent('    ' + item)}
+                    {this.getPaddingContent('   ' + item)}
                 </div>
 
                 <div className={s.iBlock}>
                     {this.getLNPadding(rightPos + shift +index)}
-                    {this.getPaddingContent('    ' + item)}
+                    {this.getPaddingContent('   ' + item)}
                 </div>
 
             </div>
@@ -403,14 +400,14 @@ class ContentDiff extends React.Component {
                 <div className={cx(s.iBlock, s.lBorder)}>{lArr.map((item, index) => {
                     return <div className={cx(s.prBlock, lClass)} key={index}>
                         {this.getLNPadding(lLeftPos + index)}
-                        {this.getPaddingContent('-  ' + item)}
+                        {this.getPaddingContent('- ' + item)}
                     </div>
                 })}</div>
 
                 <div className={cx(s.iBlock, lArr.length ? '' : s.rBorder)}>{rArr.map((item, index) => {
                     return <div className={cx(s.prBlock, rClass)} key={index}>
                         {this.getLNPadding(rRightPos + index)}
-                        {this.getPaddingContent('+  ' + item)}
+                        {this.getPaddingContent('+ ' + item)}
                     </div>
                 })}</div>
 
@@ -478,10 +475,14 @@ class ContentDiff extends React.Component {
     }
 
     getHighlightCombinePart = (leftPart = {}, rightPart = {}) => {
+        const { highlightedLines } = this.props; // 从 props 中获取高亮行数组
         const { type: lType, content: lContent, leftPos: lLeftPos, rightPos: lRightPos } = leftPart;
         const { type: rType, content: rContent, leftPos: rLeftPos, rightPos: rRightPos } = rightPart;
         const lArr = lContent?.head || [];
         const rArr = rContent?.head || [];
+
+        const body = highlightedLines[0];
+        const startLine = body.startLine, endLine = body.endLine, startColumn = body.startColumn, endColumn = body.endColumn;
         return <React.Fragment>
 
                 <div className={cx(s.iBlock, s.lBorder)}>{lArr.map((item, index) => {
@@ -494,7 +495,7 @@ class ContentDiff extends React.Component {
                 <div className={cx(s.iBlock, lArr.length ? '' : s.rBorder)}>{rArr.map((item, index) => {
                     return <div className={cx(s.prBlock, this.shouldHighlightLine(rRightPos + index, 'right') ? s.add : '')} key={index}>
                         {this.getLNPadding(rRightPos + index)}
-                        {this.getPaddingContent('+  ' + item)}
+                        {this.getPaddingContent('+ ' + item)}
                     </div>
                 })}</div>
 
@@ -524,12 +525,12 @@ class ContentDiff extends React.Component {
                 
                 <div className={cx(s.iBlock, s.lBorder, leftHighlightClass)}>
                     {this.getLNPadding(leftPos + shift + index)}
-                    {this.getPaddingContent('    ' + item)}
+                    {this.getPaddingContent('   ' + item)}
                 </div>
 
                 <div className={cx(s.iBlock, rightHighlightClass)}>
                     {this.getLNPadding(rightPos + shift +index)}
-                    {this.getPaddingContent('    ' + item)}
+                    {this.getPaddingContent('   ' + item)}
                 </div>
 
             </div>
