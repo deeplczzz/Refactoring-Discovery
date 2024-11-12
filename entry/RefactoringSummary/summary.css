@@ -1,6 +1,5 @@
 .summarytitle {
     font-family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-    margin-right: 2%;
     font-size: 28px;
     font-weight: 600;
     border-bottom: 2px solid #eee;
@@ -14,6 +13,35 @@
     padding-bottom: 20px;
 }
 
-.totaldetectedandvalue{
+.statistic{
+    margin-bottom: 30px;
+    margin-top: 30px;
+    margin-left: 2%;
+    margin-right: 2%;
+    display: flex;
+    justify-content: space-between; /* 均匀分布 */
+    align-items: center; /* 垂直居中对齐 */
+    width: 40%;
+}
+
+.summarytable{
+    font-size: 12px;
+}
+
+.pieandtree{
+    margin-right: 2%;
+    margin-top: 30px;
     margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between; /* 均匀分布 */
+}
+
+.pie {
+    flex: 0 0 70%; /* 设置饼图占 60% */
+    margin-left: 10px;
+}
+
+.directorytree {
+    flex: 0 0 30%; /* 设置文件目录占 40% */
+    border-right: 1px solid #eee;
 }

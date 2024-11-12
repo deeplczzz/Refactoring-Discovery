@@ -44,10 +44,10 @@ function startSpringBootServer() {
   const { spawn } = lazyModules.loadChildProcess(); 
   if (app.isPackaged) {
     // 打包后的路径
-    jarPath = path.join(process.resourcesPath, 'server', 'RefactoringDiscovery-0.0.1-SNAPSHOT.jar');
+    jarPath = path.join(process.resourcesPath, 'server', 'RefactoringDiscovery-1.0.1.jar');
   } else {
     // 开发模式下的路径
-    jarPath = path.join(app.getAppPath(), 'server', 'RefactoringDiscovery-0.0.1-SNAPSHOT.jar');
+    jarPath = path.join(app.getAppPath(), 'server', 'RefactoringDiscovery-1.0.1.jar');
   }
 
   springBootProcess = spawn('java', ['-jar', jarPath], {

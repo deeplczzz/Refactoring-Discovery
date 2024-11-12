@@ -25,3 +25,20 @@
 .list{
     margin-top: 30px;
 }
+
+.leftsidetitle{
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.rightsidetitle{
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    margin-top: 20px;
+}
+
+.card{
+    margin-bottom: 10px;
+}

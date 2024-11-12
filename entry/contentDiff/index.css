@@ -5,10 +5,6 @@
     border-radius: 0 0 6px 6px;
 }
 
-.highlighted {
-    background-color: rgb(252, 252, 178); 
-}
-
 .normal {
     color: black;
 }
@@ -25,14 +21,6 @@
     margin: 0;
     vertical-align: top;
     display: inline-block;
-}
-
-.button {
-    margin-top: 5px;
-    margin-bottom: 5px;
-    text-align: center;
-    color: brown;
-    border: 1px solid brown;
 }
 
 .content {
@@ -52,13 +40,6 @@
     width: 20px;
     display: inline-block;
     white-space: pre-wrap;
-}
-
-.innerPre {
-    margin: 0;
-    word-wrap: break-word;
-    word-break: break-all;
-    white-space: normal;
 }
 
 .line {
@@ -145,20 +126,6 @@
     user-select: text;
     font-family: 'Consolas', monospace;
     font-size: 13px;
-}
-
-.filled {
-    width: calc(100% - 52px);
-}
-
-.radioGroup {
-    display: flex;
-    margin-top: 5px;
-    margin-bottom: 5px;
-    justify-content: flex-end;
-    align-items: center;
-    padding-left: 2%;
-    padding-right: 2%;
 }
 
 .lBorder {

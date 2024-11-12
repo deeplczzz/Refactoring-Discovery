@@ -1,5 +1,5 @@
 import React from 'react';
-import { List, Button, Drawer} from 'antd';
+import { List, Button, Drawer, Card} from 'antd';
 import s from './refactoringlist.css';
 
 export default class RefactoringList extends React.Component {
@@ -38,33 +38,32 @@ export default class RefactoringList extends React.Component {
 
     renderDetail = (refactoring) => (
         <>
-            <strong>Left Side Location:</strong>
-            <ul type="none">
-                {refactoring.leftSideLocation.map((location, locIndex) => (
-                    <li key={locIndex}>
-                        <div><strong>filePath:</strong> {location.filePath}</div>
-                        <div><strong>startLine:</strong> {location.startLine}</div>
-                        <div><strong>endLine:</strong> {location.endLine}</div>
-                        <div><strong>codeElementType:</strong> {location.codeElementType}</div>
-                        <div><strong>description:</strong> {location.description}</div>
-                        <div><strong>codeEntity:</strong> {location.codeElement}</div>
-                    </li>
-                ))}
-            </ul>
+            <div className={s.leftsidetitle}>Left Side Location:</div>
+            {refactoring.leftSideLocation.map((location, locIndex) => (
+                <div className={s.card}>
+                    <Card size="small" key={locIndex} title={location.codeElement} hoverable = "true">
+                        <div>description: {location.description}</div>
+                        <div>filePath: {location.filePath}</div>
+                        <div>codeElementType: {location.codeElementType}</div>
+                        <div>startLine: {location.startLine}</div>
+                        <div>endLine: {location.endLine}</div>
+                    </Card>
+                </div>
+            ))}
+
             
-            <strong>Right Side Location:</strong>
-            <ul type="none">
-                {refactoring.rightSideLocation.map((location, locIndex) => (
-                    <li key={locIndex}>
-                        <div><strong>filePath:</strong> {location.filePath}</div>
-                        <div><strong>startLine:</strong> {location.startLine}</div>
-                        <div><strong>endLine:</strong> {location.endLine}</div>
-                        <div><strong>codeElementType:</strong> {location.codeElementType}</div>
-                        <div><strong>description:</strong> {location.description}</div>
-                        <div><strong>codeEntity:</strong> {location.codeElement}</div>
-                    </li>
-                ))}
-            </ul>
+            <div className={s.rightsidetitle}>Right Side Location:</div>
+            {refactoring.rightSideLocation.map((location, locIndex) => (
+                <div className={s.card}>
+                    <Card size="small" key={locIndex} title={location.codeElement} hoverable = "true">
+                        <div>description: {location.description}</div>
+                        <div>filePath: {location.filePath}</div>
+                        <div>codeElementType: {location.codeElementType}</div>
+                        <div>startLine: {location.startLine}</div>
+                        <div>endLine: {location.endLine}</div>
+                    </Card>
+                </div>
+            ))}
         </>
     );
 

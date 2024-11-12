@@ -45,8 +45,8 @@
         "asar": true,
         "extraResources": [
             {
-                "from": "server/RefactoringDiscovery-0.0.1-SNAPSHOT.jar",
-                "to": "server/RefactoringDiscovery-0.0.1-SNAPSHOT.jar"
+                "from": "server/RefactoringDiscovery-1.0.1.jar",
+                "to": "server/RefactoringDiscovery-1.0.1.jar"
             }
         ],
         "directories": {

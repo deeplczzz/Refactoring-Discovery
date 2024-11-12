@@ -36,9 +36,9 @@ export const PieConfig = (refactoringData, selectedTypes) => ({
     pieStyle: (data) => {
         const isSelected = selectedTypes.includes(data.type);
         return {
-            stroke: isSelected ? '#0056b3' : 'white',
+            stroke: isSelected ? 'gray' : 'white',
             lineWidth: isSelected ? 3 : 1,
-            shadowColor: isSelected ? '#0056b3' : null,
+            shadowColor: isSelected ? 'gray' : null,
             shadowBlur: isSelected ? 10 : 0,         
         };
     },

@@ -1,14 +1,12 @@
 import React from 'react';
 import s from './index.css';
-import { Pie } from '@ant-design/charts'; 
-import {Button, Form, message, Select, DatePicker, Affix, Input, ConfigProvider} from 'antd';
+import {Button, Form, message, Select, Tooltip, DatePicker, Affix, Input} from 'antd';
 import ContentDiff from '../contentDiff';
 import NewRefactoringList from '../RefactoringList/NewRefactoringList'; 
 import RefactoringSummary from '../RefactoringSummary/RefactoringSummary'; 
 import RefactoringDetail from '../RefactoringDetail/RefactoringDetail';
 import moment from 'moment';
-import {ArrowLeftOutlined, ArrowUpOutlined, FolderOpenOutlined} from '@ant-design/icons'; 
-import { PieConfig } from '../Pie-Chart/PieChart-Config';
+import {ArrowLeftOutlined, ArrowUpOutlined, FolderOpenOutlined, CopyOutlined} from '@ant-design/icons'; 
 
 const { RangePicker } = DatePicker;
 const FormItem = Form.Item;
@@ -29,6 +27,8 @@ class MainPage extends React.Component {
         fileUploaded: false, // 表示文件已上传
         refactorings: [], // 新增用于存储 refactorings
         commitid:'',
+        commitMessage:'', //存储commit消息
+        commitAuthor:'',
         commits: [],  // 存储从后端获取到的 commit 列表
         highlightedFiles: [], // 用于存储点击 Location 后的文件和行号信息
         isFilteredByLocation: false, // 标记是否正在根据 Location 过滤文件
@@ -42,6 +42,8 @@ class MainPage extends React.Component {
         filteredCommits: [], //存储过滤后的 commits
         isScrollVisible: false, // 是否显示回到顶部按钮
         currentPage: 1, //用于存储list当前页码
+        detecttype: 'defaut',
+        commitMap: {}, //commit到message和author的映射
     }
     
     //计算所有文件的增删行数
@@ -117,14 +119,11 @@ class MainPage extends React.Component {
             isDetect: true, 
             PieSelectedTypes: [], // 重置选中的类型
         });
-        
     };
 
     //选择仓库目录按钮的事件
     selectDirectoryDialog = async () => {
-        console.log('Opening directory selection dialog');
         window.electronAPI.selectDirectory();
-    
         window.electronAPI.onDirectorySelected((path) => {
             console.log('Directory selected:', path);  // 调试日志
             this.setState({ repository: path ,
@@ -139,7 +138,7 @@ class MainPage extends React.Component {
     //获取 commit 列表
     fetchCommits = async (path) => {
         try {
-            const response = await fetch('http://localhost:8080/api/commit', {
+            const response = await fetch('http://localhost:8080/api/commits', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -155,9 +154,19 @@ class MainPage extends React.Component {
             if (commitList.length > 0) {
                 const earliestDate = moment(commitList[commitList.length - 1].commitTime, 'YYYY-MM-DD'); // 假设 commitList 按照时间顺序排列
                 const latestDate = moment(commitList[0].commitTime, 'YYYY-MM-DD'); // 假设 commitList 按照时间顺序排列
+
+                const commitMap = {};
+                commitList.forEach(commit => {
+                    commitMap[commit.commitId] = {
+                        commitMessage: commit.message,
+                        commitAuthor: commit.author,
+                    };
+                });
+
                 this.setState({ 
                     commits: commitList,
                     filteredCommits: commitList,
+                    commitMap,
                     earliestDate,
                     latestDate,
                     dateRange: [earliestDate, latestDate],
@@ -190,17 +199,27 @@ class MainPage extends React.Component {
             return commitDate.isBetween(startDate, endDate, null, '[]');
         });
 
-        this.setState({ filteredCommits, commitid: '' }); // 重置选中的 commitid
+        this.setState({ filteredCommits, commitid: '' });
     }
     
     //commit选择框
     renderCommitSelect = () => {
-        const { filteredCommits, commitid } = this.state;
+        const { filteredCommits, commitid, commitMap } = this.state;
         return (
             <FormItem>
                 <Select
                     value={commitid}
-                    onSelect={(value) => {this.setState({ commitid: value }, this.fetchData);}}
+                    onSelect={(value) => {
+                        const selectedCommit = commitMap[value];
+                        if (selectedCommit) {
+                            this.setState({ 
+                                commitid: value, 
+                                commitMessage: selectedCommit.commitMessage, // 直接使用选中的提交信息
+                                commitAuthor: selectedCommit.commitAuthor // 直接使用选中的用户信息
+                            }, this.fetchData);
+                        }
+                    }}
+                    
                     style={{ width: '100%'}}
                     showSearch
                     filterOption={(input, option) => {
@@ -223,18 +242,17 @@ class MainPage extends React.Component {
         const { commitid, repository } = this.state;
     
         if (!commitid || !repository) {
-            message.error('Please provide repository_path and commitid.');
+            message.error('Please provide repository and commitid.');
             return;
         }
     
         try {
-            // 发送 POST 请求到后端获取文件 diff 和 refactorings
-            const response = await fetch('http://localhost:8080/api/diff', {
+            const response = await fetch('http://localhost:8080/api/detect', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ repository, commitid }),
+                body: JSON.stringify({ repository: repository, commitId: commitid}),
             });
     
             if (!response.ok) {
@@ -359,7 +377,6 @@ class MainPage extends React.Component {
                 // 如果类型未被选中,则添加到选中列表
                 newSelectedTypes = [...prevState.PieSelectedTypes, data.type];
             }
-            console.log('New selected types:', newSelectedTypes);
             return { PieSelectedTypes: newSelectedTypes };
         });
     }
@@ -386,25 +403,43 @@ class MainPage extends React.Component {
         return current.isBefore(earliestDate, 'day') || current.isAfter(latestDate, 'day');
     };
 
+    //复制函数
+    copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text).then(() => {
+            message.success('Commit ID copied!'); // 提示用户已复制
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            message.error('Failed to copy commit ID.');
+        });
+    };
+
 
     render() {
-        const { diffResults, fileUploaded, repository, commitid, commits,highlightedFiles, 
-            isFilteredByLocation, refactorings, showType, isDetect, dateRange,currentPage} = this.state;
+        const { diffResults, fileUploaded, repository, commitid, commits,highlightedFiles, commitAuthor, commitMessage,
+            isFilteredByLocation, refactorings, showType, isDetect, dateRange, currentPage, detecttype} = this.state;
         const refactoringData = this.getRefactoringTypeData();
-        const pieConfig = PieConfig(refactoringData, this.state.PieSelectedTypes); //饼图配置
-    
+        
         const isFileMatched = (filePath, resultFileName) => {
             if (filePath === resultFileName) return true;
             const [oldPath, newPath] = resultFileName.split(" --> ").map(p => p.trim());
             return filePath === oldPath || filePath === newPath;
         };
         const totalChanges = this.calculateTotalChanges();
+        const tooltipStyle = {
+            fontSize: '12px',
+            whiteSpace: 'nowrap',
+            maxWidth: 'none',
+            lineHeight: '1',
+            minHeight: 'auto',
+            userSelect: 'none',
+            borderRadius: '6px'   
+        };
 
         return (
             <div className={s.wrapper}>
                 <Form {...layout} onFinish={this.handleSubmit} className={s.handleSubmit}>
                     
-                    <div className={s.bottonandtext}>
+                    <div className={s.buttonandtext}>
                         <div className={s.repositorylabel}>Repository :</div>
                         <div className={s.inputandbutton}>
                             <div>
@@ -420,11 +455,37 @@ class MainPage extends React.Component {
                                 </Button>
                             </div>
                         </div>
+                        <div className={s.detecttypelabel}>DetectType :</div>
+                        <div className={s.detcttypeselect}>
+                            <Select
+                                defaultValue = 'defaut'
+                                onSelect={(value) => {this.setState({ detecttype: value });}}
+                                className={s.detcttypeselectbody}
+                                style={{borderRadius: '4px'}}
+                                options={[
+                                    {
+                                      label: <span>Commit</span>,
+                                      title: 'Commit',
+                                      options: [
+                                        { label: <span>Between the previous commit</span>, value: 'defaut' },
+                                        { label: <span>Between two commits</span>, value: 'dc' },
+                                      ],
+                                    },
+                                    {
+                                      label: <span>Tag</span>,
+                                      title: 'Tag',
+                                      options: [
+                                        { label: <span>Between two tags</span>, value: 'dt' },
+                                      ],
+                                    },
+                                  ]}
+                            />
+                        </div>
                     </div>
                     
-
-                    <div>
-                        {commits.length > 0 &&(
+                    {/* 比较连续版本 */}
+                    {detecttype === 'defaut' && commits.length > 0 && (
+                        <div className={s.defaut}>
                             <div className={s.dataSelect}>
                                 <div className={s.dataSelectlabel}>DateRange :</div>
                                 <div className={s.dataSelectPicker}>
@@ -435,47 +496,36 @@ class MainPage extends React.Component {
                                     />
                                 </div>
                             </div>
-                        )}
-                    </div>
-
-                    <div>
-                        {commits.length > 0 &&(
-                                <div  className={s.CommitselectAndBotton}>
-                                    <div className={s.Commitlabel}>Commit ID :</div>
-                                    <div className ={s.commitselect}>
-                                        {this.renderCommitSelect()}
-                                    </div>
-                                    <div>
-                                        <Button type="primary" htmlType="submit" className={s.botton} disabled={!commitid}>
-                                            Detect
-                                        </Button>
-                                    </div>
+                            <div  className={s.CommitselectAndBotton}>
+                                <div className={s.Commitlabel}>Commit ID :</div>
+                                <div className ={s.commitselect}>
+                                    {this.renderCommitSelect()}
                                 </div>
-                        )}
-                    </div>
+                                <div>
+                                    <Button type="primary" htmlType="submit" className={s.button} disabled={!commitid}>
+                                        Detect
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 比较两个commit之间 */}
+                    {detecttype === 'dc' && commits.length > 0 && (
+                        <div>
+
+                        </div>
+                    )}
+
+                    {/* 比较两个版本之间 */}
+                    {detecttype === 'dt' && commits.length > 0 && (
+                        <div>
+
+                        </div>
+                    )}
+                    
                 </Form>
 
-                {/* 高亮时的返回键 */}
-                {isDetect && fileUploaded && isFilteredByLocation && (
-                    <Button
-                        icon={<ArrowLeftOutlined />}
-                        onClick={this.resetToAllFiles}
-                        style={{ 
-                            marginBottom: '15px', 
-                            marginLeft: '2%',
-                            color: '#666',
-                            fontSize: '14px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            backgroundColor: '#f5f5f5',
-                            border: '1px solid #e8e8e8',
-                            boxShadow: 'none'
-                        }}
-                        className={s.backButton}
-                    >
-                        BACK
-                    </Button>
-                )}
 
                 {/* 显示未高亮文件 */}
                 {!isDetect && fileUploaded && diffResults.length > 0 && (
@@ -503,6 +553,39 @@ class MainPage extends React.Component {
                             </div>
                         </Affix>
 
+                        <div className={s.messageandauthor}>
+                            <div className={s.message}>
+                                {commitMessage}
+                            </div>
+                            <div className={s.authorandcommit}>
+                                <div className={s.author}>
+                                    <span style={{ color: 'gray' }}>author:</span>
+                                    &nbsp;&nbsp;&nbsp;
+                                    {commitAuthor}
+                                </div>
+                                <div className={s.commit}>
+                                    <span style={{ color: 'gray', marginLeft: '20px' }}>commit</span>
+                                    &nbsp;
+                                    {commitid.substring(0, 7)}
+                                    <Tooltip 
+                                        placement="bottomRight" 
+                                        title={"Copy full SHA for " + commitid.substring(0, 7)}
+                                        overlayInnerStyle={tooltipStyle}  
+                                        autoAdjustOverflow={true}
+                                        mouseLeaveDelay={0}
+                                    >
+                                        <Button 
+                                            type="text"
+                                            onClick={() => this.copyToClipboard(commitid)} 
+                                            className={s.commitbutton}
+                                            icon={<CopyOutlined />}
+
+                                        />
+                                    </Tooltip>
+                                </div>
+                            </div>
+                        </div>
+
                         {diffResults.map((result, index) => (
                             <div key={index}>
                                 <ContentDiff
@@ -518,59 +601,73 @@ class MainPage extends React.Component {
                     </> 
                 )}
 
-                {/* 显示重构总结和饼图 */}
+                {/* 显示重构总结和重构列表 */}
                 {isDetect && !isFilteredByLocation && fileUploaded && (
                     <>
                         <div className={s.RefactoringSummary}>
-                            <RefactoringSummary data={refactoringData} />
+                            <RefactoringSummary 
+                                data={refactoringData} 
+                                refactorings={refactorings} 
+                                onPieSelect={this.handlePieSelect}
+                                PieSelectedTypes={this.state.PieSelectedTypes}
+                            />
                         </div>
-                        {refactorings.length > 0 && (
-                            <div className={s.pie}>
-                                <Pie {...pieConfig} onEvent={(chart, event) => {
-                                    if (event.type === 'element:click') {
-                                        this.handlePieSelect(event);
-                                    }
-                                }}/>
-                            </div>
-                        )}
-                    </>
-                )}
 
-                {/* 显示重构列表 */}
-                {isDetect && fileUploaded && !isFilteredByLocation &&(
-                    <NewRefactoringList 
-                        refactorings={this.getFilteredRefactorings()} 
-                        onHighlightDiff={this.handleHighlightDiff} 
-                        currentPage={currentPage}
-                        onPageChange={(page) => this.setState({ currentPage: page })}
-                    />
+                        <NewRefactoringList 
+                            refactorings={this.getFilteredRefactorings()} 
+                            onHighlightDiff={this.handleHighlightDiff} 
+                            currentPage={currentPage}
+                            onPageChange={(page) => this.setState({ currentPage: page })}
+                        />
+                    </>
                 )}
 
                 {/* 显示location之后的重构细节 */}
                 {isDetect && fileUploaded && isFilteredByLocation &&(
-                    <RefactoringDetail
-                        refactorings={this.getFilteredRefactorings()} 
-                    />
+                    <>
+                        <Button
+                            icon={<ArrowLeftOutlined />}
+                            onClick={this.resetToAllFiles}
+                            style={{ 
+                                marginBottom: '15px', 
+                                marginLeft: '2%',
+                                color: '#666',
+                                fontSize: '14px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                backgroundColor: '#f5f5f5',
+                                border: '1px solid #e8e8e8',
+                                boxShadow: 'none'
+                            }}
+                            className={s.backButton}
+                        >
+                            BACK
+                        </Button>
+
+                        <RefactoringDetail
+                            refactorings={this.getFilteredRefactorings()} 
+                        />
+
+                        {diffResults.map((result, index) => {
+                            const matchedFiles = highlightedFiles.filter(f => isFileMatched(f.filePath, result.fileName));
+                            const shouldRender = matchedFiles.length > 0;
+        
+                            return shouldRender && (
+                                <div key={index}>
+                                    <ContentDiff
+                                        isFile={this.isFile}
+                                        diffArr={result.diff}
+                                        highlightedLines={matchedFiles}
+                                        showType={showType}
+                                        fileName={result.fileName}
+                                        commitId = {commitid}   
+                                    />
+                                </div>
+                            );
+                        })}
+                    </>
                 )}
-
-                {/* 显示高亮文件 */}
-                {isDetect && fileUploaded && isFilteredByLocation && diffResults.length > 0 && diffResults.map((result, index) => {
-                    const matchedFiles = highlightedFiles.filter(f => isFileMatched(f.filePath, result.fileName));
-                    const shouldRender = matchedFiles.length > 0;
-
-                    return shouldRender && (
-                        <div key={index}>
-                            <ContentDiff
-                                isFile={this.isFile}
-                                diffArr={result.diff}
-                                highlightedLines={matchedFiles}
-                                showType={showType}
-                                fileName={result.fileName}
-                                commitId = {commitid}   
-                            />
-                        </div>
-                    );
-                })}
+                
             </div>
         );
     }
