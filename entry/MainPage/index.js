@@ -39,11 +39,22 @@ class MainPage extends React.Component {
         dateRange: null, //存储选择的日期范围
         latestDate: null, //记录最晚时间
         earliestDate: null, //记录最早时间
+        latestDate_dc1: null, //记录最晚时间
+        earliestDate_dc1: null, //记录最早时间
+        latestDate_dc2: null, //记录最晚时间
+        earliestDate_dc2: null, //记录最早时间
+        dateRange_dc1: null, //存储选择的日期范围
+        dateRange_dc2: null,
         filteredCommits: [], //存储过滤后的 commits
+        filteredCommits_dc1: [],
+        filteredCommits_dc2: [],
         isScrollVisible: false, // 是否显示回到顶部按钮
         currentPage: 1, //用于存储list当前页码
         detecttype: 'defaut',
         commitMap: {}, //commit到message和author的映射
+        startCommitId:'',
+        endCommitId:'',
+
     }
     
     //计算所有文件的增删行数
@@ -156,21 +167,35 @@ class MainPage extends React.Component {
                 const latestDate = moment(commitList[0].commitTime, 'YYYY-MM-DD'); // 假设 commitList 按照时间顺序排列
 
                 const commitMap = {};
-                commitList.forEach(commit => {
+                commitList.forEach((commit,index) => {
                     commitMap[commit.commitId] = {
                         commitMessage: commit.message,
                         commitAuthor: commit.author,
+                        commitIndex: index,
+                        commitTime: moment(commit.commitTime, 'YYYY-MM-DD'),
                     };
                 });
 
                 this.setState({ 
                     commits: commitList,
                     filteredCommits: commitList,
+                    filteredCommits_dc1: commitList,
+                    filteredCommits_dc2: commitList,
                     commitMap,
                     earliestDate,
                     latestDate,
+                    latestDate_dc2: latestDate, 
+                    earliestDate_dc2: earliestDate, 
+                    latestDate_dc1: latestDate, 
+                    earliestDate_dc1: earliestDate, 
                     dateRange: [earliestDate, latestDate],
-                }, this.filterCommits);
+                    dateRange_dc1: [earliestDate, latestDate],
+                    dateRange_dc2: [earliestDate, latestDate],
+                },() => {
+                    this.filterCommits();
+                    this.filterCommits_dc('dateRange_dc1', -1);
+                    this.filterCommits_dc('dateRange_dc2', -1);
+                });
             } else {
                 message.warning('没有找到提交记录。');
             }
@@ -182,10 +207,17 @@ class MainPage extends React.Component {
 
     //处理时间范围的函数
     handleDateRangeChange = (dates, dateStrings) => {
-        this.setState({ dateRange:dates }, this.filterCommits);
+        this.setState({ dateRange:dates }, () => { this.filterCommits()});
+    }
+    handleDateRangeChange_dc1 = (dates, dateStrings) => {
+        this.setState({ dateRange_dc1:dates },  () => {this.filterCommits_dc('dateRange_dc1', -1)});
+    }
+    handleDateRangeChange_dc2 = (dates, dateStrings) => {
+        this.setState({ dateRange_dc2:dates },  () => {this.filterCommits_dc('dateRange_dc2', -1)});
     }
 
-    //根据时间范围过滤commits
+
+    //根据时间过滤commits
     filterCommits = () => {
         const { commits, dateRange } = this.state;
         if (!dateRange || dateRange.length !== 2) {
@@ -201,6 +233,45 @@ class MainPage extends React.Component {
 
         this.setState({ filteredCommits, commitid: '' });
     }
+
+    filterCommits_dc = (type, commitindex) => {
+        const { commits, dateRange_dc1, dateRange_dc2, startCommitId, endCommitId} = this.state;
+        const range = type === 'dateRange_dc1' ? dateRange_dc1 : dateRange_dc2;
+        const filteredCommitsKey = type === 'dateRange_dc1' ? 'filteredCommits_dc1' : 'filteredCommits_dc2';
+
+        if (!range || range.length !== 2) {
+            this.setState({ [filteredCommitsKey]: commits });
+            return;
+        }
+
+        const [startDate, endDate] = range;
+        let pre_filteredCommits = [];
+        if(commitindex === -1){
+            pre_filteredCommits = commits;
+        }
+        else{
+            pre_filteredCommits = type === 'dateRange_dc1' ? commits.slice(commitindex + 1,) : commits.slice(0 , commitindex);
+        }
+        console.log(pre_filteredCommits);
+        const filteredCommits = pre_filteredCommits.filter(commit => {
+            const commitDate = moment(commit.commitTime, 'YYYY-MM-DD');
+            return commitDate.isBetween(startDate, endDate, null, '[]');
+        });
+        if( type === 'dateRange_dc1'){
+            if (!filteredCommits.some(commit => commit.commitId === startCommitId)) {
+                this.setState({ [filteredCommitsKey]: filteredCommits, startCommitId: '' });
+            } else {
+                this.setState({ [filteredCommitsKey]: filteredCommits });
+            }
+        }
+        else{
+            if (!filteredCommits.some(commit => commit.commitId === endCommitId)) {
+                this.setState({ [filteredCommitsKey]: filteredCommits, endCommitId: '' });
+            } else {
+                this.setState({ [filteredCommitsKey]: filteredCommits });
+            }
+        }
+    }
     
     //commit选择框
     renderCommitSelect = () => {
@@ -214,8 +285,8 @@ class MainPage extends React.Component {
                         if (selectedCommit) {
                             this.setState({ 
                                 commitid: value, 
-                                commitMessage: selectedCommit.commitMessage, // 直接使用选中的提交信息
-                                commitAuthor: selectedCommit.commitAuthor // 直接使用选中的用户信息
+                                commitMessage: selectedCommit.commitMessage,
+                                commitAuthor: selectedCommit.commitAuthor
                             }, this.fetchData);
                         }
                     }}
@@ -236,6 +307,62 @@ class MainPage extends React.Component {
             </FormItem>
         );
     };
+
+    renderCommitSelect_dc = (isStart) => {
+        const { filteredCommits_dc1, filteredCommits_dc2, startCommitId, endCommitId, commitMap, dateRange_dc1, dateRange_dc2} = this.state;
+        const filteredCommitsByDate = isStart ? filteredCommits_dc1 : filteredCommits_dc2;
+
+        return (
+            <FormItem>
+                <Select
+                    value={isStart ? startCommitId : endCommitId}
+                    onSelect={(value) => {
+                        const selectedCommit = commitMap[value];
+                        this.setState({ 
+                            [isStart ? 'startCommitId' : 'endCommitId']: value 
+                        });
+                        if(isStart){
+                            const [startDate, endDate] = dateRange_dc2;
+                            this.setState({
+                                dateRange_dc2 : [selectedCommit.commitTime, endDate], 
+                                earliestDate_dc2 : selectedCommit.commitTime,
+                            },() => {
+                                this.filterCommits_dc('dateRange_dc2', selectedCommit.commitIndex);
+                                if(endCommitId){
+                                    this.fetchData_dc();
+                                }
+                            });
+                        }
+                        else{
+                            const [startDate, endDate] = dateRange_dc1;
+                            this.setState({
+                                dateRange_dc1 : [startDate, selectedCommit.commitTime],
+                                latestDate_dc1 : selectedCommit.commitTime,
+                            },() => {
+                                this.filterCommits_dc('dateRange_dc1', selectedCommit.commitIndex);
+                                if(startCommitId){
+                                    this.fetchData_dc();
+                                }
+                            });
+                        }
+                    }}
+                    style={{ width: '100%' }}
+                    showSearch
+                    filterOption={(input, option) => {
+                        const commitInfo = option?.children?.toString().toLowerCase() || '';
+                        return commitInfo.indexOf(input.toLowerCase()) >= 0;
+                    }}
+                >
+                    {filteredCommitsByDate.map((commit, index) => (
+                        <Select.Option key={index} value={commit.commitId}>
+                            [{commit.commitTime}]{" "}{commit.commitId}
+                        </Select.Option>
+                    ))}
+                </Select>
+            </FormItem>
+        );
+    };
+
 
     // 负责从后端获取数据
     fetchData = async () => {
@@ -291,6 +418,59 @@ class MainPage extends React.Component {
         }
     };
 
+    // 负责从后端获取数据
+    fetchData_dc = async () => {
+        const {repository, startCommitId, endCommitId} = this.state;
+    
+        if (! repository || !startCommitId || !endCommitId) {
+            message.error('Please provide repository and two commitid');
+            return;
+        }
+    
+        try {
+            const response = await fetch('http://localhost:8080/api/detectBC', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ repository: repository, startCommitId: startCommitId, endCommitId: endCommitId}),
+            });
+    
+            if (!response.ok) {
+                throw new Error('Network response was not ok.');
+            }
+    
+            const json = await response.json();
+    
+            if (json.results && json.results.length > 0) {
+                const firstResult = json.results[0];
+                const files = firstResult.files;
+    
+                if (files && files.length > 0) {
+                    const diffResults = await Promise.all(files.map(async (file) => ({
+                        fileName: file.name,
+                        diff: await this.actDiff(file.oldCode, file.newCode),
+                    })));
+    
+                    this.setState({
+                        diffResults,
+                        refactorings: firstResult.refactorings || [],
+                        fileUploaded: true ,
+                        isFilteredByLocation: false ,
+                        showType: SHOW_TYPE.NORMAL,
+                        isDetect:false,
+                    });
+                } else {
+                    message.error('No files found in JSON.');
+                }
+            } else {
+                message.error('Invalid JSON format: Missing results array.');
+            }
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            message.error('Error fetching data.');
+        }
+    };
 
     handleHighlightDiff = (leftSideLocations, rightSideLocations, Description) => {
         const { highlightedFiles, refactorings } = this.state;
@@ -402,6 +582,16 @@ class MainPage extends React.Component {
         if (!current) return false;
         return current.isBefore(earliestDate, 'day') || current.isAfter(latestDate, 'day');
     };
+    disabledDate_dc1 = (current) => {
+        const { earliestDate_dc1, latestDate_dc1 } = this.state;
+        if (!current) return false;
+        return current.isBefore(earliestDate_dc1, 'day') || current.isAfter(latestDate_dc1, 'day');
+    };
+    disabledDate_dc2 = (current) => {
+        const { earliestDate_dc2, latestDate_dc2 } = this.state;
+        if (!current) return false;
+        return current.isBefore(earliestDate_dc2, 'day') || current.isAfter(latestDate_dc2, 'day');
+    };
 
     //复制函数
     copyToClipboard = (text) => {
@@ -415,8 +605,8 @@ class MainPage extends React.Component {
 
 
     render() {
-        const { diffResults, fileUploaded, repository, commitid, commits,highlightedFiles, commitAuthor, commitMessage,
-            isFilteredByLocation, refactorings, showType, isDetect, dateRange, currentPage, detecttype} = this.state;
+        const { diffResults, fileUploaded, repository, commitid, commits,highlightedFiles, commitAuthor, commitMessage, latestDate, earliestDate,
+            isFilteredByLocation, refactorings, showType, isDetect, dateRange, currentPage, detecttype, dateRange_dc1, dateRange_dc2, startCommitId, endCommitId} = this.state;
         const refactoringData = this.getRefactoringTypeData();
         
         const isFileMatched = (filePath, resultFileName) => {
@@ -459,7 +649,27 @@ class MainPage extends React.Component {
                         <div className={s.detcttypeselect}>
                             <Select
                                 defaultValue = 'defaut'
-                                onSelect={(value) => {this.setState({ detecttype: value });}}
+                                onSelect={(value) => {
+                                    this.setState({ 
+                                        detecttype: value, 
+                                        fileUploaded: false, 
+                                        isDetect: false, 
+                                        isFilteredByLocation: false,
+                                        commitid: '',
+                                        dateRange: [earliestDate,latestDate],
+                                        dateRange_dc1: [earliestDate,latestDate], 
+                                        dateRange_dc2: [earliestDate,latestDate],
+                                        filteredCommits: commits,
+                                        filteredCommits_dc1:commits,
+                                        filteredCommits_dc2:commits,
+                                        earliestDate_dc1:earliestDate,
+                                        earliestDate_dc2:earliestDate,
+                                        latestDate_dc1:latestDate,
+                                        latestDate_dc2:latestDate,
+                                        startCommitId: '',
+                                        endCommitId: ''
+                                    });
+                                }}
                                 className={s.detcttypeselectbody}
                                 style={{borderRadius: '4px'}}
                                 options={[
@@ -469,6 +679,7 @@ class MainPage extends React.Component {
                                       options: [
                                         { label: <span>Between the previous commit</span>, value: 'defaut' },
                                         { label: <span>Between two commits</span>, value: 'dc' },
+                                        { label: <span>All between two commits</span>, value: 'dac' },
                                       ],
                                     },
                                     {
@@ -476,6 +687,7 @@ class MainPage extends React.Component {
                                       title: 'Tag',
                                       options: [
                                         { label: <span>Between two tags</span>, value: 'dt' },
+                                        { label: <span>All between two tags</span>, value: 'dat' },
                                       ],
                                     },
                                   ]}
@@ -512,8 +724,47 @@ class MainPage extends React.Component {
 
                     {/* 比较两个commit之间 */}
                     {detecttype === 'dc' && commits.length > 0 && (
-                        <div>
+                        <div className={s.dc}>
+                            <div className={s.dataSelect}>
+                                <div className={s.dataSelectlabel}>DateRange :</div>
+                                <div className={s.dataSelectPicker}>
+                                    <RangePicker 
+                                        onChange={this.handleDateRangeChange_dc1}
+                                        value={dateRange_dc1}
+                                        disabledDate={this.disabledDate_dc1}
+                                    />
+                                </div>
+                            </div>
 
+                            <div  className={s.dc_commitselect}>
+                                <div className={s.Commitlabel}>Start ID:</div>
+                                <div className ={s.commitselect}>
+                                    {this.renderCommitSelect_dc(true)}
+                                </div>
+                            </div>
+
+                            <div className={s.dataSelect}>
+                                <div className={s.dataSelectlabel}>DateRange :</div>
+                                <div className={s.dataSelectPicker}>
+                                    <RangePicker 
+                                        onChange = {this.handleDateRangeChange_dc2}
+                                        value={dateRange_dc2}
+                                        disabledDate={this.disabledDate_dc2}
+                                    />
+                                </div>
+                            </div>
+
+                            <div  className={s.dc_commitselectandbutton}>
+                                <div className={s.Commitlabel}>End ID :</div>
+                                <div className ={s.commitselect}>
+                                    {this.renderCommitSelect_dc(false)}
+                                </div>
+                                <div>
+                                    <Button type="primary" htmlType="submit" className={s.button} disabled={!startCommitId && !endCommitId}>
+                                        Detect
+                                    </Button>
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -523,7 +774,6 @@ class MainPage extends React.Component {
 
                         </div>
                     )}
-                    
                 </Form>
 
 
@@ -553,7 +803,7 @@ class MainPage extends React.Component {
                             </div>
                         </Affix>
 
-                        <div className={s.messageandauthor}>
+                        {detecttype === 'defaut' && (<div className={s.messageandauthor}>
                             <div className={s.message}>
                                 {commitMessage}
                             </div>
@@ -585,6 +835,7 @@ class MainPage extends React.Component {
                                 </div>
                             </div>
                         </div>
+                        )}
 
                         {diffResults.map((result, index) => (
                             <div key={index}>

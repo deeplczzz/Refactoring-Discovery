@@ -76,7 +76,7 @@ export default class RefactoringList extends React.Component {
                 <div className={s.listtitle}>Refactorings</div>
                 <div className={s.listbody}>
                     <List
-                        dataSource={refactorings}
+                        dataSource={refactorings.sort((a, b) => a.type.localeCompare(b.type))}
                         pagination={{
                             current: currentPage,
                             pageSize: pageSize,

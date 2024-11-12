@@ -90,6 +90,20 @@
     margin-right: 2%;
 }
 
+.index__dc_commitselect--rquq5{
+    display: grid;
+    grid-template-columns: 90px 550px;
+    margin-left: 2%;
+    margin-right: 2%;
+}
+
+.index__dc_commitselectandbutton--GQ6sM{
+    display: grid;
+    grid-template-columns: 90px 550px 90px;
+    margin-left: 2%;
+    margin-right: 2%;
+}
+
 .index__commitselect--1bVNQ{
     margin-right: 0px;
     margin-left: 20px;
@@ -106,6 +120,11 @@
     grid-template-rows: 60px 60px;
 }
 
+.index__dc--23X3H{
+    display: grid;
+    grid-template-rows: 60px 60px 60px 60px;
+}
+
 .index__RefactoringSummary--2HMGu{
     margin-left: 2%;
     margin-right: 2%;
@@ -114,6 +133,13 @@
 .index__dataSelect--Gr3q9{
     display: grid;
     grid-template-columns: 90px 250px;
+    margin-right: 2%;
+    margin-left: 2%;
+}
+
+.index__dc_dataSelect--dwR6c{
+    display: grid;
+    grid-template-columns: 90px 250px ;
     margin-right: 2%;
     margin-left: 2%;
 }

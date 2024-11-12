@@ -90,6 +90,20 @@
     margin-right: 2%;
 }
 
+.dc_commitselect{
+    display: grid;
+    grid-template-columns: 90px 550px;
+    margin-left: 2%;
+    margin-right: 2%;
+}
+
+.dc_commitselectandbutton{
+    display: grid;
+    grid-template-columns: 90px 550px 90px;
+    margin-left: 2%;
+    margin-right: 2%;
+}
+
 .commitselect{
     margin-right: 0px;
     margin-left: 20px;
@@ -106,6 +120,11 @@
     grid-template-rows: 60px 60px;
 }
 
+.dc{
+    display: grid;
+    grid-template-rows: 60px 60px 60px 60px;
+}
+
 .RefactoringSummary{
     margin-left: 2%;
     margin-right: 2%;
@@ -114,6 +133,13 @@
 .dataSelect{
     display: grid;
     grid-template-columns: 90px 250px;
+    margin-right: 2%;
+    margin-left: 2%;
+}
+
+.dc_dataSelect{
+    display: grid;
+    grid-template-columns: 90px 250px ;
     margin-right: 2%;
     margin-left: 2%;
 }
