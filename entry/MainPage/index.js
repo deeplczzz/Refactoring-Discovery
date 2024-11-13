@@ -1,4 +1,4 @@
-import React from 'react';
+import React,{ useState, useEffect } from 'react';
 import s from './index.css';
 import {Button, Form, message, Select, Tooltip, DatePicker, Affix, Input} from 'antd';
 import ContentDiff from '../contentDiff';
@@ -54,8 +54,16 @@ class MainPage extends React.Component {
         commitMap: {}, //commit到message和author的映射
         startCommitId:'',
         endCommitId:'',
-
+        treeFilterRefactorings:[], //被文件树过滤的重构
+        isFilteredbyTree: false,
+        selectedKeys: [],
     }
+
+    isFetchingRefactoring = false; //标识是否正在进行重构挖掘
+    isFetchingRefactoring_dc = false; //标识是否正在进行重构挖掘
+    lastRequestParams = {}; //记录上一次请求访问的参数
+    
+    
     
     //计算所有文件的增删行数
     calculateTotalChanges = () => {
@@ -140,7 +148,10 @@ class MainPage extends React.Component {
             this.setState({ repository: path ,
                             fileUploaded:false,
                             isFilteredByLocation: false,
-                            showType:SHOW_TYPE.NORMAL
+                            showType:SHOW_TYPE.NORMAL,
+                            commitid:'',
+                            startCommitId:'',
+                            endCommitId:''
             });
             this.fetchCommits(path);
         });
@@ -252,7 +263,6 @@ class MainPage extends React.Component {
         else{
             pre_filteredCommits = type === 'dateRange_dc1' ? commits.slice(commitindex + 1,) : commits.slice(0 , commitindex);
         }
-        console.log(pre_filteredCommits);
         const filteredCommits = pre_filteredCommits.filter(commit => {
             const commitDate = moment(commit.commitTime, 'YYYY-MM-DD');
             return commitDate.isBetween(startDate, endDate, null, '[]');
@@ -287,7 +297,7 @@ class MainPage extends React.Component {
                                 commitid: value, 
                                 commitMessage: selectedCommit.commitMessage,
                                 commitAuthor: selectedCommit.commitAuthor
-                            }, this.fetchData);
+                            }, this.fetchDiffFile);
                         }
                     }}
                     
@@ -329,7 +339,7 @@ class MainPage extends React.Component {
                             },() => {
                                 this.filterCommits_dc('dateRange_dc2', selectedCommit.commitIndex);
                                 if(endCommitId){
-                                    this.fetchData_dc();
+                                    this.fetchDiffFile_dc();
                                 }
                             });
                         }
@@ -341,7 +351,7 @@ class MainPage extends React.Component {
                             },() => {
                                 this.filterCommits_dc('dateRange_dc1', selectedCommit.commitIndex);
                                 if(startCommitId){
-                                    this.fetchData_dc();
+                                    this.fetchDiffFile_dc();
                                 }
                             });
                         }
@@ -363,8 +373,10 @@ class MainPage extends React.Component {
         );
     };
 
-
-    // 负责从后端获取数据
+    /**
+     * 
+     * @deprecated 从后端一次性获取diff文件和重构列表 效率较低
+     */
     fetchData = async () => {
         const { commitid, repository } = this.state;
     
@@ -418,7 +430,10 @@ class MainPage extends React.Component {
         }
     };
 
-    // 负责从后端获取数据
+    /**
+     * 
+     * @deprecated 从后端一次性获取diff文件和重构列表 between commit 版本 效率较低 即将废除
+     */
     fetchData_dc = async () => {
         const {repository, startCommitId, endCommitId} = this.state;
     
@@ -463,6 +478,244 @@ class MainPage extends React.Component {
                 } else {
                     message.error('No files found in JSON.');
                 }
+            } else {
+                message.error('Invalid JSON format: Missing results array.');
+            }
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            message.error('Error fetching data.');
+        }
+    };
+
+    //负责仅从后端获取oldode以及newcode
+    fetchDiffFile = async () => {
+        const { commitid, repository } = this.state;
+    
+        if (!commitid || !repository) {
+            message.error('Please provide repository and commitid.');
+            return;
+        }
+    
+        try {
+            const response = await fetch('http://localhost:8080/api/getDiff', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ repository: repository, commitId: commitid}),
+            });
+    
+            if (!response.ok) {
+                throw new Error('Network response was not ok.');
+            }
+    
+            const diffFiles = await response.json();
+    
+            if (diffFiles.length > 0) {
+                const diffResults = await Promise.all(diffFiles.map(async (file) => ({
+                    fileName: file.name,
+                    diff: await this.actDiff(file.oldCode, file.newCode),
+                })));
+                this.setState({
+                    diffResults,
+                    fileUploaded: true ,
+                    isFilteredByLocation: false ,
+                    showType: SHOW_TYPE.NORMAL,
+                    isDetect:false,
+                });
+            } else {
+                message.error('No diff files found in JSON.');
+            }
+        } catch (error) {
+            console.error('Error fetching diff files:', error);
+            message.error('Error fetching diff files.');
+        }
+    };
+
+    //负责仅从后端获取oldode以及newcode （两个commit版本）
+    fetchDiffFile_dc = async () => {
+        const { startCommitId,endCommitId, repository } = this.state;
+    
+        if (!startCommitId || !repository || !endCommitId) {
+            message.error('Please provide repository and two commitid.');
+            return;
+        }
+    
+        try {
+            const response = await fetch('http://localhost:8080/api/getDiffBC', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ repository: repository, startCommitId: startCommitId, endCommitId: endCommitId}),
+            });
+    
+            if (!response.ok) {
+                throw new Error('Network response was not ok.');
+            }
+    
+            const diffFiles = await response.json();
+    
+            if (diffFiles.length > 0) {
+                const diffResults = await Promise.all(diffFiles.map(async (file) => ({
+                    fileName: file.name,
+                    diff: await this.actDiff(file.oldCode, file.newCode),
+                })));
+                this.setState({
+                    diffResults,
+                    fileUploaded: true ,
+                    isFilteredByLocation: false ,
+                    showType: SHOW_TYPE.NORMAL,
+                    isDetect:false,
+                });
+            } else {
+                message.error('No diff files found in JSON.');
+            }
+        } catch (error) {
+            console.error('Error fetching diff files:', error);
+            message.error('Error fetching diff files.');
+        }
+    };
+
+    //用于从后端获取重构
+    fetchRefactoring = async () => {
+        const { commitid, repository } = this.state;
+    
+        if(!commitid || !repository) {
+            message.error('Please provide repository and commitid.');
+            return;
+        }
+
+        if(this.isFetchingRefactoring){
+            return; //如果上一次没执行完，则不执行请求
+        }
+
+        if(this.lastRequestParams.commitid && this.lastRequestParams.commitid === commitid) {
+            return;  // 如果是相同的参数，则不执行请求
+        }
+
+        this.isFetchingRefactoring = true;  // 设置为正在请求中
+
+        try {
+            const response = await fetch('http://localhost:8080/api/detect', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ repository: repository, commitId: commitid}),
+            });
+    
+            if (!response.ok) {
+                throw new Error('Network response was not ok.');
+            }
+    
+            const json = await response.json();
+    
+            if (json.results && json.results.length > 0) {
+                const firstResult = json.results[0];
+                this.setState({
+                    refactorings: firstResult.refactorings || [],
+                    showType: SHOW_TYPE.HIGHLIGHT,
+                    isFilteredByLocation: false,
+                    PieSelectedTypes: [], 
+                    isDetect: true, 
+                });
+                this.isFetchingRefactoring = false;
+                this.lastRequestParams = { ...this.lastRequestParams, commitid };
+            } else {
+                message.error('Invalid JSON format: Missing results array.');
+                this.isFetchingRefactoring = false;
+            }
+        } catch (error) {
+            this.isFetchingRefactoring = false;
+            console.error('Error fetching data:', error);
+            message.error('Error fetching data.');
+        }
+    };
+
+    //用于从后端获取重构(between two commits)
+    fetchRefactoring_dc = async () => {
+        const { startCommitId,endCommitId, repository } = this.state;
+        
+        if (!startCommitId || !repository || !endCommitId) {
+            message.error('Please provide repository and two commitid.');
+            return;
+        }
+
+        if(this.isFetchingRefactoring_dc){
+            return; //如果上一次没执行完，则不执行请求
+        }
+
+        if (
+            (this.lastRequestParams.startCommitId && this.lastRequestParams.endCommitId) && 
+            (this.lastRequestParams.startCommitId === startCommitId && this.lastRequestParams.endCommitId === endCommitId)
+        ) {
+            return;  // 如果是相同的参数，则不执行请求
+        }
+
+        this.isFetchingRefactoring_dc = true;  // 设置为正在请求中
+
+        try {
+            const response = await fetch('http://localhost:8080/api/detectBC', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ repository: repository, startCommitId: startCommitId, endCommitId: endCommitId}),
+            });
+    
+            if (!response.ok) {
+                throw new Error('Network response was not ok.');
+            }
+    
+            const json = await response.json();
+    
+            if (json.results && json.results.length > 0) {
+                const firstResult = json.results[0];
+                this.setState({
+                    refactorings: firstResult.refactorings || [],
+                    showType: SHOW_TYPE.HIGHLIGHT,
+                    isFilteredByLocation: false,
+                    PieSelectedTypes: [], 
+                    isDetect: true, 
+                });
+                this.isFetchingRefactoring_dc = false;
+                this.lastRequestParams = { ...this.lastRequestParams, startCommitId, endCommitId}; //只有匹配成功的时候，才不能查询相同的
+            } else {
+                this.isFetchingRefactoring_dc = false;
+                message.error('Invalid JSON format: Missing results array.');
+            }
+        } catch (error) {
+            this.isFetchingRefactoring_dc = false;
+            console.error('Error fetching data:', error);
+            message.error('Error fetching data.');
+        }
+    };
+
+    //用于从后端获取重构(all between two commits)
+    fetchRefactoring_dac = async () => {
+        const { startCommitId,endCommitId, repository } = this.state;
+    
+        if (!startCommitId || !repository || !endCommitId) {
+            message.error('Please provide repository and two commitid.');
+            return;
+        }
+
+        try {
+            const response = await fetch('http://localhost:8080/api/detectAC', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ repository: repository, startCommitId: startCommitId, endCommitId: endCommitId}),
+            });
+    
+            if (!response.ok) {
+                throw new Error('Network response was not ok.');
+            }
+    
+            if (json.results && json.results.length > 0) {
+
             } else {
                 message.error('Invalid JSON format: Missing results array.');
             }
@@ -543,6 +796,17 @@ class MainPage extends React.Component {
         return Array.from(typeMap, ([type, value]) => ({ type, value }));
     }
 
+    //计算被树过滤后的重构类别的统计数据
+    getTreeFilterRefactoringTypeData = () => {
+        const { treeFilterRefactorings } = this.state;
+        if (treeFilterRefactorings.length === 0) return [];
+        const typeMap = new Map();
+        treeFilterRefactorings.forEach(({ type }) => {
+            typeMap.set(type, (typeMap.get(type) || 0) + 1);
+        });
+        return Array.from(typeMap, ([type, value]) => ({ type, value }));
+    }
+
     //处理饼图点击事件
     handlePieSelect = (event) => {
         const { data } = event.data || {};
@@ -563,17 +827,18 @@ class MainPage extends React.Component {
 
     //获取重构列表应该显示的重构信息
     getFilteredRefactorings = () => {
-        const { refactorings, PieSelectedTypes, isFilteredByLocation, filteredRefactoring } = this.state;
+        const { refactorings, PieSelectedTypes, isFilteredByLocation, filteredRefactoring, treeFilterRefactorings, isFilteredbyTree} = this.state;
 
         if (isFilteredByLocation) {
             return filteredRefactoring;
         }
 
-        if (PieSelectedTypes.length === 0) {
-            return refactorings;
-        }
+        let r = isFilteredbyTree ? treeFilterRefactorings : refactorings
 
-        return refactorings.filter(refactoring => PieSelectedTypes.includes(refactoring.type));
+        if (PieSelectedTypes.length === 0) {
+            return r;
+        }
+        return r.filter(refactoring => PieSelectedTypes.includes(refactoring.type));
     }
 
     // 禁用超出范围的日期
@@ -603,17 +868,34 @@ class MainPage extends React.Component {
         });
     };
 
+    //判断文件名是否匹配 尤其是在有--->的时候
+    isFileMatched = (filePath, resultFileName) => {
+        if (filePath === resultFileName) return true;
+        const [oldPath, newPath] = resultFileName.split(" --> ").map(p => p.trim());
+        return filePath === oldPath || filePath === newPath;
+    };
+
+    handleTreeFilterRefactorings = (filteredRefactorings) => {
+        this.setState({
+            treeFilterRefactorings: filteredRefactorings,
+            isFilteredbyTree : true,
+            PieSelectedTypes : [],
+        });
+    };
+
+    handleCleanTreeFilterRefactorings = () => {
+        this.setState({
+            treeFilterRefactorings: [],
+            isFilteredbyTree : false,
+            PieSelectedTypes : [],
+        });
+    };
+
 
     render() {
-        const { diffResults, fileUploaded, repository, commitid, commits,highlightedFiles, commitAuthor, commitMessage, latestDate, earliestDate,
+        const { diffResults, fileUploaded, repository, selectedKeys, commitid, commits,highlightedFiles, commitAuthor, commitMessage, latestDate, earliestDate, isFilteredbyTree,
             isFilteredByLocation, refactorings, showType, isDetect, dateRange, currentPage, detecttype, dateRange_dc1, dateRange_dc2, startCommitId, endCommitId} = this.state;
         const refactoringData = this.getRefactoringTypeData();
-        
-        const isFileMatched = (filePath, resultFileName) => {
-            if (filePath === resultFileName) return true;
-            const [oldPath, newPath] = resultFileName.split(" --> ").map(p => p.trim());
-            return filePath === oldPath || filePath === newPath;
-        };
         const totalChanges = this.calculateTotalChanges();
         const tooltipStyle = {
             fontSize: '12px',
@@ -624,11 +906,34 @@ class MainPage extends React.Component {
             userSelect: 'none',
             borderRadius: '6px'   
         };
+        
+        //文件树的点击操作
+        const onSelect = (keys, event) => {
+            const { selectedKeys } = this.state;
+            if (event.node.isLeaf){
+                // 如果当前选中的键已经在 selectedKeys 中，则移除它
+                if (selectedKeys.includes(keys[0])) {
+                    this.setState({
+                        selectedKeys: selectedKeys.filter(key => key !== keys[0]),
+                    });
+                    this.handleCleanTreeFilterRefactorings();
+                } else {
+                    this.setState({
+                        selectedKeys: keys,
+                    });
+                    const selectedFilePath = event.node.fullPath; //点击文件的完整路径
+                    const fileTreeRefactorings = refactorings.filter(refactoring =>
+                        refactoring.leftSideLocation.some(location => this.isFileMatched(selectedFilePath, location.filePath)) ||
+                        refactoring.rightSideLocation.some(location => this.isFileMatched(selectedFilePath, location.filePath))
+                    );
+                    this.handleTreeFilterRefactorings(fileTreeRefactorings);
+                }
+            }
+        };
 
         return (
             <div className={s.wrapper}>
-                <Form {...layout} onFinish={this.handleSubmit} className={s.handleSubmit}>
-                    
+                <div className={s.handleSubmit}>
                     <div className={s.buttonandtext}>
                         <div className={s.repositorylabel}>Repository :</div>
                         <div className={s.inputandbutton}>
@@ -714,7 +1019,7 @@ class MainPage extends React.Component {
                                     {this.renderCommitSelect()}
                                 </div>
                                 <div>
-                                    <Button type="primary" htmlType="submit" className={s.button} disabled={!commitid}>
+                                    <Button type="primary" onClick = {this.fetchRefactoring} className={s.button} disabled={!commitid}>
                                         Detect
                                     </Button>
                                 </div>
@@ -723,7 +1028,7 @@ class MainPage extends React.Component {
                     )}
 
                     {/* 比较两个commit之间 */}
-                    {detecttype === 'dc' && commits.length > 0 && (
+                    {(detecttype === 'dc' || detecttype === 'dac') && commits.length > 0 && (
                         <div className={s.dc}>
                             <div className={s.dataSelect}>
                                 <div className={s.dataSelectlabel}>DateRange :</div>
@@ -760,8 +1065,13 @@ class MainPage extends React.Component {
                                     {this.renderCommitSelect_dc(false)}
                                 </div>
                                 <div>
-                                    <Button type="primary" htmlType="submit" className={s.button} disabled={!startCommitId && !endCommitId}>
-                                        Detect
+                                    <Button 
+                                        type="primary" 
+                                        onClick={detecttype === 'dc' ? this.fetchRefactoring_dc : this.fetchRefactoring_dac} 
+                                        className={s.button} 
+                                        disabled={!startCommitId || !endCommitId}
+                                    >
+                                        {detecttype === 'dc' ? 'Detect' : 'Detect All'}
                                     </Button>
                                 </div>
                             </div>
@@ -774,7 +1084,8 @@ class MainPage extends React.Component {
 
                         </div>
                     )}
-                </Form>
+
+                </div>
 
 
                 {/* 显示未高亮文件 */}
@@ -857,10 +1168,13 @@ class MainPage extends React.Component {
                     <>
                         <div className={s.RefactoringSummary}>
                             <RefactoringSummary 
-                                data={refactoringData} 
+                                data={refactoringData}
+                                piedata={isFilteredbyTree ? this.getTreeFilterRefactoringTypeData() : refactoringData}
                                 refactorings={refactorings} 
                                 onPieSelect={this.handlePieSelect}
                                 PieSelectedTypes={this.state.PieSelectedTypes}
+                                selectedKeys={selectedKeys} 
+                                onTreeSelect={onSelect}
                             />
                         </div>
 
@@ -900,7 +1214,7 @@ class MainPage extends React.Component {
                         />
 
                         {diffResults.map((result, index) => {
-                            const matchedFiles = highlightedFiles.filter(f => isFileMatched(f.filePath, result.fileName));
+                            const matchedFiles = highlightedFiles.filter(f => this.isFileMatched(f.filePath, result.fileName));
                             const shouldRender = matchedFiles.length > 0;
         
                             return shouldRender && (

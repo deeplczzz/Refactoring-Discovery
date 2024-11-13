@@ -26,9 +26,7 @@
 
 .index__button--1wJb1{
     border-radius: 4px !important; /* 圆角 */
-    margin-left: 0px;
-    margin-right: 10%;
-    margin-top: 0%;
+    margin-left: 4%;
 }
 
 .index__handleSubmit--2lzLt{
@@ -85,21 +83,21 @@
 
 .index__CommitselectAndBotton--15zK0{
     display: grid;
-    grid-template-columns: 90px 550px auto;
+    grid-template-columns: 90px 450px auto;
     margin-left: 2%;
     margin-right: 2%;
 }
 
 .index__dc_commitselect--rquq5{
     display: grid;
-    grid-template-columns: 90px 550px;
+    grid-template-columns: 90px 450px;
     margin-left: 2%;
     margin-right: 2%;
 }
 
 .index__dc_commitselectandbutton--GQ6sM{
     display: grid;
-    grid-template-columns: 90px 550px 90px;
+    grid-template-columns: 90px 450px auto;
     margin-left: 2%;
     margin-right: 2%;
 }

@@ -7,7 +7,7 @@ import {AimOutlined, BarsOutlined, FileOutlined} from '@ant-design/icons';
 import { Pie } from '@ant-design/charts'; 
 import { PieConfig } from '../Pie-Chart/PieChart-Config';
 
-const RefactoringSummary = ({ data, refactorings, onPieSelect, PieSelectedTypes}) => {
+const RefactoringSummary = ({ data, piedata, refactorings, onPieSelect, PieSelectedTypes, selectedKeys, onTreeSelect}) => {
     const fileCountMap = {};
     
     refactorings.forEach(refactoring => {
@@ -29,7 +29,7 @@ const RefactoringSummary = ({ data, refactorings, onPieSelect, PieSelectedTypes}
     }));
 
     const totalRefactorings = data.reduce((acc, item) => acc + item.value, 0);
-    const pieConfig = PieConfig(data, PieSelectedTypes);
+    const pieConfig = PieConfig(piedata, PieSelectedTypes);
 
     //生成树形结构
     const buildTreeData = (fileCountMap) => {
@@ -41,7 +41,7 @@ const RefactoringSummary = ({ data, refactorings, onPieSelect, PieSelectedTypes}
 
             parts.forEach((part, index) => {
                 if (!currentLevel[part]) {
-                    currentLevel[part] = { children: {}, isLeaf: false };
+                    currentLevel[part] = { children: {}, isLeaf: false, fullPath: filePath };
                 }
                 if (index === parts.length - 1) {
                     currentLevel[part].count = count;
@@ -63,6 +63,7 @@ const RefactoringSummary = ({ data, refactorings, onPieSelect, PieSelectedTypes}
                     key: key,
                     children: children,
                     isLeaf: isLeaf,
+                    fullPath: value.fullPath,
                 };
             });
         };
@@ -100,7 +101,7 @@ const RefactoringSummary = ({ data, refactorings, onPieSelect, PieSelectedTypes}
                 rowKey="type"
             >
                 <Column title="TYPE" dataIndex="type" key="type" />
-                <Column title="COUNT" dataIndex="value" key="value" />
+                <Column title="COUNT" dataIndex="value" key="value" sorter={(a, b) => a.value - b.value}/>
             </Table>
 
             {refactorings.length > 0 && <div className={s.pieandtree}>
@@ -108,7 +109,8 @@ const RefactoringSummary = ({ data, refactorings, onPieSelect, PieSelectedTypes}
                         <DirectoryTree
                             treeData={treeData}
                             defaultExpandAll
-                            
+                            selectedKeys={selectedKeys} 
+                            onSelect={(keys, event) => onTreeSelect(keys, event)}
                         />
                 </div>
                 <div className={s.pie}>

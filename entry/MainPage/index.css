@@ -26,9 +26,7 @@
 
 .button{
     border-radius: 4px !important; /* 圆角 */
-    margin-left: 0px;
-    margin-right: 10%;
-    margin-top: 0%;
+    margin-left: 4%;
 }
 
 .handleSubmit{
@@ -85,21 +83,21 @@
 
 .CommitselectAndBotton{
     display: grid;
-    grid-template-columns: 90px 550px auto;
+    grid-template-columns: 90px 450px auto;
     margin-left: 2%;
     margin-right: 2%;
 }
 
 .dc_commitselect{
     display: grid;
-    grid-template-columns: 90px 550px;
+    grid-template-columns: 90px 450px;
     margin-left: 2%;
     margin-right: 2%;
 }
 
 .dc_commitselectandbutton{
     display: grid;
-    grid-template-columns: 90px 550px 90px;
+    grid-template-columns: 90px 450px auto;
     margin-left: 2%;
     margin-right: 2%;
 }
