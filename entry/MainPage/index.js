@@ -108,7 +108,14 @@ class MainPage extends React.Component {
     // 处理滚动事件
     handleScroll = () => {
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        this.setState({ isScrollVisible: scrollTop > 300 });
+        const isVisible = scrollTop > 300;
+
+        this.setState(prevState => {
+            if (prevState.isScrollVisible !== isVisible) {
+                return { isScrollVisible: isVisible };
+            }
+            return null; 
+        });
     }
 
     // 滚动到顶部
@@ -590,10 +597,6 @@ class MainPage extends React.Component {
             return; //如果上一次没执行完，则不执行请求
         }
 
-        if(this.lastRequestParams.commitid && this.lastRequestParams.commitid === commitid) {
-            return;  // 如果是相同的参数，则不执行请求
-        }
-
         this.isFetchingRefactoring = true;  // 设置为正在请求中
 
         try {
@@ -621,7 +624,6 @@ class MainPage extends React.Component {
                     isDetect: true, 
                 });
                 this.isFetchingRefactoring = false;
-                this.lastRequestParams = { ...this.lastRequestParams, commitid };
             } else {
                 message.error('Invalid JSON format: Missing results array.');
                 this.isFetchingRefactoring = false;
@@ -644,13 +646,6 @@ class MainPage extends React.Component {
 
         if(this.isFetchingRefactoring_dc){
             return; //如果上一次没执行完，则不执行请求
-        }
-
-        if (
-            (this.lastRequestParams.startCommitId && this.lastRequestParams.endCommitId) && 
-            (this.lastRequestParams.startCommitId === startCommitId && this.lastRequestParams.endCommitId === endCommitId)
-        ) {
-            return;  // 如果是相同的参数，则不执行请求
         }
 
         this.isFetchingRefactoring_dc = true;  // 设置为正在请求中
@@ -680,7 +675,6 @@ class MainPage extends React.Component {
                     isDetect: true, 
                 });
                 this.isFetchingRefactoring_dc = false;
-                this.lastRequestParams = { ...this.lastRequestParams, startCommitId, endCommitId}; //只有匹配成功的时候，才不能查询相同的
             } else {
                 this.isFetchingRefactoring_dc = false;
                 message.error('Invalid JSON format: Missing results array.');
@@ -894,7 +888,7 @@ class MainPage extends React.Component {
 
     render() {
         const { diffResults, fileUploaded, repository, selectedKeys, commitid, commits,highlightedFiles, commitAuthor, commitMessage, latestDate, earliestDate, isFilteredbyTree,
-            isFilteredByLocation, refactorings, showType, isDetect, dateRange, currentPage, detecttype, dateRange_dc1, dateRange_dc2, startCommitId, endCommitId} = this.state;
+            isFilteredByLocation, refactorings, showType, isDetect, dateRange, currentPage, detecttype, dateRange_dc1, dateRange_dc2, startCommitId, endCommitId, isScrollVisible} = this.state;
         const refactoringData = this.getRefactoringTypeData();
         const totalChanges = this.calculateTotalChanges();
         const tooltipStyle = {
@@ -1101,7 +1095,7 @@ class MainPage extends React.Component {
                                     <span className={s.deletionsline}>-{totalChanges.deletions}</span>
                                     <span className={s.lineschanged}>lines changed</span>
                                 </div>
-                                {this.state.isScrollVisible && (
+                                {isScrollVisible && (
                                     <Button 
                                         type="text" 
                                         icon={<ArrowUpOutlined />}

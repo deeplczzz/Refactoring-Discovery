@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React,  { useMemo, memo ,useCallback}  from 'react';
 import s from './summary.css';
 import { Table, Statistic, Tree} from 'antd';
 const { DirectoryTree } = Tree;
@@ -29,7 +29,14 @@ const RefactoringSummary = ({ data, piedata, refactorings, onPieSelect, PieSelec
     }));
 
     const totalRefactorings = data.reduce((acc, item) => acc + item.value, 0);
-    const pieConfig = PieConfig(piedata, PieSelectedTypes);
+    //const pieConfig = PieConfig(piedata, PieSelectedTypes);
+    const pieConfig = useMemo(() => PieConfig(piedata, PieSelectedTypes), [piedata, PieSelectedTypes]);
+
+    const onEvent = useCallback((chart, event) => {
+        if (event.type === 'element:click') {
+            onPieSelect(event); // 传递点击事件处理函数
+        }
+    }, [onPieSelect]);
 
     //生成树形结构
     const buildTreeData = (fileCountMap) => {
@@ -83,14 +90,14 @@ const RefactoringSummary = ({ data, piedata, refactorings, onPieSelect, PieSelec
                     prefix={<AimOutlined />}
                 />
                 <Statistic 
-                    title="Refactoring Type" 
-                    value={data.length} 
-                    prefix={<BarsOutlined />}
-                />
-                <Statistic 
                     title="Files Count" 
                     value={fileData.length}
                     prefix={<FileOutlined />}
+                />
+                <Statistic 
+                    title="Refactoring Type" 
+                    value={data.length} 
+                    prefix={<BarsOutlined />}
                 />
             </div>
 
@@ -114,15 +121,25 @@ const RefactoringSummary = ({ data, piedata, refactorings, onPieSelect, PieSelec
                         />
                 </div>
                 <div className={s.pie}>
-                    <Pie {...pieConfig} onEvent={(chart, event) => {
-                        if (event.type === 'element:click') {
-                            onPieSelect(event); // 传递点击事件处理函数
-                        }
-                    }}/>
+                    <Pie 
+                        {...pieConfig} 
+                        onEvent={onEvent}  
+                    />
                 </div>
             </div>}
         </div>
     );
 };
 
-export default RefactoringSummary;
+
+//export default RefactoringSummary;
+
+export default memo(RefactoringSummary, (prevProps, nextProps) => {
+    return (
+        prevProps.data === nextProps.data &&
+        prevProps.piedata === nextProps.piedata &&
+        prevProps.refactorings === nextProps.refactorings &&
+        prevProps.PieSelectedTypes === nextProps.PieSelectedTypes &&
+        prevProps.selectedKeys === nextProps.selectedKeys
+    );
+});
