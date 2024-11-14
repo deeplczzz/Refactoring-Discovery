@@ -107,15 +107,17 @@ class MainPage extends React.Component {
 
     // 处理滚动事件
     handleScroll = () => {
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const isVisible = scrollTop > 300;
-
-        this.setState(prevState => {
-            if (prevState.isScrollVisible !== isVisible) {
-                return { isScrollVisible: isVisible };
-            }
-            return null; 
-        });
+        const { isDetect } = this.state;
+        if(!isDetect){
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const isVisible = scrollTop > 300;
+            this.setState(prevState => {
+                if (prevState.isScrollVisible !== isVisible) {
+                    return { isScrollVisible: isVisible };
+                }
+                return null; 
+            });
+        }
     }
 
     // 滚动到顶部
