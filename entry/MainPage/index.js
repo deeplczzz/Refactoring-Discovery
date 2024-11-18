@@ -1,4 +1,4 @@
-import React,{ useState, useEffect } from 'react';
+import React from 'react';
 import s from './index.css';
 import {Button, Form, message, Select, Tooltip, DatePicker, Affix, Input} from 'antd';
 import ContentDiff from '../contentDiff';
@@ -45,7 +45,7 @@ class MainPage extends React.Component {
         earliestDate_dc2: null, //记录最早时间
         dateRange_dc1: null, //存储选择的日期范围
         dateRange_dc2: null,
-        filteredCommits: [], //存储过滤后的 commits
+        filteredCommits: [], //存储过滤后的 commits（选择框真正显示的commits）
         filteredCommits_dc1: [],
         filteredCommits_dc2: [],
         isScrollVisible: false, // 是否显示回到顶部按钮
@@ -139,7 +139,9 @@ class MainPage extends React.Component {
         }
     }
 
-    //处理点击detect按钮的事件
+    /**
+     * @deprecated 处理点击detect按钮的事件，目前将所有detect按钮功能分开，暂时不需要
+     */
     handleSubmit = async () => {
         this.setState({
             showType: SHOW_TYPE.HIGHLIGHT,
@@ -230,10 +232,22 @@ class MainPage extends React.Component {
         this.setState({ dateRange:dates }, () => { this.filterCommits()});
     }
     handleDateRangeChange_dc1 = (dates, dateStrings) => {
-        this.setState({ dateRange_dc1:dates },  () => {this.filterCommits_dc('dateRange_dc1', -1)});
+        const {commitMap,endCommitId} = this.state;
+        this.setState({ dateRange_dc1:dates },  () => {
+            if(endCommitId){
+                this.filterCommits_dc('dateRange_dc1', commitMap[endCommitId].commitIndex)
+            }
+            else {this.filterCommits_dc('dateRange_dc1', -1)};
+        });
     }
     handleDateRangeChange_dc2 = (dates, dateStrings) => {
-        this.setState({ dateRange_dc2:dates },  () => {this.filterCommits_dc('dateRange_dc2', -1)});
+        const {commitMap,startCommitId} = this.state;
+        this.setState({ dateRange_dc2:dates },  () => {
+            if(startCommitId){
+                this.filterCommits_dc('dateRange_dc2', commitMap[startCommitId].commitIndex);
+            }
+            else {this.filterCommits_dc('dateRange_dc2', -1)};
+        });
     }
 
 
@@ -383,7 +397,6 @@ class MainPage extends React.Component {
     };
 
     /**
-     * 
      * @deprecated 从后端一次性获取diff文件和重构列表 效率较低
      */
     fetchData = async () => {
@@ -440,7 +453,6 @@ class MainPage extends React.Component {
     };
 
     /**
-     * 
      * @deprecated 从后端一次性获取diff文件和重构列表 between commit 版本 效率较低 即将废除
      */
     fetchData_dc = async () => {
@@ -871,6 +883,7 @@ class MainPage extends React.Component {
         return filePath === oldPath || filePath === newPath;
     };
 
+    //选中文件数的文件
     handleTreeFilterRefactorings = (filteredRefactorings) => {
         this.setState({
             treeFilterRefactorings: filteredRefactorings,
@@ -879,6 +892,7 @@ class MainPage extends React.Component {
         });
     };
 
+    //取消选中文件数的文件
     handleCleanTreeFilterRefactorings = () => {
         this.setState({
             treeFilterRefactorings: [],

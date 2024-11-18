@@ -58,21 +58,22 @@ const RefactoringSummary = ({ data, piedata, refactorings, onPieSelect, PieSelec
             });
         });
 
-        const convertToTreeData = (node) => {
+        const convertToTreeData = (node, parentKey = '') => {
             if (!node || typeof node !== 'object' || Object.keys(node).length === 0) return [];
             return Object.entries(node).map(([key, value]) => {
-                const children = convertToTreeData(value.children);
+                const uniqueKey = `${parentKey}/${key}`;
+                const children = convertToTreeData(value.children, uniqueKey);
                 const isLeaf = value.isLeaf;
                 const title = isLeaf ? `${key} (${value.count || 0})` : key;
 
                 return {
                     title: title,
-                    key: key,
+                    key: uniqueKey,
                     children: children,
                     isLeaf: isLeaf,
                     fullPath: value.fullPath,
                 };
-            });
+            }).sort((a, b) => a.title.localeCompare(b.title));;
         };
         return convertToTreeData(tree);
     };
