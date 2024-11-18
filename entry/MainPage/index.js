@@ -1,5 +1,7 @@
 import React from 'react';
 import s from './index.css';
+import SockJS from 'sockjs-client';
+import { Stomp } from '@stomp/stompjs';
 import {Button, Form, message, Select, Tooltip, DatePicker, Affix, Input} from 'antd';
 import ContentDiff from '../contentDiff';
 import NewRefactoringList from '../RefactoringList/NewRefactoringList'; 
@@ -57,11 +59,13 @@ class MainPage extends React.Component {
         treeFilterRefactorings:[], //被文件树过滤的重构
         isFilteredbyTree: false,
         selectedKeys: [],
+        ongoingTasks: new Set(),
     }
 
     isFetchingRefactoring = false; //标识是否正在进行重构挖掘
     isFetchingRefactoring_dc = false; //标识是否正在进行重构挖掘
     lastRequestParams = {}; //记录上一次请求访问的参数
+    
     
     
     
@@ -95,12 +99,13 @@ class MainPage extends React.Component {
         }, { additions: 0, deletions: 0 });
     }
 
-    // 添加滚动监听
+    // 监听
     componentDidMount() {
         window.addEventListener('scroll', this.handleScroll);
+        this.connectWebSocket();
     }
 
-    // 清理滚动监听
+    // 清理监听
     componentWillUnmount() {
         window.removeEventListener('scroll', this.handleScroll);
     }
@@ -702,12 +707,23 @@ class MainPage extends React.Component {
 
     //用于从后端获取重构(all between two commits)
     fetchRefactoring_dac = async () => {
-        const { startCommitId,endCommitId, repository } = this.state;
+        const { startCommitId,endCommitId, repository, ongoingTasks } = this.state;
     
         if (!startCommitId || !repository || !endCommitId) {
             message.error('Please provide repository and two commitid.');
             return;
         }
+
+        const taskKey = `${repository}-${startCommitId}-${endCommitId}`;
+
+        if (ongoingTasks.has(taskKey)) {
+            message.warning('Task is already running for this repository and commit range. Please wait.');
+            return;
+        }
+
+        this.setState((prevState) => ({
+            ongoingTasks: new Set(prevState.ongoingTasks).add(taskKey),
+        }));
 
         try {
             const response = await fetch('http://localhost:8080/api/detectAC', {
@@ -717,22 +733,48 @@ class MainPage extends React.Component {
                 },
                 body: JSON.stringify({ repository: repository, startCommitId: startCommitId, endCommitId: endCommitId}),
             });
-    
-            if (!response.ok) {
-                throw new Error('Network response was not ok.');
-            }
-    
-            if (json.results && json.results.length > 0) {
 
+            const responseMessage = await response.text();
+
+            if (response.ok) {
+                message.success(responseMessage); // 成功信息
             } else {
-                message.error('Invalid JSON format: Missing results array.');
+                message.error(`Failed: ${responseMessage}`); // 失败信息
             }
         } catch (error) {
             console.error('Error fetching data:', error);
             message.error('Error fetching data.');
+            this.resetTask(taskKey);
         }
     };
 
+    //探测all between commit时候的websocket连接以及接收消息
+    connectWebSocket = () => {
+        const socket = new SockJS('http://localhost:8080/ws');
+        this.stompClient = Stomp.over(socket);
+    
+        this.stompClient.connect({}, () => {
+            console.log('Connected to WebSocket');
+    
+            this.stompClient.subscribe('/topic/task-completion', (messageOutput) => {
+                const taskKey = messageOutput.body;
+                message.success(`Task completed for ${taskKey}`);
+                this.resetTask(taskKey);
+            });
+        }, (error) => {
+            console.error('WebSocket connection error:', error);
+        });
+    };
+    
+    //重置正在执行的任务
+    resetTask = (taskKey) => {
+        this.setState((prevState) => {
+            const newOngoingTasks = new Set(prevState.ongoingTasks);
+            newOngoingTasks.delete(taskKey);
+            return { ongoingTasks: newOngoingTasks };
+        });
+    };
+    
     handleHighlightDiff = (leftSideLocations, rightSideLocations, Description) => {
         const { highlightedFiles, refactorings } = this.state;
     

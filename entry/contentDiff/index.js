@@ -18,6 +18,7 @@ const BLOCK_LENGTH = 3;
 class ContentDiff extends React.Component {
     state = {
         lineGroup: [],
+        highlightlineGroup: [],
         originalLineGroup: [], // 新增：保存原始的行组数据
         showType: this.props.showType,
         selectedText: '',
@@ -156,6 +157,7 @@ class ContentDiff extends React.Component {
         }
     }
 
+    //代码划分块
     flashContent = (newArr) => {
         if (typeof (newArr || this.props.diffArr) === 'string') return;
         const initLineGroup = (newArr || this.props.diffArr).map((item, index, originArr) => {

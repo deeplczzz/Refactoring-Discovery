@@ -108,8 +108,18 @@ const RefactoringSummary = ({ data, piedata, refactorings, onPieSelect, PieSelec
                 className={s.summarytable}
                 rowKey="type"
             >
-                <Column title="TYPE" dataIndex="type" key="type" />
-                <Column title="COUNT" dataIndex="value" key="value" sorter={(a, b) => a.value - b.value}/>
+                <Column 
+                    title="TYPE" 
+                    dataIndex="type" 
+                    key="type" 
+                />
+                <Column 
+                    title="COUNT" 
+                    dataIndex="value" 
+                    key="value" 
+                    sorter={(a, b) => a.value - b.value}
+                    defaultSortOrder="descend" 
+                />
             </Table>
 
             {refactorings.length > 0 && <div className={s.pieandtree}>

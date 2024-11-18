@@ -5,7 +5,7 @@ module.exports = {
     mode:"production",
     target: 'web',
     externals: {
-        electron: 'require("electron")'
+        electron: 'require("electron")',
     },
     context: path.resolve(__dirname),
     entry: {
@@ -14,7 +14,7 @@ module.exports = {
     output: {
         filename: '[name].bundle.js',
         path: path.resolve(__dirname, 'dist'),
-        publicPath: path.resolve(__dirname, 'dist')
+        publicPath: path.resolve(__dirname, 'dist'),
     },
     optimization: {
         splitChunks: {
@@ -43,6 +43,9 @@ module.exports = {
                 exclude: /node_modules/,
                 use: {
                         loader: 'babel-loader',
+                        options: {
+                            presets: ['@babel/preset-env'],  // 使用预设来转换现代 JavaScript 语法
+                        },
                 },
             },
             {
