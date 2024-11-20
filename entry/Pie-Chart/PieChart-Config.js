@@ -8,7 +8,7 @@ export const PieConfig = (refactoringData, selectedTypes) => ({
     statistic: false,
     width: 400,
     height: 400,
-    animation: false,
+    //animation: false,
     label: {
         type: 'spider',
         content: '{name}({value})',

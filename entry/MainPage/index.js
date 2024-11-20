@@ -2,13 +2,15 @@ import React from 'react';
 import s from './index.css';
 import SockJS from 'sockjs-client';
 import { Stomp } from '@stomp/stompjs';
-import {Button, Form, message, Select, Tooltip, DatePicker, Affix, Input} from 'antd';
+import {Spin, Button, Form, message, Select, Tooltip, DatePicker, Affix, Input} from 'antd';
 import ContentDiff from '../contentDiff';
 import NewRefactoringList from '../RefactoringList/NewRefactoringList'; 
 import RefactoringSummary from '../RefactoringSummary/RefactoringSummary'; 
 import RefactoringDetail from '../RefactoringDetail/RefactoringDetail';
 import moment from 'moment';
 import {ArrowLeftOutlined, ArrowUpOutlined, FolderOpenOutlined, CopyOutlined} from '@ant-design/icons'; 
+import { calculateTotalChanges } from '../utils/diffUtils';
+import { getRefactoringTypeData } from '../utils/refactoringUtils';
 
 const { RangePicker } = DatePicker;
 const FormItem = Form.Item;
@@ -16,6 +18,7 @@ const layout = {
     labelCol: { span: 4 },
     wrapperCol: { span: 20 },
 };
+const CACHE_SIZE = 9;
 
 const SHOW_TYPE = {
     HIGHLIGHT: 0,
@@ -60,44 +63,17 @@ class MainPage extends React.Component {
         isFilteredbyTree: false,
         selectedKeys: [],
         ongoingTasks: new Set(),
+        loadingFromDB: false,
+        refactoringCache: [],
+        refactoringCurrentIndex: 0,
+        refactoringCurrentPage: 0,
+        commitsCache:[],
     }
 
     isFetchingRefactoring = false; //标识是否正在进行重构挖掘
     isFetchingRefactoring_dc = false; //标识是否正在进行重构挖掘
     lastRequestParams = {}; //记录上一次请求访问的参数
     
-    
-    
-    
-    //计算所有文件的增删行数
-    calculateTotalChanges = () => {
-        const { diffResults } = this.state;
-        return diffResults.reduce((total, result) => {
-            const changes = result.diff.reduce((acc, line) => {
-                // 如果是单行变更
-                if (typeof line === 'string') {
-                    if (line.startsWith('+')) acc.additions++;
-                    if (line.startsWith('-')) acc.deletions++;
-                } 
-                // 如果是对象形式的变更
-                else {
-                    if (line.value) {
-                        const lines = line.value.split('\n');
-                        // 计算实际的行数（去掉最后一个空行）
-                        const lineCount = lines[lines.length - 1] === '' ? lines.length - 1 : lines.length;
-                        if (line.added) acc.additions += lineCount;
-                        if (line.removed) acc.deletions += lineCount;
-                    }
-                }
-                return acc;
-            }, { additions: 0, deletions: 0 });
-            
-            return {
-                additions: total.additions + changes.additions,
-                deletions: total.deletions + changes.deletions
-            };
-        }, { additions: 0, deletions: 0 });
-    }
 
     // 监听
     componentDidMount() {
@@ -254,7 +230,6 @@ class MainPage extends React.Component {
             else {this.filterCommits_dc('dateRange_dc2', -1)};
         });
     }
-
 
     //根据时间过滤commits
     filterCommits = () => {
@@ -705,9 +680,9 @@ class MainPage extends React.Component {
         }
     };
 
-    //用于从后端获取重构(all between two commits)
+    //通知后端，开始挖掘重构并存入数据库(all between two commits)
     fetchRefactoring_dac = async () => {
-        const { startCommitId,endCommitId, repository, ongoingTasks } = this.state;
+        const {startCommitId, endCommitId, repository, ongoingTasks, commitMap, commits} = this.state;
     
         if (!startCommitId || !repository || !endCommitId) {
             message.error('Please provide repository and two commitid.');
@@ -735,9 +710,18 @@ class MainPage extends React.Component {
             });
 
             const responseMessage = await response.text();
-
+            const commitsf = commits.slice(commitMap[endCommitId].commitIndex, commitMap[startCommitId].commitIndex);
+            
             if (response.ok) {
-                message.success(responseMessage); // 成功信息
+                this.setState(
+                    {
+                        refactoringCurrentPage: 0,
+                        refactoringCurrentIndex: 0,
+                        refactoringCache:[],
+                        commitsCache: commitsf.map(commit => commit.commitId).slice().reverse(),
+                    },
+                    () => this.loadRefactoringFromDB(this.state.commitsCache.slice(0, Math.min(this.state.commitsCache.length, CACHE_SIZE)))
+                );
             } else {
                 message.error(`Failed: ${responseMessage}`); // 失败信息
             }
@@ -745,6 +729,41 @@ class MainPage extends React.Component {
             console.error('Error fetching data:', error);
             message.error('Error fetching data.');
             this.resetTask(taskKey);
+        }
+    };
+
+    loadRefactoringFromDB = async (commitIds) => {
+        const { repository } = this.state;
+        this.setState({ loadingFromDB: true });
+
+        try {
+            const response = await fetch('http://localhost:8080/api/getFromDB', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    repository: repository,
+                    commitIds: commitIds,
+                }),
+            });
+
+            if (!response.ok) {
+                const errorMsg = await response.text();
+                throw new Error(errorMsg);
+            }
+
+            const data = await response.json();
+            const parsedData = data.map(item => JSON.parse(item));
+
+            console.log(parsedData);
+            this.setState({ refactoringCache: parsedData });
+            console.log(this.state.refactoringCache);
+
+        } catch (error) {
+            message.error(`Error loading data`);
+        } finally {
+            this.setState({ loadingFromDB: false });
         }
     };
 
@@ -757,9 +776,18 @@ class MainPage extends React.Component {
             console.log('Connected to WebSocket');
     
             this.stompClient.subscribe('/topic/task-completion', (messageOutput) => {
-                const taskKey = messageOutput.body;
-                message.success(`Task completed for ${taskKey}`);
-                this.resetTask(taskKey);
+                const messageJson = JSON.parse(messageOutput.body);
+                
+                if (messageJson.status === 'success'){
+                    message.success(`Task completed for ${messageJson.taskKey}`);
+                    console.log(messageJson.taskKey);
+                    this.resetTask(messageJson.taskKey);
+                }else if (messageJson.status === 'failure') {
+                    message.error(`Task failed for ${messageJson.taskKey}`);
+                    this.resetTask(messageJson.taskKey);
+                } else {
+                    console.warn('Unknown status in WebSocket message:', messageJson);
+                }
             });
         }, (error) => {
             console.error('WebSocket connection error:', error);
@@ -833,18 +861,6 @@ class MainPage extends React.Component {
             filteredRefactoring: [], //根据location过滤的重构信息
         });
     };
-
-    // 计算重构类别的统计数据
-    getRefactoringTypeData = () => {
-        const { refactorings } = this.state;
-        if (refactorings.length === 0) return [];
-        const typeMap = new Map();
-        refactorings.forEach(({ type }) => {
-            typeMap.set(type, (typeMap.get(type) || 0) + 1);
-        });
-        
-        return Array.from(typeMap, ([type, value]) => ({ type, value }));
-    }
 
     //计算被树过滤后的重构类别的统计数据
     getTreeFilterRefactoringTypeData = () => {
@@ -947,8 +963,8 @@ class MainPage extends React.Component {
     render() {
         const { diffResults, fileUploaded, repository, selectedKeys, commitid, commits,highlightedFiles, commitAuthor, commitMessage, latestDate, earliestDate, isFilteredbyTree,
             isFilteredByLocation, refactorings, showType, isDetect, dateRange, currentPage, detecttype, dateRange_dc1, dateRange_dc2, startCommitId, endCommitId, isScrollVisible} = this.state;
-        const refactoringData = this.getRefactoringTypeData();
-        const totalChanges = this.calculateTotalChanges();
+        const refactoringData = getRefactoringTypeData(refactorings);
+        const totalChanges = calculateTotalChanges(diffResults);
         const tooltipStyle = {
             fontSize: '12px',
             whiteSpace: 'nowrap',
@@ -1284,6 +1300,9 @@ class MainPage extends React.Component {
                         })}
                     </>
                 )}
+
+                {/* 显示DAC模式 */}
+                
                 
             </div>
         );

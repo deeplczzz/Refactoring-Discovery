@@ -107,6 +107,7 @@ const RefactoringSummary = ({ data, piedata, refactorings, onPieSelect, PieSelec
                 pagination={false}
                 className={s.summarytable}
                 rowKey="type"
+                size="small"
             >
                 <Column 
                     title="TYPE" 
