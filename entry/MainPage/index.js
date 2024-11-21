@@ -70,6 +70,7 @@ class MainPage extends React.Component {
         refactoringCurrentIndex: 0,
         refactoringCurrentPage: 0,
         commitsCache:[],
+        refactoringData: [], //给饼图的
     }
 
     isFetchingRefactoring = false; //标识是否正在进行重构挖掘
@@ -77,13 +78,18 @@ class MainPage extends React.Component {
     lastRequestParams = {}; //记录上一次请求访问的参数
     
 
-    // 监听
     componentDidMount() {
         window.addEventListener('scroll', this.handleScroll);
         this.connectWebSocket();
+        this.updateRefactoringData();
     }
 
-    // 清理监听
+    componentDidUpdate(prevProps, prevState) {
+        if (prevState.refactorings !== this.state.refactorings || prevState.isFilteredbyTree !== this.state.isFilteredbyTree) {
+            this.updateRefactoringData();
+        }
+    }
+
     componentWillUnmount() {
         window.removeEventListener('scroll', this.handleScroll);
     }
@@ -804,6 +810,16 @@ class MainPage extends React.Component {
             return { ongoingTasks: newOngoingTasks };
         });
     };
+
+    //更新饼图数据的函数
+    updateRefactoringData = () => {
+        const { refactorings, isFilteredbyTree, treeFilterRefactorings } = this.state;
+        const refactoringData = isFilteredbyTree 
+            ? getRefactoringTypeData(treeFilterRefactorings) // 直接调用
+            : getRefactoringTypeData(refactorings); // 其他情况
+
+        this.setState({ refactoringData });
+    };
     
     handleHighlightDiff = (leftSideLocations, rightSideLocations, Description) => {
         const { highlightedFiles, refactorings } = this.state;
@@ -863,17 +879,6 @@ class MainPage extends React.Component {
             filteredRefactoring: [], //根据location过滤的重构信息
         });
     };
-
-    //计算被树过滤后的重构类别的统计数据
-    getTreeFilterRefactoringTypeData = () => {
-        const { treeFilterRefactorings } = this.state;
-        if (treeFilterRefactorings.length === 0) return [];
-        const typeMap = new Map();
-        treeFilterRefactorings.forEach(({ type }) => {
-            typeMap.set(type, (typeMap.get(type) || 0) + 1);
-        });
-        return Array.from(typeMap, ([type, value]) => ({ type, value }));
-    }
 
     //处理饼图点击事件
     handlePieSelect = (data) => {
@@ -956,9 +961,11 @@ class MainPage extends React.Component {
 
 
     render() {
-        const { diffResults, fileUploaded, repository, selectedKeys, commitid, commits,highlightedFiles, commitAuthor, commitMessage, latestDate, earliestDate, isFilteredbyTree,
-            isFilteredByLocation, refactorings, showType, isDetect, dateRange, currentPage, detecttype, dateRange_dc1, dateRange_dc2, startCommitId, endCommitId, isScrollVisible} = this.state;
-        const refactoringData = getRefactoringTypeData(refactorings);
+        const { diffResults, fileUploaded, repository, selectedKeys, commitid, commits,highlightedFiles, 
+            commitAuthor, commitMessage, latestDate, earliestDate, isFilteredbyTree, refactoringData,
+            isFilteredByLocation, refactorings, showType, isDetect, dateRange, currentPage, 
+            detecttype, dateRange_dc1, dateRange_dc2, startCommitId, endCommitId, isScrollVisible} = this.state;
+
         const totalChanges = calculateTotalChanges(diffResults);
         const fileCountMap = fileCount(refactorings);
         const tooltipStyle = {
@@ -1245,7 +1252,7 @@ class MainPage extends React.Component {
                                 </div>
                                 <div className={s.pie}>
                                     <PieChart
-                                        piedata={isFilteredbyTree ? this.getTreeFilterRefactoringTypeData() : refactoringData}
+                                        piedata={refactoringData}
                                         onPieSelect={this.handlePieSelect}
                                     />
                                 </div>
