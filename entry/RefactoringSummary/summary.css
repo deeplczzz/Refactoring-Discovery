@@ -27,21 +27,3 @@
 .summarytable{
     font-size: 12px;
 }
-
-.pieandtree{
-    margin-right: 2%;
-    margin-top: 30px;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: space-between; /* 均匀分布 */
-}
-
-.pie {
-    flex: 0 0 70%; /* 设置饼图占 60% */
-    margin-left: 10px;
-}
-
-.directorytree {
-    flex: 0 0 30%; /* 设置文件目录占 40% */
-    border-right: 1px solid #eee;
-}

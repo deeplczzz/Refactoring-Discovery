@@ -10,7 +10,9 @@ import RefactoringDetail from '../RefactoringDetail/RefactoringDetail';
 import moment from 'moment';
 import {ArrowLeftOutlined, ArrowUpOutlined, FolderOpenOutlined, CopyOutlined} from '@ant-design/icons'; 
 import { calculateTotalChanges } from '../utils/diffUtils';
-import { getRefactoringTypeData } from '../utils/refactoringUtils';
+import { getRefactoringTypeData, fileCount } from '../utils/refactoringUtils';
+import PieChart from '../Pie-Chart/PieChart';
+import FileTree from '../RefactoringSummary/FileTree';
 
 const { RangePicker } = DatePicker;
 const FormItem = Form.Item;
@@ -874,22 +876,15 @@ class MainPage extends React.Component {
     }
 
     //处理饼图点击事件
-    handlePieSelect = (event) => {
-        const { data } = event.data || {};
-        if (!data || !data.type) return;
-
-        this.setState(prevState => {
-            let newSelectedTypes;
-            if (prevState.PieSelectedTypes.includes(data.type)) {
-                // 如果类型已被选中,则取消选择
-                newSelectedTypes = prevState.PieSelectedTypes.filter(type => type !== data.type);
-            } else {
-                // 如果类型未被选中,则添加到选中列表
-                newSelectedTypes = [...prevState.PieSelectedTypes, data.type];
-            }
-            return { PieSelectedTypes: newSelectedTypes };
-        });
-    }
+    handlePieSelect = (data) => {
+        const type = data.type;
+        const { PieSelectedTypes } = this.state;
+        if (PieSelectedTypes.includes(type)) {
+            this.setState({ PieSelectedTypes: PieSelectedTypes.filter(t => t !== type) });
+        } else {
+            this.setState({ PieSelectedTypes: [...PieSelectedTypes, type] });
+        }
+    };
 
     //获取重构列表应该显示的重构信息
     getFilteredRefactorings = () => {
@@ -965,6 +960,7 @@ class MainPage extends React.Component {
             isFilteredByLocation, refactorings, showType, isDetect, dateRange, currentPage, detecttype, dateRange_dc1, dateRange_dc2, startCommitId, endCommitId, isScrollVisible} = this.state;
         const refactoringData = getRefactoringTypeData(refactorings);
         const totalChanges = calculateTotalChanges(diffResults);
+        const fileCountMap = fileCount(refactorings);
         const tooltipStyle = {
             fontSize: '12px',
             whiteSpace: 'nowrap',
@@ -1237,13 +1233,23 @@ class MainPage extends React.Component {
                         <div className={s.RefactoringSummary}>
                             <RefactoringSummary 
                                 data={refactoringData}
-                                piedata={isFilteredbyTree ? this.getTreeFilterRefactoringTypeData() : refactoringData}
-                                refactorings={refactorings} 
-                                onPieSelect={this.handlePieSelect}
-                                PieSelectedTypes={this.state.PieSelectedTypes}
-                                selectedKeys={selectedKeys} 
-                                onTreeSelect={onSelect}
+                                fileCountMap={fileCountMap} 
                             />
+                            <div className={s.pieandtree}>
+                                <div className={s.filetree}>
+                                    <FileTree
+                                        fileCountMap={fileCountMap} 
+                                        selectedKeys={selectedKeys} 
+                                        onTreeSelect={onSelect}
+                                    />
+                                </div>
+                                <div className={s.pie}>
+                                    <PieChart
+                                        piedata={isFilteredbyTree ? this.getTreeFilterRefactoringTypeData() : refactoringData}
+                                        onPieSelect={this.handlePieSelect}
+                                    />
+                                </div>
+                            </div>
                         </div>
 
                         <NewRefactoringList 

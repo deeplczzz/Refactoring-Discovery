@@ -128,6 +128,24 @@
     margin-right: 2%;
 }
 
+.index__pieandtree--2rgfc{
+    margin-right: 2%;
+    margin-top: 30px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between; /* 均匀分布 */
+}
+
+.index__pie--YbGNm {
+    flex: 0 0 70%; /* 设置饼图占 60% */
+    margin-left: 10px;
+}
+
+.index__filetree--1ANic {
+    flex: 0 0 30%; /* 设置文件目录占 40% */
+    border-right: 1px solid #eee;
+}
+
 .index__dataSelect--Gr3q9{
     display: grid;
     grid-template-columns: 90px 250px;
@@ -569,24 +587,6 @@
 
 .summary__summarytable--3EyNd{
     font-size: 12px;
-}
-
-.summary__pieandtree--GOI9F{
-    margin-right: 2%;
-    margin-top: 30px;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: space-between; /* 均匀分布 */
-}
-
-.summary__pie--380KC {
-    flex: 0 0 70%; /* 设置饼图占 60% */
-    margin-left: 10px;
-}
-
-.summary__directorytree--2oAMR {
-    flex: 0 0 30%; /* 设置文件目录占 40% */
-    border-right: 1px solid #eee;
 }
 
 .refactoringdetail__detailtitle--2htdL {
