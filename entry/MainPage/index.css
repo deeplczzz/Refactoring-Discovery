@@ -205,43 +205,74 @@
     color: #6c757d;
 }
 
-.messageandauthor{
-    border-radius: 6px;
-    border: 1px solid #dcdcdc;
+.spin{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* 使其占满整个视口高度 */
+}
+
+.pagingarea{
     margin-left: 2%;
     margin-right: 2%;
-    margin-top: 10px;
-    margin-bottom: 10px;
+    margin-top: 20px;
+    display: flex; /* 使用 Flexbox 布局 */
+    align-items: center; /* 垂直居中对齐 */
 }
 
-.message{
-    padding-top: 10px;
-    padding-bottom: 10px;
-    padding-left: 5px;
-    border-bottom: 1px solid #dcdcdc;
+.changepagebutton{
+    background-color: transparent !important; 
+    border: none;
+    text-align: center;
+    font-style: italic;
+    display: inline-block;
+    font-size: 16px;
+    height: 80px;
+    color: rgb(9, 105, 218) !important;
 }
 
-.authorandcommit{
-    padding-top: 8px;
-    padding-bottom: 8px;
-    padding-left: 5px;
-    display: flex;
-    justify-content: space-between; 
+.changepagebuttondisable{
+    background-color: transparent !important; 
+    border: none;
+    text-align: center;
+    font-style: italic;
+    display: inline-block;
+    font-size: 16px;
+    height: 80px;
+    color: rgb(150, 148, 148) !important;
+}
+
+.changepagebutton:hover {
+    background-color: transparent !important;
+}
+
+.changepagebutton:active {
+    background-color: transparent !important; 
+}
+
+.changepagebuttondisable:hover {
+    background-color: transparent !important;
+}
+
+.changepagebuttondisable:active {
+    background-color: transparent !important; 
+}
+
+.pageButton {
+    flex: 0.9; 
+    display: flex; 
+    justify-content: center; 
     align-items: center;
 }
 
-.author{
-    display: flex;
-    align-items: center; 
+.commitInfoContainer {
+    flex: 8.2; 
+    text-align: center;
 }
 
-.commit{
-    display: flex;
-    align-items: center; 
+.tabs{
+    margin-left: 2%;
+    margin-right: 2%;
 }
 
-.commitbutton{
-    margin-left: 8px;
-    margin-right: 8px;
-    background: none; /* 取消背景 */
-}
+

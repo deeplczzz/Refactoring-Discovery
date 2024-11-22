@@ -2,6 +2,7 @@ import React from 'react';
 import { Tree } from 'antd';
 const { DirectoryTree } = Tree;
 
+//文件目录树
 const FileTree = ({ fileCountMap, selectedKeys, onTreeSelect }) => {
     
     const buildTreeData = (fileCountMap) => {

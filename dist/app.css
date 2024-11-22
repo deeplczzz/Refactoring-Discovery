@@ -205,46 +205,78 @@
     color: #6c757d;
 }
 
-.index__messageandauthor--6CDRU{
-    border-radius: 6px;
-    border: 1px solid #dcdcdc;
+.index__spin--3199c{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* 使其占满整个视口高度 */
+}
+
+.index__pagingarea--131b6{
     margin-left: 2%;
     margin-right: 2%;
-    margin-top: 10px;
-    margin-bottom: 10px;
+    margin-top: 20px;
+    display: flex; /* 使用 Flexbox 布局 */
+    align-items: center; /* 垂直居中对齐 */
 }
 
-.index__message--2P5TV{
-    padding-top: 10px;
-    padding-bottom: 10px;
-    padding-left: 5px;
-    border-bottom: 1px solid #dcdcdc;
+.index__changepagebutton--2IsRC{
+    background-color: transparent !important; 
+    border: none;
+    text-align: center;
+    font-style: italic;
+    display: inline-block;
+    font-size: 16px;
+    height: 80px;
+    color: rgb(9, 105, 218) !important;
 }
 
-.index__authorandcommit--3Ud4q{
-    padding-top: 8px;
-    padding-bottom: 8px;
-    padding-left: 5px;
-    display: flex;
-    justify-content: space-between; 
+.index__changepagebuttondisable--2X2cw{
+    background-color: transparent !important; 
+    border: none;
+    text-align: center;
+    font-style: italic;
+    display: inline-block;
+    font-size: 16px;
+    height: 80px;
+    color: rgb(150, 148, 148) !important;
+}
+
+.index__changepagebutton--2IsRC:hover {
+    background-color: transparent !important;
+}
+
+.index__changepagebutton--2IsRC:active {
+    background-color: transparent !important; 
+}
+
+.index__changepagebuttondisable--2X2cw:hover {
+    background-color: transparent !important;
+}
+
+.index__changepagebuttondisable--2X2cw:active {
+    background-color: transparent !important; 
+}
+
+.index__pageButton--2yM4m {
+    flex: 0.9; 
+    display: flex; 
+    justify-content: center; 
     align-items: center;
 }
 
-.index__author--35_G4{
-    display: flex;
-    align-items: center; 
+.index__commitInfoContainer--1R6_s {
+    flex: 8.2; 
+    text-align: center;
 }
 
-.index__commit--1hcqh{
-    display: flex;
-    align-items: center; 
+.index__tabs--6ktR8{
+    margin-left: 2%;
+    margin-right: 2%;
 }
 
-.index__commitbutton--2wxiK{
-    margin-left: 8px;
-    margin-right: 8px;
-    background: none; /* 取消背景 */
-}
+
+
 .index__color--2ojbV {
     color: black;
     background-color: #fff;
@@ -645,4 +677,45 @@
     margin-left: 5;
     padding-left: 10px;
     margin-bottom: 10px;
+}
+.commitinfo__messageandauthor--3Np-o{
+    border-radius: 6px;
+    border: 1px solid #dcdcdc;
+    margin-left: 2%;
+    margin-right: 2%;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.commitinfo__message--2Nx7I{
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 5px;
+    border-bottom: 1px solid #dcdcdc;
+    text-align: left;
+}
+
+.commitinfo__authorandcommit--1LqNb{
+    padding-top: 8px;
+    padding-bottom: 8px;
+    padding-left: 5px;
+    display: flex;
+    justify-content: space-between; 
+    align-items: center;
+}
+
+.commitinfo__author--2jtJ5{
+    display: flex;
+    align-items: center; 
+}
+
+.commitinfo__commit--3kKYZ{
+    display: flex;
+    align-items: center; 
+}
+
+.commitinfo__commitbutton--2nxa8{
+    margin-left: 8px;
+    margin-right: 8px;
+    background: none; /* 取消背景 */
 }

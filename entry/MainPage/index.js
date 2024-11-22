@@ -2,7 +2,7 @@ import React from 'react';
 import s from './index.css';
 import SockJS from 'sockjs-client';
 import { Stomp } from '@stomp/stompjs';
-import {Spin, Button, Form, message, Select, Tooltip, DatePicker, Affix, Input} from 'antd';
+import {Spin, Button, Form, message, Select, DatePicker, Affix, Input, Tabs} from 'antd';
 import ContentDiff from '../contentDiff';
 import NewRefactoringList from '../RefactoringList/NewRefactoringList'; 
 import RefactoringSummary from '../RefactoringSummary/RefactoringSummary'; 
@@ -13,6 +13,7 @@ import { calculateTotalChanges } from '../utils/diffUtils';
 import { getRefactoringTypeData, fileCount } from '../utils/refactoringUtils';
 import PieChart from '../Pie-Chart/PieChart';
 import FileTree from '../RefactoringSummary/FileTree';
+import CommitInfo from '../Module/CommitInfo'
 
 const { RangePicker } = DatePicker;
 const FormItem = Form.Item;
@@ -34,8 +35,8 @@ class MainPage extends React.Component {
         fileUploaded: false, // 表示文件已上传
         refactorings: [], // 新增用于存储 refactorings
         commitid:'',
-        commitMessage:'', //存储commit消息
-        commitAuthor:'',
+        commitMessage:'', //commit message
+        commitAuthor:'', //提交人
         commits: [],  // 存储从后端获取到的 commit 列表
         highlightedFiles: [], // 用于存储点击 Location 后的文件和行号信息
         isFilteredByLocation: false, // 标记是否正在根据 Location 过滤文件
@@ -67,10 +68,12 @@ class MainPage extends React.Component {
         ongoingTasks: new Set(),
         loadingFromDB: false,
         refactoringCache: [],
-        refactoringCurrentIndex: 0,
-        refactoringCurrentPage: 0,
+        refactoringCurrentIndex: 0, //当前页面下的索引
+        refactoringCurrentPage: 0, //当前页
         commitsCache:[],
-        refactoringData: [], //给饼图的
+        refactoringData: [], //给饼图的类别数据
+        refactoringTotalPages: 0, //总页数
+        refactoringPageSize: 0, //页面大小
     }
 
     isFetchingRefactoring = false; //标识是否正在进行重构挖掘
@@ -85,7 +88,7 @@ class MainPage extends React.Component {
     }
 
     componentDidUpdate(prevProps, prevState) {
-        if (prevState.refactorings !== this.state.refactorings || prevState.isFilteredbyTree !== this.state.isFilteredbyTree) {
+        if (prevState.refactorings !== this.state.refactorings || prevState.isFilteredbyTree !== this.state.isFilteredbyTree || prevState.selectedKeys !== this.state.selectedKeys) {
             this.updateRefactoringData();
         }
     }
@@ -127,18 +130,6 @@ class MainPage extends React.Component {
             return [];
         }
     }
-
-    /**
-     * @deprecated 处理点击detect按钮的事件，目前将所有detect按钮功能分开，暂时不需要
-     */
-    handleSubmit = async () => {
-        this.setState({
-            showType: SHOW_TYPE.HIGHLIGHT,
-            isFilteredByLocation: false,
-            isDetect: true, 
-            PieSelectedTypes: [], // 重置选中的类型
-        });
-    };
 
     //选择仓库目录按钮的事件
     selectDirectoryDialog = async () => {
@@ -384,118 +375,6 @@ class MainPage extends React.Component {
         );
     };
 
-    /**
-     * @deprecated 从后端一次性获取diff文件和重构列表 效率较低
-     */
-    fetchData = async () => {
-        const { commitid, repository } = this.state;
-    
-        if (!commitid || !repository) {
-            message.error('Please provide repository and commitid.');
-            return;
-        }
-    
-        try {
-            const response = await fetch('http://localhost:8080/api/detect', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ repository: repository, commitId: commitid}),
-            });
-    
-            if (!response.ok) {
-                throw new Error('Network response was not ok.');
-            }
-    
-            const json = await response.json();
-    
-            if (json.results && json.results.length > 0) {
-                const firstResult = json.results[0];
-                const files = firstResult.files;
-    
-                if (files && files.length > 0) {
-                    const diffResults = await Promise.all(files.map(async (file) => ({
-                        fileName: file.name,
-                        diff: await this.actDiff(file.oldCode, file.newCode),
-                    })));
-    
-                    this.setState({
-                        diffResults,
-                        refactorings: firstResult.refactorings || [],
-                        fileUploaded: true ,
-                        isFilteredByLocation: false ,
-                        showType: SHOW_TYPE.NORMAL,
-                        isDetect:false,
-                    });
-                } else {
-                    message.error('No files found in JSON.');
-                }
-            } else {
-                message.error('Invalid JSON format: Missing results array.');
-            }
-        } catch (error) {
-            console.error('Error fetching data:', error);
-            message.error('Error fetching data.');
-        }
-    };
-
-    /**
-     * @deprecated 从后端一次性获取diff文件和重构列表 between commit 版本 效率较低 即将废除
-     */
-    fetchData_dc = async () => {
-        const {repository, startCommitId, endCommitId} = this.state;
-    
-        if (! repository || !startCommitId || !endCommitId) {
-            message.error('Please provide repository and two commitid');
-            return;
-        }
-    
-        try {
-            const response = await fetch('http://localhost:8080/api/detectBC', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ repository: repository, startCommitId: startCommitId, endCommitId: endCommitId}),
-            });
-    
-            if (!response.ok) {
-                throw new Error('Network response was not ok.');
-            }
-    
-            const json = await response.json();
-    
-            if (json.results && json.results.length > 0) {
-                const firstResult = json.results[0];
-                const files = firstResult.files;
-    
-                if (files && files.length > 0) {
-                    const diffResults = await Promise.all(files.map(async (file) => ({
-                        fileName: file.name,
-                        diff: await this.actDiff(file.oldCode, file.newCode),
-                    })));
-    
-                    this.setState({
-                        diffResults,
-                        refactorings: firstResult.refactorings || [],
-                        fileUploaded: true ,
-                        isFilteredByLocation: false ,
-                        showType: SHOW_TYPE.NORMAL,
-                        isDetect:false,
-                    });
-                } else {
-                    message.error('No files found in JSON.');
-                }
-            } else {
-                message.error('Invalid JSON format: Missing results array.');
-            }
-        } catch (error) {
-            console.error('Error fetching data:', error);
-            message.error('Error fetching data.');
-        }
-    };
-
     //负责仅从后端获取oldode以及newcode
     fetchDiffFile = async () => {
         const { commitid, repository } = this.state;
@@ -583,6 +462,46 @@ class MainPage extends React.Component {
         } catch (error) {
             console.error('Error fetching diff files:', error);
             message.error('Error fetching diff files.');
+        }
+    };
+
+    //负责仅从后端获取oldode以及newcode，不改变任何属性
+    fetchDiffFile_only = async (commitid) => {
+        const {repository} = this.state;
+        if (!commitid || !repository) {
+            message.error('Please provide repository and commitid.');
+            return null;
+        }
+
+        try {
+            const response = await fetch('http://localhost:8080/api/getDiff', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ repository: repository, commitId: commitid}),
+            });
+    
+            if (!response.ok) {
+                throw new Error('Network response was not ok.');
+            }
+    
+            const diffFiles = await response.json();
+    
+            if (diffFiles.length > 0) {
+                const diffResults = await Promise.all(diffFiles.map(async (file) => ({
+                    fileName: file.name,
+                    diff: await this.actDiff(file.oldCode, file.newCode),
+                })));
+                return diffResults;
+            } else {
+                message.error('No diff files found in JSON.');
+                return null;
+            }
+        } catch (error) {
+            console.error('Error fetching diff files:', error);
+            message.error('Error fetching diff files.');
+            return null;
         }
     };
 
@@ -723,12 +642,23 @@ class MainPage extends React.Component {
             if (response.ok) {
                 this.setState(
                     {
-                        refactoringCurrentPage: 0,
-                        refactoringCurrentIndex: 0,
-                        refactoringCache:[],
-                        commitsCache: commitsf.map(commit => commit.commitId).slice().reverse(),
+                        refactoringCurrentPage: 0, //当前页0
+                        refactoringCurrentIndex: 0, //当前页面的当前id
+                        refactoringCache:[], //重构缓存
+                        isDetect: true, 
+                        isFilteredByLocation: false,
+                        PieSelectedTypes: [], 
+                        showType: SHOW_TYPE.HIGHLIGHT,
+                        commitsCache: commitsf.map(commit => commit.commitId).slice().reverse(), //只需要id并反转，按时间增序
+                        refactoringTotalPages: Math.ceil(commitsf.length / CACHE_SIZE), //页面总数
+                        refactoringPageSize: Math.min(commitsf.length, CACHE_SIZE)//页面大小
                     },
-                    () => this.loadRefactoringFromDB(this.state.commitsCache.slice(0, Math.min(this.state.commitsCache.length, CACHE_SIZE)))
+                    () => {
+                        this.loadRefactoringFromDB(this.state.commitsCache.slice(0, Math.min(this.state.commitsCache.length, CACHE_SIZE)))
+                            .then(() => {
+                                this.setState({ refactorings: this.state.refactoringCache[0].results[0].refactorings || [] });
+                            });
+                    }
                 );
             } else {
                 message.error(`Failed: ${responseMessage}`); // 失败信息
@@ -740,6 +670,7 @@ class MainPage extends React.Component {
         }
     };
 
+    //通知后端从数据库读取数据并展示
     loadRefactoringFromDB = async (commitIds) => {
         const { repository } = this.state;
         this.setState({ loadingFromDB: true });
@@ -764,8 +695,9 @@ class MainPage extends React.Component {
             const data = await response.json();
             const parsedData = data.map(item => JSON.parse(item));
 
-            console.log(parsedData);
-            this.setState({ refactoringCache: parsedData });
+            this.setState({ 
+                refactoringCache: parsedData,
+            });
             console.log(this.state.refactoringCache);
 
         } catch (error) {
@@ -815,8 +747,8 @@ class MainPage extends React.Component {
     updateRefactoringData = () => {
         const { refactorings, isFilteredbyTree, treeFilterRefactorings } = this.state;
         const refactoringData = isFilteredbyTree 
-            ? getRefactoringTypeData(treeFilterRefactorings) // 直接调用
-            : getRefactoringTypeData(refactorings); // 其他情况
+            ? getRefactoringTypeData(treeFilterRefactorings) //正在被文件树过滤
+            : getRefactoringTypeData(refactorings); // 没有被文件数过滤
 
         this.setState({ refactoringData });
     };
@@ -876,7 +808,8 @@ class MainPage extends React.Component {
         this.setState({
             highlightedFiles: [],
             isFilteredByLocation: false,
-            filteredRefactoring: [], //根据location过滤的重构信息
+            filteredRefactoring: [],
+            PieSelectedTypes:[], //返回之后 重置饼图选中类型，因为饼图目前无法保存选中状态至重新渲染
         });
     };
 
@@ -893,11 +826,7 @@ class MainPage extends React.Component {
 
     //获取重构列表应该显示的重构信息
     getFilteredRefactorings = () => {
-        const { refactorings, PieSelectedTypes, isFilteredByLocation, filteredRefactoring, treeFilterRefactorings, isFilteredbyTree} = this.state;
-
-        if (isFilteredByLocation) {
-            return filteredRefactoring;
-        }
+        const { refactorings, PieSelectedTypes, treeFilterRefactorings, isFilteredbyTree} = this.state;
 
         let r = isFilteredbyTree ? treeFilterRefactorings : refactorings
 
@@ -959,24 +888,98 @@ class MainPage extends React.Component {
         });
     };
 
+    //翻页按钮的函数
+    handlePageChange = (direction) => {
+        const { refactoringCurrentPage, refactoringPageSize, commitsCache, refactoringTotalPages, refactoringCurrentIndex} = this.state;
+        
+        let newPage = refactoringCurrentPage;
+        let newIndex = refactoringCurrentIndex;
+
+        if(direction === 0){ // 向前翻页
+            if(refactoringCurrentIndex === 0 && refactoringCurrentPage !== 0){ //跨页
+                newIndex = refactoringPageSize - 1;
+                newPage = refactoringCurrentPage - 1;
+                const NewcommitIds = commitsCache.slice(newPage * refactoringPageSize, (newPage + 1) * refactoringPageSize);
+                this.setState(
+                    {
+                        refactoringCurrentIndex: newIndex,
+                        refactoringCurrentPage: newPage,
+                        selectedKeys:[],
+                        PieSelectedTypes:[],
+                        isFilteredByLocation:false,
+                        isFilteredbyTree:false,
+                        showType: SHOW_TYPE.NORMAL,
+                    },
+                    () => this.loadRefactoringFromDB(NewcommitIds)
+                        .then(() => {
+                            this.setState({ refactorings: this.state.refactoringCache[newIndex].results[0].refactorings || []});
+                        })
+                );
+            }
+            else{ //页内
+                newIndex = refactoringCurrentIndex - 1;
+                this.setState({
+                    refactoringCurrentIndex : newIndex,
+                    selectedKeys:[],
+                    PieSelectedTypes:[],
+                    isFilteredByLocation:false,
+                    isFilteredbyTree:false,
+                    showType: SHOW_TYPE.NORMAL,
+                }, () => {
+                    this.setState({ refactorings: this.state.refactoringCache[newIndex].results[0].refactorings || []});
+                });
+            }
+        }
+        else{ //向后翻页
+            if(refactoringCurrentIndex === refactoringPageSize - 1 && refactoringCurrentPage !== refactoringTotalPages - 1){
+                newIndex = 0;
+                newPage = refactoringCurrentPage + 1;
+                const NewcommitIds = commitsCache.slice(newPage * refactoringPageSize, Math.min((newPage + 1) * refactoringPageSize, commitsCache.length));
+                this.setState(
+                    {
+                        refactoringCurrentIndex: newIndex,
+                        refactoringCurrentPage: newPage,
+                        selectedKeys:[],
+                        PieSelectedTypes:[],
+                        isFilteredByLocation:false,
+                        isFilteredbyTree:false,
+                        showType: SHOW_TYPE.NORMAL,
+                    },
+                    () => this.loadRefactoringFromDB(NewcommitIds)
+                        .then(() => {
+                            this.setState({ refactorings: this.state.refactoringCache[newIndex].results[0].refactorings || []});
+                        })
+                );
+            }
+            else{
+                newIndex = refactoringCurrentIndex + 1;
+                this.setState({
+                    refactoringCurrentIndex : newIndex,
+                    selectedKeys:[],
+                    PieSelectedTypes:[],
+                    isFilteredByLocation:false,
+                    isFilteredbyTree:false,
+                    showType: SHOW_TYPE.NORMAL,
+                },() => {
+                    this.setState({ refactorings: this.state.refactoringCache[newIndex].results[0].refactorings || []});
+                });
+            }
+        }
+        console.log(this.state.refactoringCache[newIndex]);
+        console.log('New Page:', newPage, 'New Index:', newIndex);
+    };
 
     render() {
-        const { diffResults, fileUploaded, repository, selectedKeys, commitid, commits,highlightedFiles, 
-            commitAuthor, commitMessage, latestDate, earliestDate, isFilteredbyTree, refactoringData,
-            isFilteredByLocation, refactorings, showType, isDetect, dateRange, currentPage, 
+        const { diffResults, fileUploaded, selectedKeys, commitid, commits,highlightedFiles, 
+            loadingFromDB, refactoringPageSize, refactoringCurrentIndex, refactoringCurrentPage,
+            commitAuthor, commitMessage, latestDate, earliestDate, refactoringData, filteredRefactoring, refactoringCache,
+            isFilteredByLocation, refactorings, showType, isDetect, dateRange, currentPage, commitMap, commitsCache,
             detecttype, dateRange_dc1, dateRange_dc2, startCommitId, endCommitId, isScrollVisible} = this.state;
 
         const totalChanges = calculateTotalChanges(diffResults);
         const fileCountMap = fileCount(refactorings);
-        const tooltipStyle = {
-            fontSize: '12px',
-            whiteSpace: 'nowrap',
-            maxWidth: 'none',
-            lineHeight: '1',
-            minHeight: 'auto',
-            userSelect: 'none',
-            borderRadius: '6px'   
-        };
+        const currentCommitID = commitsCache[(refactoringCurrentPage)*refactoringPageSize+refactoringCurrentIndex];
+        const currentCommitInfo = commitMap[currentCommitID];
         
         //文件树的点击操作
         const onSelect = (keys, event) => {
@@ -1001,6 +1004,53 @@ class MainPage extends React.Component {
                 }
             }
         };
+        
+        const items = [
+            { 
+                label: 'Diff', 
+                key: 'diff', 
+                children: 
+                <div>
+                </div> 
+            }, 
+            {
+                label: 'Refactorings', 
+                key: 'refactorings', 
+                children: 
+                <div>
+                    <div className={s.RefactoringSummary}>
+                        <RefactoringSummary 
+                            data={refactoringData}
+                            fileCountMap={fileCountMap} 
+                        />
+                        <div className={s.pieandtree}>
+                            <div className={s.filetree}>
+                                <FileTree
+                                    fileCountMap={fileCountMap}
+                                    selectedKeys={selectedKeys}
+                                    onTreeSelect={onSelect}
+                                />
+                            </div>
+                            <div className={s.pie}>
+                                <PieChart
+                                    piedata={this.state.refactoringData} 
+                                    onPieSelect={this.handlePieSelect}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <NewRefactoringList 
+                        refactorings={this.getFilteredRefactorings()} 
+                        onHighlightDiff={this.handleHighlightDiff} 
+                        currentPage={currentPage}
+                        onPageChange={(page) => this.setState({ currentPage: page })}
+                    />
+                </div> 
+            },
+        ];
+        
+        
 
         return (
             <div className={s.wrapper}>
@@ -1159,7 +1209,7 @@ class MainPage extends React.Component {
                 </div>
 
 
-                {/* 显示未高亮文件 */}
+                {/* 显示diff文件 */}
                 {!isDetect && fileUploaded && diffResults.length > 0 && (
                     <>
                         <Affix offsetTop={0}>
@@ -1185,38 +1235,13 @@ class MainPage extends React.Component {
                             </div>
                         </Affix>
 
-                        {detecttype === 'defaut' && (<div className={s.messageandauthor}>
-                            <div className={s.message}>
-                                {commitMessage}
-                            </div>
-                            <div className={s.authorandcommit}>
-                                <div className={s.author}>
-                                    <span style={{ color: 'gray' }}>author:</span>
-                                    &nbsp;&nbsp;&nbsp;
-                                    {commitAuthor}
-                                </div>
-                                <div className={s.commit}>
-                                    <span style={{ color: 'gray', marginLeft: '20px' }}>commit</span>
-                                    &nbsp;
-                                    {commitid.substring(0, 7)}
-                                    <Tooltip 
-                                        placement="bottomRight" 
-                                        title={"Copy full SHA for " + commitid.substring(0, 7)}
-                                        overlayInnerStyle={tooltipStyle}  
-                                        autoAdjustOverflow={true}
-                                        mouseLeaveDelay={0}
-                                    >
-                                        <Button 
-                                            type="text"
-                                            onClick={() => this.copyToClipboard(commitid)} 
-                                            className={s.commitbutton}
-                                            icon={<CopyOutlined />}
-
-                                        />
-                                    </Tooltip>
-                                </div>
-                            </div>
-                        </div>
+                        {detecttype === 'defaut' && (
+                            <CommitInfo 
+                                commitMessage={commitMessage} 
+                                commitAuthor={commitAuthor} 
+                                commitid={commitid} 
+                                copyToClipboard={this.copyToClipboard}
+                            />
                         )}
 
                         {diffResults.map((result, index) => (
@@ -1235,7 +1260,7 @@ class MainPage extends React.Component {
                 )}
 
                 {/* 显示重构总结和重构列表 */}
-                {isDetect && !isFilteredByLocation && fileUploaded && (
+                {(detecttype === 'defaut' ||  detecttype === 'dc') && isDetect && !isFilteredByLocation && fileUploaded && (
                     <>
                         <div className={s.RefactoringSummary}>
                             <RefactoringSummary 
@@ -1245,14 +1270,14 @@ class MainPage extends React.Component {
                             <div className={s.pieandtree}>
                                 <div className={s.filetree}>
                                     <FileTree
-                                        fileCountMap={fileCountMap} 
-                                        selectedKeys={selectedKeys} 
+                                        fileCountMap={fileCountMap}
+                                        selectedKeys={selectedKeys}
                                         onTreeSelect={onSelect}
                                     />
                                 </div>
                                 <div className={s.pie}>
                                     <PieChart
-                                        piedata={refactoringData}
+                                        piedata={this.state.refactoringData} 
                                         onPieSelect={this.handlePieSelect}
                                     />
                                 </div>
@@ -1291,7 +1316,7 @@ class MainPage extends React.Component {
                         </Button>
 
                         <RefactoringDetail
-                            refactorings={this.getFilteredRefactorings()} 
+                            refactorings={filteredRefactoring} 
                         />
 
                         {diffResults.map((result, index) => {
@@ -1315,7 +1340,55 @@ class MainPage extends React.Component {
                 )}
 
                 {/* 显示DAC模式 */}
-                
+                {isDetect && detecttype === 'dac' && refactoringCache.length > 0 && !isFilteredByLocation &&(
+                    loadingFromDB ? 
+                    (
+                        <div className={s.spin}>
+                            <Spin size="large" />
+                        </div>
+                    ):
+                    (
+                        <div>
+                            <div className={s.pagingarea}>
+                                <div className={s.pageButton}>
+                                    <Button 
+                                        className={currentCommitID === commitsCache[0] ? s.changepagebuttondisable : s.changepagebutton} 
+                                        type="text" 
+                                        onClick={() => this.handlePageChange(0)}
+                                        disabled={currentCommitID === commitsCache[0]}
+                                    >
+                                        {"<<<<"}<br />Previous
+                                    </Button>
+                                </div>
+                                <div className={s.commitInfoContainer}>
+                                    <CommitInfo
+                                        commitMessage={currentCommitInfo.commitMessage} 
+                                        commitAuthor={currentCommitInfo.commitAuthor}
+                                        commitid={currentCommitID}
+                                        copyToClipboard={this.copyToClipboard}
+                                    />
+                                </div>
+                                <div className={s.pageButton}>
+                                    <Button 
+                                        className={currentCommitID === commitsCache[commitsCache.length-1] ? s.changepagebuttondisable : s.changepagebutton} 
+                                        type="text" 
+                                        onClick={() => this.handlePageChange(1)}
+                                        disabled={currentCommitID === commitsCache[commitsCache.length-1]}
+                                    >
+                                        {">>>>"}<br />Next
+                                    </Button>
+                                </div>
+                            </div>
+                            <div>
+                                <Tabs 
+                                    items={items} 
+                                    tabBarStyle={{marginLeft: '2%', marginRight: '2%'}} 
+                                    defaultActiveKey = "refactorings"
+                                />
+                            </div>
+                        </div>
+                    )
+                )}
                 
             </div>
         );

@@ -1,4 +1,4 @@
-export const PieConfig = (refactoringData, selectedTypes) => ({
+export const PieConfig = (refactoringData) => ({
     appendPadding: 10,
     data: refactoringData,
     angleField: 'value',

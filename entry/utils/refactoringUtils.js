@@ -1,4 +1,4 @@
-    // 计算重构类别的统计数据
+    // 计算重构类别及每个类别的数量
     export const getRefactoringTypeData = (refactorings) => {
         if (refactorings.length === 0) return [];
         const typeMap = new Map();
@@ -9,6 +9,7 @@
         return Array.from(typeMap, ([type, value]) => ({ type, value }));
     }
 
+    // 计算重构列表里包含的文件及其涉及的重构数量
     export const fileCount = (refactorings) => {
         const fileCountMap = {};
         
