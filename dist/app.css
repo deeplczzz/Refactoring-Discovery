@@ -521,6 +521,7 @@
 }
 
 .index__customsyntax---zUOS {
+    white-space: pre-wrap !important;
     background-color: transparent !important;
     background-image: none !important;
     box-shadow: none !important;
@@ -528,15 +529,16 @@
     padding: 0 !important;                    /* 去除内边距 */
     margin: 0 !important;                     /* 去除外边距 */
 
-    display: inline !important;               /* 设置为内联显示，防止换行 */
-
     font-family: inherit !important;          /* 使用继承的字体 */
     font-size: inherit !important;            /* 使用继承的字体大小 */
     line-height: inherit !important;          /* 使用继承的行高 */
     text-shadow: none !important;             /* 去除文字阴影 */
-
+    
+    
+    overflow: hidden !important;
     border: none !important;
     outline: none !important;
+    width: 100% !important;
 }
 
 .index__ShowTypeButton--1-eGr{

@@ -131,19 +131,6 @@ class ContentDiff extends React.Component {
         }));
     }
 
-    //选中文本高亮
-    handleTextSelection = (e) => {
-        const selection = window.getSelection();
-        const selectedText = selection.toString().trim();
-
-        if (selectedText) {
-            this.setState({ selectedText });
-        }
-        else {
-            this.setState({ selectedText: '' });
-        }
-    }
-
     componentDidUpdate(prevProps) {
         if (prevProps.commitId !== this.props.commitId) {
             this.setState({
@@ -302,33 +289,10 @@ class ContentDiff extends React.Component {
 
     // 获取split下的内容
     getPaddingContent = (item) => {
-        const { selectedText } = this.state;
-        let prefix = null;
-        let taborspace = null;
-        // if (!prefix) {
-        //     item = item.replace(/^ {4}/gm, ''); // 移除每行开头的四个空格
-        // }
-
-        //const parts = selectedText ? item.split(new RegExp(`(${this.escapeRegExp(selectedText)})`, 'gi')) : [item];
-
-        // <span className={cx(s.splitCon)} onMouseUp={this.handleTextSelection}>
-        //     {prefix && <span key="prefix">{prefix}</span>}
-        //     {parts.map((part, index) => 
-        //         part.toLowerCase() === selectedText.toLowerCase() ? 
-        //         <span key={index} className={s.textHighlight}>
-        //             <SyntaxHighlighter language="java" style={prism} className={s.customsyntax}>{part}</SyntaxHighlighter>
-        //         </span> : 
-        //         <span key={index}>
-        //             <SyntaxHighlighter language="java" style={prism} className={s.customsyntax}>{part}</SyntaxHighlighter>
-        //         </span>
-        //     )}
-        // </span>
-    
         return (
-            <span className={cx(s.splitCon)} onMouseUp={this.handleTextSelection}>
-                {prefix && <span key="prefix">{prefix}</span>}
+            <div className={cx(s.splitCon)}>
                 <SyntaxHighlighter language="java" style={githubGist} className={s.customsyntax}>{item}</SyntaxHighlighter>
-            </span>
+            </div>
         );
     }
     

@@ -466,42 +466,23 @@ class MainPage extends React.Component {
     };
 
     //负责仅从后端获取oldode以及newcode，不改变任何属性
-    fetchDiffFile_only = async (commitid) => {
-        const {repository} = this.state;
-        if (!commitid || !repository) {
-            message.error('Please provide repository and commitid.');
-            return null;
-        }
-
+    fetchDiffFile_only = async (diffFiles) => {
         try {
-            const response = await fetch('http://localhost:8080/api/getDiff', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ repository: repository, commitId: commitid}),
-            });
-    
-            if (!response.ok) {
-                throw new Error('Network response was not ok.');
-            }
-    
-            const diffFiles = await response.json();
-    
             if (diffFiles.length > 0) {
                 const diffResults = await Promise.all(diffFiles.map(async (file) => ({
                     fileName: file.name,
                     diff: await this.actDiff(file.oldCode, file.newCode),
                 })));
-                return diffResults;
+                this.setState({ 
+                    diffResults,
+                });
             } else {
-                message.error('No diff files found in JSON.');
-                return null;
+                this.setState({ diffResults:[]});
             }
         } catch (error) {
             console.error('Error fetching diff files:', error);
             message.error('Error fetching diff files.');
-            return null;
+            this.setState({ diffResults:[]});
         }
     };
 
@@ -656,7 +637,10 @@ class MainPage extends React.Component {
                     () => {
                         this.loadRefactoringFromDB(this.state.commitsCache.slice(0, Math.min(this.state.commitsCache.length, CACHE_SIZE)))
                             .then(() => {
-                                this.setState({ refactorings: this.state.refactoringCache[0].results[0].refactorings || [] });
+                                const firstResult = this.state.refactoringCache[0].results[0];
+                                const diffFiles = firstResult.files;
+                                this.fetchDiffFile_only(diffFiles);
+                                this.setState({ refactorings: firstResult.refactorings || [] });
                             });
                     }
                 );
@@ -912,7 +896,10 @@ class MainPage extends React.Component {
                     },
                     () => this.loadRefactoringFromDB(NewcommitIds)
                         .then(() => {
-                            this.setState({ refactorings: this.state.refactoringCache[newIndex].results[0].refactorings || []});
+                            const firstResult = this.state.refactoringCache[newIndex].results[0];
+                            const diffFiles = firstResult.files;
+                            this.fetchDiffFile_only(diffFiles);
+                            this.setState({ refactorings: firstResult.refactorings || [] });
                         })
                 );
             }
@@ -926,7 +913,10 @@ class MainPage extends React.Component {
                     isFilteredbyTree:false,
                     showType: SHOW_TYPE.NORMAL,
                 }, () => {
-                    this.setState({ refactorings: this.state.refactoringCache[newIndex].results[0].refactorings || []});
+                        const firstResult = this.state.refactoringCache[newIndex].results[0];
+                        const diffFiles = firstResult.files;
+                        this.fetchDiffFile_only(diffFiles);
+                        this.setState({ refactorings: firstResult.refactorings || [] });
                 });
             }
         }
@@ -947,7 +937,10 @@ class MainPage extends React.Component {
                     },
                     () => this.loadRefactoringFromDB(NewcommitIds)
                         .then(() => {
-                            this.setState({ refactorings: this.state.refactoringCache[newIndex].results[0].refactorings || []});
+                            const firstResult = this.state.refactoringCache[newIndex].results[0];
+                            const diffFiles = firstResult.files;
+                            this.fetchDiffFile_only(diffFiles);
+                            this.setState({ refactorings: firstResult.refactorings || [] });
                         })
                 );
             }
@@ -961,7 +954,10 @@ class MainPage extends React.Component {
                     isFilteredbyTree:false,
                     showType: SHOW_TYPE.NORMAL,
                 },() => {
-                    this.setState({ refactorings: this.state.refactoringCache[newIndex].results[0].refactorings || []});
+                        const firstResult = this.state.refactoringCache[newIndex].results[0];
+                        const diffFiles = firstResult.files;
+                        this.fetchDiffFile_only(diffFiles);
+                        this.setState({ refactorings: firstResult.refactorings || [] });
                 });
             }
         }
@@ -1011,6 +1007,18 @@ class MainPage extends React.Component {
                 key: 'diff', 
                 children: 
                 <div>
+                    {diffResults.map((result, index) => (
+                        <div key={index}>
+                            <ContentDiff
+                                isFile={this.isFile}
+                                diffArr={result.diff}
+                                highlightedLines={[]}
+                                showType={SHOW_TYPE.NORMAL}
+                                fileName={result.fileName}  
+                                commitId = {currentCommitID} 
+                            />
+                        </div>
+                    ))}
                 </div> 
             }, 
             {
