@@ -2,7 +2,7 @@ import React from 'react';
 import s from './index.css';
 import SockJS from 'sockjs-client';
 import { Stomp } from '@stomp/stompjs';
-import {Spin, Button, Form, message, Select, DatePicker, Affix, Input, Tabs} from 'antd';
+import {Spin, Button, Form, message, Select, DatePicker, Affix, Input, Tabs, Result} from 'antd';
 import ContentDiff from '../contentDiff';
 import NewRefactoringList from '../RefactoringList/NewRefactoringList'; 
 import RefactoringSummary from '../RefactoringSummary/RefactoringSummary'; 
@@ -31,8 +31,8 @@ const SHOW_TYPE = {
 class MainPage extends React.Component {
     state = {
         diffResults: [], // 用于存储所有文件的 diff 结果
+        fileUpload:false,
         repository:'',
-        fileUploaded: false, // 表示文件已上传
         refactorings: [], // 新增用于存储 refactorings
         commitid:'',
         commitMessage:'', //commit message
@@ -65,20 +65,21 @@ class MainPage extends React.Component {
         treeFilterRefactorings:[], //被文件树过滤的重构
         isFilteredbyTree: false,
         selectedKeys: [],
-        ongoingTasks: new Set(),
-        loadingFromDB: false,
-        refactoringCache: [],
-        refactoringCurrentIndex: 0, //当前页面下的索引
-        refactoringCurrentPage: 0, //当前页
+        ongoingTasks: "",
+        commitcount: 0 ,
+        loadingFromDB: false, //标记正在从数据库读取数据
+        loading:false,//通用读取中
+        detecting:false, //正在挖掘重构
+        refactoringCurrentIndex: 1, //当前页面下的索引
         commitsCache:[],
         refactoringData: [], //给饼图的类别数据
-        refactoringTotalPages: 0, //总页数
-        refactoringPageSize: 0, //页面大小
     }
 
     isFetchingRefactoring = false; //标识是否正在进行重构挖掘
     isFetchingRefactoring_dc = false; //标识是否正在进行重构挖掘
     lastRequestParams = {}; //记录上一次请求访问的参数
+    currentRequestId_df = null;
+    AbortController = null;
     
 
     componentDidMount() {
@@ -90,6 +91,10 @@ class MainPage extends React.Component {
     componentDidUpdate(prevProps, prevState) {
         if (prevState.refactorings !== this.state.refactorings || prevState.isFilteredbyTree !== this.state.isFilteredbyTree || prevState.selectedKeys !== this.state.selectedKeys) {
             this.updateRefactoringData();
+        }
+
+        if (this.state.commitcount >= this.state.refactoringCurrentIndex && prevState.commitcount < prevState.refactoringCurrentIndex) {
+            this.loadRefactoringFromDB(this.state.commitsCache[this.state.refactoringCurrentIndex]);  // 调用数据库加载函数
         }
     }
 
@@ -137,12 +142,15 @@ class MainPage extends React.Component {
         window.electronAPI.onDirectorySelected((path) => {
             console.log('Directory selected:', path);  // 调试日志
             this.setState({ repository: path ,
-                            fileUploaded:false,
                             isFilteredByLocation: false,
                             showType:SHOW_TYPE.NORMAL,
                             commitid:'',
                             startCommitId:'',
-                            endCommitId:''
+                            endCommitId:'',
+                            isDetect:false,
+                            loading:false,
+                            detecting:false,
+                            diffResults:[],
             });
             this.fetchCommits(path);
         });
@@ -298,11 +306,13 @@ class MainPage extends React.Component {
                             this.setState({ 
                                 commitid: value, 
                                 commitMessage: selectedCommit.commitMessage,
-                                commitAuthor: selectedCommit.commitAuthor
-                            }, this.fetchDiffFile);
+                                commitAuthor: selectedCommit.commitAuthor,
+                                fileUpload: false,
+                                isDetect: false,
+                            },this.fetchDiffFile);
                         }
                     }}
-                    
+                    //disabled = {this.state.loading === true}
                     style={{ width: '100%'}}
                     showSearch
                     filterOption={(input, option) => {
@@ -331,7 +341,8 @@ class MainPage extends React.Component {
                     onSelect={(value) => {
                         const selectedCommit = commitMap[value];
                         this.setState({ 
-                            [isStart ? 'startCommitId' : 'endCommitId']: value 
+                            [isStart ? 'startCommitId' : 'endCommitId']: value ,
+                            fileUpload : false,
                         });
                         if(isStart){
                             const [startDate, endDate] = dateRange_dc2;
@@ -358,6 +369,7 @@ class MainPage extends React.Component {
                             });
                         }
                     }}
+                    disabled = {this.state.loading === true}
                     style={{ width: '100%' }}
                     showSearch
                     filterOption={(input, option) => {
@@ -377,12 +389,18 @@ class MainPage extends React.Component {
 
     //负责仅从后端获取oldode以及newcode
     fetchDiffFile = async () => {
-        const { commitid, repository } = this.state;
-    
-        if (!commitid || !repository) {
-            message.error('Please provide repository and commitid.');
-            return;
+        if(this.AbortController){ //中断之前的请求
+            this.AbortController.abort();
         }
+
+        const { commitid, repository } = this.state;
+
+        const abortController = new AbortController();
+        this.AbortController = abortController;
+
+        this.setState({ loading: true });
+        const requestId = Date.now();
+        this.currentRequestId_df = requestId;
     
         try {
             const response = await fetch('http://localhost:8080/api/getDiff', {
@@ -391,43 +409,48 @@ class MainPage extends React.Component {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ repository: repository, commitId: commitid}),
+                signal: abortController.signal,
             });
     
             if (!response.ok) {
                 throw new Error('Network response was not ok.');
             }
-    
+
             const diffFiles = await response.json();
-    
-            if (diffFiles.length > 0) {
-                const diffResults = await Promise.all(diffFiles.map(async (file) => ({
-                    fileName: file.name,
-                    diff: await this.actDiff(file.oldCode, file.newCode),
-                })));
+            if(requestId === this.currentRequestId_df){
+                const diffResults = diffFiles.length > 0 
+                    ? await Promise.all(diffFiles.map(async (file) => ({
+                        fileName: file.name,
+                        diff: await this.actDiff(file.oldCode, file.newCode),
+                    })))
+                    : [];
+
                 this.setState({
                     diffResults,
-                    fileUploaded: true ,
-                    isFilteredByLocation: false ,
+                    fileUpload: true,
+                    isFilteredByLocation: false,
                     showType: SHOW_TYPE.NORMAL,
                     isDetect:false,
+                    loading: false,
                 });
-            } else {
-                message.error('No diff files found in JSON.');
             }
-        } catch (error) {
-            console.error('Error fetching diff files:', error);
-            message.error('Error fetching diff files.');
+            this.AbortController = null;
+        }catch (error) {
+            if (error.name !== 'AbortError') { // 忽略中止请求的错误
+                this.AbortController = null;
+                console.error('Error fetching diff files:', error);
+                message.error('Error fetching diff files.');
+            }else{
+                console.log("请求中断！");
+            }
         }
     };
 
     //负责仅从后端获取oldode以及newcode （两个commit版本）
     fetchDiffFile_dc = async () => {
         const { startCommitId,endCommitId, repository } = this.state;
-    
-        if (!startCommitId || !repository || !endCommitId) {
-            message.error('Please provide repository and two commitid.');
-            return;
-        }
+
+        this.setState({ loading: true });
     
         try {
             const response = await fetch('http://localhost:8080/api/getDiffBC', {
@@ -451,21 +474,29 @@ class MainPage extends React.Component {
                 })));
                 this.setState({
                     diffResults,
-                    fileUploaded: true ,
                     isFilteredByLocation: false ,
                     showType: SHOW_TYPE.NORMAL,
+                    fileUpload:true,
                     isDetect:false,
                 });
             } else {
-                message.error('No diff files found in JSON.');
+                this.setState({
+                    diffResults:[],
+                    isFilteredByLocation: false ,
+                    showType: SHOW_TYPE.NORMAL,
+                    fileUpload:true,
+                    isDetect:false,
+                });
             }
         } catch (error) {
             console.error('Error fetching diff files:', error);
             message.error('Error fetching diff files.');
+        }finally {
+            this.setState({ loading: false });
         }
     };
 
-    //负责仅从后端获取oldode以及newcode，不改变任何属性
+    //传入diffFiles 计算diff
     fetchDiffFile_only = async (diffFiles) => {
         try {
             if (diffFiles.length > 0) {
@@ -488,18 +519,20 @@ class MainPage extends React.Component {
 
     //用于从后端获取重构
     fetchRefactoring = async () => {
+        if(this.AbortController){ //中断之前的请求
+            this.AbortController.abort();
+        }
+        const abortController = new AbortController();
+        this.AbortController = abortController;
+
         const { commitid, repository } = this.state;
-    
+        
         if(!commitid || !repository) {
             message.error('Please provide repository and commitid.');
             return;
         }
 
-        if(this.isFetchingRefactoring){
-            return; //如果上一次没执行完，则不执行请求
-        }
-
-        this.isFetchingRefactoring = true;  // 设置为正在请求中
+        this.setState({isDetect: true});
 
         try {
             const response = await fetch('http://localhost:8080/api/detect', {
@@ -508,6 +541,7 @@ class MainPage extends React.Component {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ repository: repository, commitId: commitid}),
+                signal: abortController.signal,
             });
     
             if (!response.ok) {
@@ -515,25 +549,23 @@ class MainPage extends React.Component {
             }
     
             const json = await response.json();
-    
-            if (json.results && json.results.length > 0) {
-                const firstResult = json.results[0];
-                this.setState({
-                    refactorings: firstResult.refactorings || [],
-                    showType: SHOW_TYPE.HIGHLIGHT,
-                    isFilteredByLocation: false,
-                    PieSelectedTypes: [], 
-                    isDetect: true, 
-                });
-                this.isFetchingRefactoring = false;
-            } else {
-                message.error('Invalid JSON format: Missing results array.');
-                this.isFetchingRefactoring = false;
-            }
+
+            const firstResult = json.results?.[0] || {};
+            this.setState({
+                refactorings: firstResult.refactorings || [],
+                showType: SHOW_TYPE.HIGHLIGHT,
+                isFilteredByLocation: false,
+                PieSelectedTypes: [],
+            });
+            this.AbortController = null;
         } catch (error) {
-            this.isFetchingRefactoring = false;
-            console.error('Error fetching data:', error);
-            message.error('Error fetching data.');
+            if (error.name !== 'AbortError') { // 忽略中止请求的错误
+                this.AbortController = null;
+                console.error('Error fetching refactoring data:', error);
+                message.error('Error fetching refactoring data.');
+            }else{
+                console.log("请求中断！");
+            }
         }
     };
 
@@ -551,6 +583,7 @@ class MainPage extends React.Component {
         }
 
         this.isFetchingRefactoring_dc = true;  // 设置为正在请求中
+        this.setState({ detecting: true, isDetect: true });
 
         try {
             const response = await fetch('http://localhost:8080/api/detectBC', {
@@ -574,39 +607,42 @@ class MainPage extends React.Component {
                     showType: SHOW_TYPE.HIGHLIGHT,
                     isFilteredByLocation: false,
                     PieSelectedTypes: [], 
-                    isDetect: true, 
                 });
                 this.isFetchingRefactoring_dc = false;
             } else {
                 this.isFetchingRefactoring_dc = false;
-                message.error('Invalid JSON format: Missing results array.');
+                this.setState({
+                    refactorings: [],
+                    showType: SHOW_TYPE.HIGHLIGHT,
+                    isFilteredByLocation: false,
+                    PieSelectedTypes: [], 
+                });
             }
         } catch (error) {
             this.isFetchingRefactoring_dc = false;
             console.error('Error fetching data:', error);
             message.error('Error fetching data.');
+        }finally {
+            this.setState({ detecting: false });
         }
     };
 
     //通知后端，开始挖掘重构并存入数据库(all between two commits)
     fetchRefactoring_dac = async () => {
         const {startCommitId, endCommitId, repository, ongoingTasks, commitMap, commits} = this.state;
-    
-        if (!startCommitId || !repository || !endCommitId) {
-            message.error('Please provide repository and two commitid.');
+        
+        //如果有正在运行的进程 则不让运行
+        if (ongoingTasks) {
+            message.warning('A process is currently running. Please wait.');
             return;
         }
 
         const taskKey = `${repository}-${startCommitId}-${endCommitId}`;
 
-        if (ongoingTasks.has(taskKey)) {
-            message.warning('Task is already running for this repository and commit range. Please wait.');
-            return;
-        }
-
-        this.setState((prevState) => ({
-            ongoingTasks: new Set(prevState.ongoingTasks).add(taskKey),
-        }));
+        this.setState({
+            ongoingTasks:taskKey,
+            commitcount:0,
+        });
 
         try {
             const response = await fetch('http://localhost:8080/api/detectAC', {
@@ -621,31 +657,18 @@ class MainPage extends React.Component {
             const commitsf = commits.slice(commitMap[endCommitId].commitIndex, commitMap[startCommitId].commitIndex);
             
             if (response.ok) {
-                this.setState(
-                    {
-                        refactoringCurrentPage: 0, //当前页0
-                        refactoringCurrentIndex: 0, //当前页面的当前id
-                        refactoringCache:[], //重构缓存
+                this.setState({
+                        refactoringCurrentIndex: 1, //当前页面的当前id
+                        refactorings:[],
                         isDetect: true, 
                         isFilteredByLocation: false,
                         PieSelectedTypes: [], 
                         showType: SHOW_TYPE.HIGHLIGHT,
                         commitsCache: commitsf.map(commit => commit.commitId).slice().reverse(), //只需要id并反转，按时间增序
-                        refactoringTotalPages: Math.ceil(commitsf.length / CACHE_SIZE), //页面总数
-                        refactoringPageSize: Math.min(commitsf.length, CACHE_SIZE)//页面大小
-                    },
-                    () => {
-                        this.loadRefactoringFromDB(this.state.commitsCache.slice(0, Math.min(this.state.commitsCache.length, CACHE_SIZE)))
-                            .then(() => {
-                                const firstResult = this.state.refactoringCache[0].results[0];
-                                const diffFiles = firstResult.files;
-                                this.fetchDiffFile_only(diffFiles);
-                                this.setState({ refactorings: firstResult.refactorings || [] });
-                            });
-                    }
-                );
+                });
             } else {
                 message.error(`Failed: ${responseMessage}`); // 失败信息
+                this.resetTask(taskKey);
             }
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -655,7 +678,7 @@ class MainPage extends React.Component {
     };
 
     //通知后端从数据库读取数据并展示
-    loadRefactoringFromDB = async (commitIds) => {
+    loadRefactoringFromDB = async (commitId) => {
         const { repository } = this.state;
         this.setState({ loadingFromDB: true });
 
@@ -667,7 +690,7 @@ class MainPage extends React.Component {
                 },
                 body: JSON.stringify({
                     repository: repository,
-                    commitIds: commitIds,
+                    commitId: commitId,
                 }),
             });
 
@@ -676,29 +699,28 @@ class MainPage extends React.Component {
                 throw new Error(errorMsg);
             }
 
-            const data = await response.json();
-            const parsedData = data.map(item => JSON.parse(item));
-
-            this.setState({ 
-                refactoringCache: parsedData,
-            });
-            console.log(this.state.refactoringCache);
+            const json = await response.json();
+            const firstResult = json.results?.[0] || {};
+            const diffFiles = firstResult.files || [];
+            this.fetchDiffFile_only(diffFiles);
+            this.setState({ refactorings: firstResult.refactorings || [] });
 
         } catch (error) {
-            message.error(`Error loading data`);
+            message.error(`Error loading data from dataset`);
         } finally {
             this.setState({ loadingFromDB: false });
         }
     };
 
-    //探测all between commit时候的websocket连接以及接收消息
+    //websocket连接
     connectWebSocket = () => {
         const socket = new SockJS('http://localhost:8080/ws');
         this.stompClient = Stomp.over(socket);
     
         this.stompClient.connect({}, () => {
             console.log('Connected to WebSocket');
-    
+            
+            //订阅任务完成消息
             this.stompClient.subscribe('/topic/task-completion', (messageOutput) => {
                 const messageJson = JSON.parse(messageOutput.body);
                 
@@ -713,6 +735,21 @@ class MainPage extends React.Component {
                     console.warn('Unknown status in WebSocket message:', messageJson);
                 }
             });
+
+            // 订阅 commitProcessed 更新消息
+            this.stompClient.subscribe('/topic/detect-processed', (messageOutput) => {
+                const messageJson = JSON.parse(messageOutput.body);
+                
+                // 确保是当前的任务，并且处理了 commit
+                const {count, taskKey} = messageJson;
+                //只更新当前任务的
+                if (this.state.ongoingTasks === taskKey) {
+                    this.setState((prevState) => ({
+                        commitcount: count, // 更新 commitcount
+                    }));
+                    console.log(`Commit count updated: ${count}`);
+                }
+            });
         }, (error) => {
             console.error('WebSocket connection error:', error);
         });
@@ -720,10 +757,8 @@ class MainPage extends React.Component {
     
     //重置正在执行的任务
     resetTask = (taskKey) => {
-        this.setState((prevState) => {
-            const newOngoingTasks = new Set(prevState.ongoingTasks);
-            newOngoingTasks.delete(taskKey);
-            return { ongoingTasks: newOngoingTasks };
+        this.setState({
+            ongoingTasks:"",
         });
     };
 
@@ -874,108 +909,43 @@ class MainPage extends React.Component {
 
     //翻页按钮的函数
     handlePageChange = (direction) => {
-        const { refactoringCurrentPage, refactoringPageSize, commitsCache, refactoringTotalPages, refactoringCurrentIndex} = this.state;
-        
-        let newPage = refactoringCurrentPage;
-        let newIndex = refactoringCurrentIndex;
+        const {refactoringCurrentIndex, commitsCache} = this.state;
+        let newindex = refactoringCurrentIndex;
 
         if(direction === 0){ // 向前翻页
-            if(refactoringCurrentIndex === 0 && refactoringCurrentPage !== 0){ //跨页
-                newIndex = refactoringPageSize - 1;
-                newPage = refactoringCurrentPage - 1;
-                const NewcommitIds = commitsCache.slice(newPage * refactoringPageSize, (newPage + 1) * refactoringPageSize);
-                this.setState(
-                    {
-                        refactoringCurrentIndex: newIndex,
-                        refactoringCurrentPage: newPage,
-                        selectedKeys:[],
-                        PieSelectedTypes:[],
-                        isFilteredByLocation:false,
-                        isFilteredbyTree:false,
-                        showType: SHOW_TYPE.NORMAL,
-                    },
-                    () => this.loadRefactoringFromDB(NewcommitIds)
-                        .then(() => {
-                            const firstResult = this.state.refactoringCache[newIndex].results[0];
-                            const diffFiles = firstResult.files;
-                            this.fetchDiffFile_only(diffFiles);
-                            this.setState({ refactorings: firstResult.refactorings || [] });
-                        })
-                );
+            const currentCommitID = commitsCache[newindex - 1];
+            if(this.state.commitcount >= newindex - 1){
+                this.loadRefactoringFromDB(currentCommitID);
             }
-            else{ //页内
-                newIndex = refactoringCurrentIndex - 1;
-                this.setState({
-                    refactoringCurrentIndex : newIndex,
-                    selectedKeys:[],
-                    PieSelectedTypes:[],
-                    isFilteredByLocation:false,
-                    isFilteredbyTree:false,
-                    showType: SHOW_TYPE.NORMAL,
-                }, () => {
-                        const firstResult = this.state.refactoringCache[newIndex].results[0];
-                        const diffFiles = firstResult.files;
-                        this.fetchDiffFile_only(diffFiles);
-                        this.setState({ refactorings: firstResult.refactorings || [] });
-                });
-            }
+            this.setState({
+                refactoringCurrentIndex: newindex - 1,
+            });
+            
         }
         else{ //向后翻页
-            if(refactoringCurrentIndex === refactoringPageSize - 1 && refactoringCurrentPage !== refactoringTotalPages - 1){
-                newIndex = 0;
-                newPage = refactoringCurrentPage + 1;
-                const NewcommitIds = commitsCache.slice(newPage * refactoringPageSize, Math.min((newPage + 1) * refactoringPageSize, commitsCache.length));
-                this.setState(
-                    {
-                        refactoringCurrentIndex: newIndex,
-                        refactoringCurrentPage: newPage,
-                        selectedKeys:[],
-                        PieSelectedTypes:[],
-                        isFilteredByLocation:false,
-                        isFilteredbyTree:false,
-                        showType: SHOW_TYPE.NORMAL,
-                    },
-                    () => this.loadRefactoringFromDB(NewcommitIds)
-                        .then(() => {
-                            const firstResult = this.state.refactoringCache[newIndex].results[0];
-                            const diffFiles = firstResult.files;
-                            this.fetchDiffFile_only(diffFiles);
-                            this.setState({ refactorings: firstResult.refactorings || [] });
-                        })
-                );
+            const currentCommitID = commitsCache[newindex + 1];
+            if(this.state.commitcount >= newindex + 1){
+                this.loadRefactoringFromDB(currentCommitID);
             }
-            else{
-                newIndex = refactoringCurrentIndex + 1;
-                this.setState({
-                    refactoringCurrentIndex : newIndex,
-                    selectedKeys:[],
-                    PieSelectedTypes:[],
-                    isFilteredByLocation:false,
-                    isFilteredbyTree:false,
-                    showType: SHOW_TYPE.NORMAL,
-                },() => {
-                        const firstResult = this.state.refactoringCache[newIndex].results[0];
-                        const diffFiles = firstResult.files;
-                        this.fetchDiffFile_only(diffFiles);
-                        this.setState({ refactorings: firstResult.refactorings || [] });
-                });
-            }
+            this.setState({
+                refactoringCurrentIndex: newindex + 1,
+            });
         }
-        console.log(this.state.refactoringCache[newIndex]);
-        console.log('New Page:', newPage, 'New Index:', newIndex);
     };
 
     render() {
-        const { diffResults, fileUploaded, selectedKeys, commitid, commits,highlightedFiles, 
-            loadingFromDB, refactoringPageSize, refactoringCurrentIndex, refactoringCurrentPage,
-            commitAuthor, commitMessage, latestDate, earliestDate, refactoringData, filteredRefactoring, refactoringCache,
+        const { diffResults, selectedKeys, commitid, commits,highlightedFiles, loading,fileUpload,detecting,
+            loadingFromDB, refactoringCurrentIndex,
+            commitAuthor, commitMessage, latestDate, earliestDate, refactoringData, filteredRefactoring,
             isFilteredByLocation, refactorings, showType, isDetect, dateRange, currentPage, commitMap, commitsCache,
             detecttype, dateRange_dc1, dateRange_dc2, startCommitId, endCommitId, isScrollVisible} = this.state;
 
         const totalChanges = calculateTotalChanges(diffResults);
         const fileCountMap = fileCount(refactorings);
-        const currentCommitID = commitsCache[(refactoringCurrentPage)*refactoringPageSize+refactoringCurrentIndex];
+
+        const currentCommitID = commitsCache[refactoringCurrentIndex];
         const currentCommitInfo = commitMap[currentCommitID];
+        
         
         //文件树的点击操作
         const onSelect = (keys, event) => {
@@ -1086,10 +1056,11 @@ class MainPage extends React.Component {
                                 onSelect={(value) => {
                                     this.setState({ 
                                         detecttype: value, 
-                                        fileUploaded: false, 
+                                        fileUpload:false,
                                         isDetect: false, 
                                         isFilteredByLocation: false,
                                         commitid: '',
+                                        diffResults:[],
                                         dateRange: [earliestDate,latestDate],
                                         dateRange_dc1: [earliestDate,latestDate], 
                                         dateRange_dc2: [earliestDate,latestDate],
@@ -1139,6 +1110,7 @@ class MainPage extends React.Component {
                                         onChange={this.handleDateRangeChange}
                                         value={dateRange}
                                         disabledDate={this.disabledDate}
+                                        //disabled={loading}
                                     />
                                 </div>
                             </div>
@@ -1166,6 +1138,7 @@ class MainPage extends React.Component {
                                         onChange={this.handleDateRangeChange_dc1}
                                         value={dateRange_dc1}
                                         disabledDate={this.disabledDate_dc1}
+                                        disabled={loading}
                                     />
                                 </div>
                             </div>
@@ -1184,6 +1157,7 @@ class MainPage extends React.Component {
                                         onChange = {this.handleDateRangeChange_dc2}
                                         value={dateRange_dc2}
                                         disabledDate={this.disabledDate_dc2}
+                                        disabled={loading}
                                     />
                                 </div>
                             </div>
@@ -1198,7 +1172,7 @@ class MainPage extends React.Component {
                                         type="primary" 
                                         onClick={detecttype === 'dc' ? this.fetchRefactoring_dc : this.fetchRefactoring_dac} 
                                         className={s.button} 
-                                        disabled={!startCommitId || !endCommitId}
+                                        disabled={!startCommitId || !endCommitId || (detecttype === 'dc'? detecting : this.state.ongoingTasks)}
                                     >
                                         {detecttype === 'dc' ? 'Detect' : 'Detect All'}
                                     </Button>
@@ -1218,91 +1192,116 @@ class MainPage extends React.Component {
 
 
                 {/* 显示diff文件 */}
-                {!isDetect && fileUploaded && diffResults.length > 0 && (
-                    <>
-                        <Affix offsetTop={0}>
-                            <div className={s.affixContainer}>
-                                <div>
-                                    <span className={s.fileCount}>
-                                        {diffResults.length} files changed
-                                    </span>
-                                    <span className={s.additionsline}>+{totalChanges.additions}</span>
-                                    <span className={s.deletionsline}>-{totalChanges.deletions}</span>
-                                    <span className={s.lineschanged}>lines changed</span>
+                {!isDetect && (
+                    loading ? (
+                        <div className={s.spin}>
+                            <Spin size="large"></Spin>
+                        </div>
+                    ):( fileUpload && ( diffResults.length > 0 ? (
+                        <>
+                            <Affix offsetTop={0}>
+                                <div className={s.affixContainer}>
+                                    <div>
+                                        <span className={s.fileCount}>
+                                            {diffResults.length} files changed
+                                        </span>
+                                        <span className={s.additionsline}>+{totalChanges.additions}</span>
+                                        <span className={s.deletionsline}>-{totalChanges.deletions}</span>
+                                        <span className={s.lineschanged}>lines changed</span>
+                                    </div>
+                                    {isScrollVisible && (
+                                        <Button 
+                                            type="text" 
+                                            icon={<ArrowUpOutlined />}
+                                            className={s.backTopButton}
+                                            onClick={this.scrollToTop}
+                                        >
+                                            Top
+                                        </Button>
+                                    )}
                                 </div>
-                                {isScrollVisible && (
-                                    <Button 
-                                        type="text" 
-                                        icon={<ArrowUpOutlined />}
-                                        className={s.backTopButton}
-                                        onClick={this.scrollToTop}
-                                    >
-                                        Top
-                                    </Button>
-                                )}
-                            </div>
-                        </Affix>
+                            </Affix>
 
-                        {detecttype === 'defaut' && (
-                            <CommitInfo 
-                                commitMessage={commitMessage} 
-                                commitAuthor={commitAuthor} 
-                                commitid={commitid} 
-                                copyToClipboard={this.copyToClipboard}
-                            />
-                        )}
+                            {detecttype === 'defaut' && (
+                                <CommitInfo 
+                                    commitMessage={commitMessage} 
+                                    commitAuthor={commitAuthor} 
+                                    commitid={commitid} 
+                                    copyToClipboard={this.copyToClipboard}
+                                />
+                            )}
 
-                        {diffResults.map((result, index) => (
-                            <div key={index}>
-                                <ContentDiff
-                                    isFile={this.isFile}
-                                    diffArr={result.diff}
-                                    highlightedLines={[]}  // 初始状态没有高亮
-                                    showType={showType}
-                                    fileName={result.fileName}  
-                                    commitId = {commitid} 
+                            {diffResults.map((result, index) => (
+                                <div key={index}>
+                                    <ContentDiff
+                                        isFile={this.isFile}
+                                        diffArr={result.diff}
+                                        highlightedLines={[]}  // 初始状态没有高亮
+                                        showType={showType}
+                                        fileName={result.fileName}  
+                                        commitId = {commitid} 
+                                    />
+                                </div>
+                            ))}
+                        </> ) : ( //没有diff文件，显示结果提示
+                            <div className={s.errorresult}>
+                                <Result
+                                    title="No diff files found in commit."
                                 />
                             </div>
-                        ))}
-                    </> 
+                        )
+                    ))
                 )}
 
                 {/* 显示重构总结和重构列表 */}
-                {(detecttype === 'defaut' ||  detecttype === 'dc') && isDetect && !isFilteredByLocation && fileUploaded && (
-                    <>
-                        <div className={s.RefactoringSummary}>
-                            <RefactoringSummary 
-                                data={refactoringData}
-                                fileCountMap={fileCountMap} 
-                            />
-                            <div className={s.pieandtree}>
-                                <div className={s.filetree}>
-                                    <FileTree
-                                        fileCountMap={fileCountMap}
-                                        selectedKeys={selectedKeys}
-                                        onTreeSelect={onSelect}
-                                    />
-                                </div>
-                                <div className={s.pie}>
-                                    <PieChart
-                                        piedata={this.state.refactoringData} 
-                                        onPieSelect={this.handlePieSelect}
-                                    />
+                {(detecttype === 'defaut' ||  detecttype === 'dc') && isDetect && !isFilteredByLocation && (
+                    detecting ? 
+                    (
+                        <div className={s.spin}>
+                            <Spin size="large"></Spin>
+                        </div>
+                    ):( refactorings.length > 0 ? (
+                        <>
+                            <div className={s.RefactoringSummary}>
+                                <RefactoringSummary 
+                                    data={refactoringData}
+                                    fileCountMap={fileCountMap} 
+                                />
+                                <div className={s.pieandtree}>
+                                    <div className={s.filetree}>
+                                        <FileTree
+                                            fileCountMap={fileCountMap}
+                                            selectedKeys={selectedKeys}
+                                            onTreeSelect={onSelect}
+                                        />
+                                    </div>
+                                    <div className={s.pie}>
+                                        <PieChart
+                                            piedata={this.state.refactoringData} 
+                                            onPieSelect={this.handlePieSelect}
+                                        />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <NewRefactoringList 
-                            refactorings={this.getFilteredRefactorings()} 
-                            onHighlightDiff={this.handleHighlightDiff} 
-                            currentPage={currentPage}
-                            onPageChange={(page) => this.setState({ currentPage: page })}
-                        />
-                    </>
+                            <NewRefactoringList 
+                                refactorings={this.getFilteredRefactorings()} 
+                                onHighlightDiff={this.handleHighlightDiff} 
+                                currentPage={currentPage}
+                                onPageChange={(page) => this.setState({ currentPage: page })}
+                            />
+                        </>
+                    ):(
+                        <div className={s.errorresult}>
+                                <Result
+                                    title="No refactorings were discovered in this commit."
+                                />
+                        </div>
+                    ))
                 )}
 
                 {/* 显示location之后的重构细节 */}
-                {isDetect && fileUploaded && isFilteredByLocation &&(
+                {isDetect && isFilteredByLocation &&(
                     <>
                         <Button
                             icon={<ArrowLeftOutlined />}
@@ -1348,54 +1347,51 @@ class MainPage extends React.Component {
                 )}
 
                 {/* 显示DAC模式 */}
-                {isDetect && detecttype === 'dac' && refactoringCache.length > 0 && !isFilteredByLocation &&(
-                    loadingFromDB ? 
-                    (
-                        <div className={s.spin}>
-                            <Spin size="large" />
-                        </div>
-                    ):
-                    (
-                        <div>
-                            <div className={s.pagingarea}>
-                                <div className={s.pageButton}>
-                                    <Button 
-                                        className={currentCommitID === commitsCache[0] ? s.changepagebuttondisable : s.changepagebutton} 
-                                        type="text" 
-                                        onClick={() => this.handlePageChange(0)}
-                                        disabled={currentCommitID === commitsCache[0]}
-                                    >
-                                        {"<<<<"}<br />Previous
-                                    </Button>
-                                </div>
-                                <div className={s.commitInfoContainer}>
-                                    <CommitInfo
-                                        commitMessage={currentCommitInfo.commitMessage} 
-                                        commitAuthor={currentCommitInfo.commitAuthor}
-                                        commitid={currentCommitID}
-                                        copyToClipboard={this.copyToClipboard}
-                                    />
-                                </div>
-                                <div className={s.pageButton}>
-                                    <Button 
-                                        className={currentCommitID === commitsCache[commitsCache.length-1] ? s.changepagebuttondisable : s.changepagebutton} 
-                                        type="text" 
-                                        onClick={() => this.handlePageChange(1)}
-                                        disabled={currentCommitID === commitsCache[commitsCache.length-1]}
-                                    >
-                                        {">>>>"}<br />Next
-                                    </Button>
-                                </div>
+                {isDetect && detecttype === 'dac' && !isFilteredByLocation &&(
+                    <div>
+                        <div className={s.pagingarea}>
+                            <div className={s.pageButton}>
+                                <Button 
+                                    className={currentCommitID === commitsCache[0] ? s.changepagebuttondisable : s.changepagebutton} 
+                                    type="text" 
+                                    onClick={() => this.handlePageChange(0)}
+                                    disabled={currentCommitID === commitsCache[0]}
+                                >
+                                    {"<<<<"}<br />Previous
+                                </Button>
                             </div>
-                            <div>
-                                <Tabs 
-                                    items={items} 
-                                    tabBarStyle={{marginLeft: '2%', marginRight: '2%'}} 
-                                    defaultActiveKey = "refactorings"
+                            <div className={s.commitInfoContainer}>
+                                <CommitInfo
+                                    commitMessage={currentCommitInfo.commitMessage} 
+                                    commitAuthor={currentCommitInfo.commitAuthor}
+                                    commitid={currentCommitID}
+                                    copyToClipboard={this.copyToClipboard}
                                 />
                             </div>
+                            <div className={s.pageButton}>
+                                <Button 
+                                    className={currentCommitID === commitsCache[commitsCache.length-1] ? s.changepagebuttondisable : s.changepagebutton} 
+                                    type="text" 
+                                    onClick={() => this.handlePageChange(1)}
+                                    disabled={currentCommitID === commitsCache[commitsCache.length-1]}
+                                >
+                                    {">>>>"}<br />Next
+                                </Button>
+                            </div>
                         </div>
-                    )
+                        {this.state.commitcount < refactoringCurrentIndex ? 
+                        (
+                            <div className={s.spin}>
+                                <Spin size="large" />
+                            </div>
+                        ):(<div>
+                            <Tabs 
+                                items={items} 
+                                tabBarStyle={{marginLeft: '2%', marginRight: '2%'}} 
+                                defaultActiveKey = "refactorings"
+                            />
+                        </div>)}
+                    </div>
                 )}
                 
             </div>

@@ -275,8 +275,12 @@
     margin-right: 2%;
 }
 
-
-
+.index__errorresult--Jj60X{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* 使其占满整个视口高度 */
+}
 .index__color--2ojbV {
     color: black;
     background-color: #fff;

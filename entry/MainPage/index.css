@@ -275,4 +275,9 @@
     margin-right: 2%;
 }
 
-
+.errorresult{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* 使其占满整个视口高度 */
+}
