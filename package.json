@@ -1,6 +1,6 @@
 {
     "name": "refactoring-discovery",
-    "version": "v1.2.9",
+    "version": "v1.3.0",
     "main": "electron.js",
     "scripts": {
         "start": "node ./bin/start",
@@ -47,8 +47,8 @@
         "asar": true,
         "extraResources": [
             {
-                "from": "server/RefactoringDiscovery-1.0.1.jar",
-                "to": "server/RefactoringDiscovery-1.0.1.jar"
+                "from": "server/RefactoringDiscovery-1.0.2.jar",
+                "to": "server/RefactoringDiscovery-1.0.2.jar"
             }
         ],
         "directories": {

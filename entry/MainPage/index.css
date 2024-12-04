@@ -9,31 +9,33 @@
     padding-bottom: 20px;
 }
 
-.formItem {
-    display: flex;
-    justify-content: space-between; /* 让内容和 label 在两边 */
-    align-items: center; /* 垂直居中对齐 */
-    width: 100%; /* 使 formItem 填满父容器 */
-}
-
-/* 使用 position: relative 和 top 调整 Upload JSON 标签的位置 */
-.formItem .ant-form-item-label {
-    display: flex;
-    align-items: center; /* 垂直居中对齐标签 */
-    position: relative; /* 使用相对定位进行调整 */
-    top: 50px; /* 根据需要调整 top 值 */
-}
-
 .button{
     border-radius: 4px !important; /* 圆角 */
     margin-left: 4%;
 }
 
-.handleSubmit{
-    display: grid;
-    grid-template-rows: 60px;
+.detecttype{
+    display: flex;
+    margin-right: 2%;
+    margin-left: 2%;
 }
 
+.handleSubmit{
+    display: grid;
+    grid-template-rows: 60px 60px;
+}
+
+.repositorylabel{
+    width: 90px;
+    white-space: nowrap;
+}
+
+.inputandbutton{
+    display: flex;
+    margin-left: 20px;
+    margin-right: 2%;
+
+}
 
 .selectbotton{
     border-radius: 0 4px 4px 0 !important;
@@ -47,30 +49,14 @@
     background-color: white !important;
 }
 
-.flexRow {
-    gap: 20px; /* 设置选择框和按钮之间的间距 */
-}
-
 .buttonandtext {
     display: flex;
     margin-right: 2%;
     margin-left: 2%;
 }
 
-.repositorylabel{
-    width: 90px;
-}
-
-.inputandbutton{
-    display: flex;
-    margin-left: 20px;
-    margin-right: 2%;
-
-}
-
 .detecttypelabel{
     width: 90px;
-    margin-left: 4%;
 }
 
 .detcttypeselect{
@@ -123,6 +109,11 @@
     grid-template-rows: 60px 60px 60px 60px;
 }
 
+.dt{
+    display: grid;
+    grid-template-rows: 60px 60px;
+}
+
 .RefactoringSummary{
     margin-left: 2%;
     margin-right: 2%;
@@ -146,7 +137,7 @@
     border-right: 1px solid #eee;
 }
 
-.dataSelect{
+.dateSelect{
     display: grid;
     grid-template-columns: 90px 250px;
     margin-right: 2%;
@@ -160,11 +151,11 @@
     margin-left: 2%;
 }
 
-.dataSelectlabel{
+.dateSelectlabel{
     margin-left: 2%;
 }
 
-.dataSelectPicker{
+.dateSelectPicker{
     margin-left: 20px;
 }
 
@@ -209,7 +200,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh; /* 使其占满整个视口高度 */
+    height: 70vh; /* 使其占满整个视口高度 */
 }
 
 .pagingarea{
@@ -279,5 +270,28 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh; /* 使其占满整个视口高度 */
+    height: 70vh; /* 使其占满整个视口高度 */
+}
+
+.tagselectandlebal{
+    display: grid;
+    grid-template-columns: 90px 200px;
+    margin-left: 2%;
+    margin-right: 2%;
+}
+
+.tagselectandlebalandbutton{
+    display: grid;
+    grid-template-columns: 90px 200px auto;
+    margin-left: 2%;
+    margin-right: 2%;
+}
+
+.taglebal{
+    margin-left: 2%;
+}
+
+.tagselect{
+    margin-right: 0px;
+    margin-left: 20px;
 }

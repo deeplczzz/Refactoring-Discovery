@@ -8,7 +8,7 @@ import NewRefactoringList from '../RefactoringList/NewRefactoringList';
 import RefactoringSummary from '../RefactoringSummary/RefactoringSummary'; 
 import RefactoringDetail from '../RefactoringDetail/RefactoringDetail';
 import moment from 'moment';
-import {ArrowLeftOutlined, ArrowUpOutlined, FolderOpenOutlined, CopyOutlined} from '@ant-design/icons'; 
+import {ArrowLeftOutlined, ArrowUpOutlined, FolderOpenOutlined} from '@ant-design/icons'; 
 import { calculateTotalChanges } from '../utils/diffUtils';
 import { getRefactoringTypeData, fileCount } from '../utils/refactoringUtils';
 import PieChart from '../Pie-Chart/PieChart';
@@ -17,10 +17,7 @@ import CommitInfo from '../Module/CommitInfo'
 
 const { RangePicker } = DatePicker;
 const FormItem = Form.Item;
-const layout = {
-    labelCol: { span: 4 },
-    wrapperCol: { span: 20 },
-};
+
 const CACHE_SIZE = 9;
 
 const SHOW_TYPE = {
@@ -67,12 +64,17 @@ class MainPage extends React.Component {
         selectedKeys: [],
         ongoingTasks: "",
         commitcount: 0 ,
-        loadingFromDB: false, //标记正在从数据库读取数据
         loading:false,//通用读取中
         detecting:false, //正在挖掘重构
-        refactoringCurrentIndex: 1, //当前页面下的索引
-        commitsCache:[],
+        refactoringCurrentIndex: 1, //detect all 中当前页面
+        commitsCache:[], //detect all 选中commits区间的Cache
         refactoringData: [], //给饼图的类别数据
+        tags:[], //所有的版本
+        tagsMap:[], //所有的版本map
+        startTag: '',
+        endTag: '',
+        filteredTags_1:[], //选择框1显示的Tags
+        filteredTags_2:[], //选择框2显示的Tags
     }
 
     isFetchingRefactoring = false; //标识是否正在进行重构挖掘
@@ -153,6 +155,7 @@ class MainPage extends React.Component {
                             diffResults:[],
             });
             this.fetchCommits(path);
+            this.fetchTags(path);
         });
     };
 
@@ -212,6 +215,48 @@ class MainPage extends React.Component {
         } catch (error) {
             console.error('Error fetching commits:', error);
             message.error('Error fetching commits.');
+        }
+    };
+
+    //获取 Tags 列表
+    fetchTags = async (path) => {
+        try {
+            const response = await fetch('http://localhost:8080/api/tags', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ repository: path }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch tags.');
+            }
+
+            const TagsList = await response.json();
+            if (TagsList.length > 0) {
+                const tagsMap = {};
+                TagsList.forEach((tag,index) => {
+                    tagsMap[tag.tagName] = {
+                        commitId: tag.commitId,
+                        tagIndex: index,
+                    };
+                });
+                this.setState({ 
+                    tags: TagsList,
+                    tagsMap,
+                    filteredTags_1: TagsList,
+                    filteredTags_2: TagsList,
+                    startTag: '',
+                    endTag: '',
+                });
+                //console.log(TagsList);
+            } else {
+                message.warning('Not found release tags');
+            }
+        } catch (error) {
+            console.error('Error fetching tags:', error);
+            message.error('Error fetching tags.');
         }
     };
 
@@ -387,6 +432,58 @@ class MainPage extends React.Component {
         );
     };
 
+    //TODO:渲染tag选择框
+    renderTagSelect = (isStart) => {
+        const {tags, filteredTags_1, filteredTags_2, startTag, endTag, tagsMap} = this.state;
+        const filteredTags = isStart ? filteredTags_1 : filteredTags_2;
+
+        return (
+            <FormItem>
+                <Select
+                    value={isStart ? startTag : endTag}
+                    onSelect={(value) => {
+                        const selecteTag = tagsMap[value];
+                        this.setState({ 
+                            [isStart ? 'startTag' : 'endTag']: value ,
+                            fileUpload : false,
+                        });
+                        if(isStart){
+                            this.setState({
+                                filteredTags_2: tags.slice(selecteTag.tagIndex+1, tags.length)
+                            },() => {
+                                if(endTag){
+                                    this.fetchDiffFile_dt();
+                                }
+                            });
+                        }
+                        else{
+                            this.setState({
+                                filteredTags_1: tags.slice(0, selecteTag.tagIndex)
+                            },() => {
+                                if(startTag){
+                                    this.fetchDiffFile_dt();
+                                }
+                            });
+                        }
+                    }}
+                    //disabled = {this.state.loading === true}
+                    style={{ width: '100%' }}
+                    showSearch
+                    filterOption={(input, option) => {
+                        const tagInfo = option?.children?.toString().toLowerCase() || '';
+                        return tagInfo.indexOf(input.toLowerCase()) >= 0;
+                    }}
+                >
+                    {filteredTags.map((tag, index) => (
+                        <Select.Option key={index} value={tag.tagName}>
+                            {tag.tagName.split('/').pop()}
+                        </Select.Option>
+                    ))}
+                </Select>
+            </FormItem>
+        );
+    };
+
     //负责仅从后端获取oldode以及newcode
     fetchDiffFile = async () => {
         if(this.AbortController){ //中断之前的请求
@@ -448,6 +545,12 @@ class MainPage extends React.Component {
 
     //负责仅从后端获取oldode以及newcode （两个commit版本）
     fetchDiffFile_dc = async () => {
+        if(this.AbortController){ //中断之前的请求
+            this.AbortController.abort();
+        }
+        const abortController = new AbortController();
+        this.AbortController = abortController;
+
         const { startCommitId,endCommitId, repository } = this.state;
 
         this.setState({ loading: true });
@@ -459,6 +562,7 @@ class MainPage extends React.Component {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ repository: repository, startCommitId: startCommitId, endCommitId: endCommitId}),
+                signal: abortController.signal,
             });
     
             if (!response.ok) {
@@ -488,9 +592,78 @@ class MainPage extends React.Component {
                     isDetect:false,
                 });
             }
+            this.AbortController = null;
         } catch (error) {
-            console.error('Error fetching diff files:', error);
-            message.error('Error fetching diff files.');
+            if (error.name !== 'AbortError') { // 忽略中止请求的错误
+                this.AbortController = null;
+                console.error('Error fetching diff files:', error);
+                message.error('Error fetching diff files.');
+            }else{
+                console.log("请求中断！");
+            }
+        }finally {
+            this.setState({ loading: false });
+        }
+    };
+
+    //负责仅从后端获取oldode以及newcode （两个Tag）
+    fetchDiffFile_dt = async () => {
+        if(this.AbortController){ //中断之前的请求
+            this.AbortController.abort();
+        }
+        const abortController = new AbortController();
+        this.AbortController = abortController;
+
+        const { startTag, endTag, repository } = this.state;
+
+        this.setState({ loading: true });
+    
+        try {
+            const response = await fetch('http://localhost:8080/api/getDiffBC', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ repository: repository, startCommitId: startTag, endCommitId: endTag}),
+                signal: abortController.signal,
+            });
+    
+            if (!response.ok) {
+                throw new Error('Network response was not ok.');
+            }
+    
+            const diffFiles = await response.json();
+    
+            if (diffFiles.length > 0) {
+                const diffResults = await Promise.all(diffFiles.map(async (file) => ({
+                    fileName: file.name,
+                    diff: await this.actDiff(file.oldCode, file.newCode),
+                })));
+                this.setState({
+                    diffResults,
+                    isFilteredByLocation: false ,
+                    showType: SHOW_TYPE.NORMAL,
+                    fileUpload:true,
+                    isDetect:false,
+                });
+            } else {
+                this.setState({
+                    diffResults:[],
+                    isFilteredByLocation: false ,
+                    showType: SHOW_TYPE.NORMAL,
+                    fileUpload:true,
+                    isDetect:false,
+                });
+            }
+            this.AbortController = null;
+        } catch (error) {
+            if (error.name !== 'AbortError') { // 忽略中止请求的错误
+                this.AbortController = null;
+                console.error('Error fetching diff files:', error);
+                message.error('Error fetching diff files.');
+            }else{
+                console.log("请求中断！");
+            }
         }finally {
             this.setState({ loading: false });
         }
@@ -663,6 +836,9 @@ class MainPage extends React.Component {
                         isDetect: true, 
                         isFilteredByLocation: false,
                         PieSelectedTypes: [], 
+                        treeFilterRefactorings:[],
+                        isFilteredbyTree: false,
+                        selectedKeys: [],
                         showType: SHOW_TYPE.HIGHLIGHT,
                         commitsCache: commitsf.map(commit => commit.commitId).slice().reverse(), //只需要id并反转，按时间增序
                 });
@@ -677,10 +853,67 @@ class MainPage extends React.Component {
         }
     };
 
+    //TODO：用于从后端获取重构(between two tags)
+    fetchRefactoring_dt = async () => {
+        const { startTag, endTag, repository } = this.state;
+        
+        if (!startTag || !repository || !endTag) {
+            message.error('Please provide repository and two Tags.');
+            return;
+        }
+
+        if(this.isFetchingRefactoring_dc){
+            return; //如果上一次没执行完，则不执行请求
+        }
+
+        this.isFetchingRefactoring_dc = true;  // 设置为正在请求中
+        this.setState({ detecting: true, isDetect: true });
+
+        try {
+            const response = await fetch('http://localhost:8080/api/detectBT', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ repository: repository, startTag: startTag, endTag: endTag}),
+            });
+    
+            if (!response.ok) {
+                throw new Error('Network response was not ok.');
+            }
+    
+            const json = await response.json();
+    
+            if (json.results && json.results.length > 0) {
+                const firstResult = json.results[0];
+                this.setState({
+                    refactorings: firstResult.refactorings || [],
+                    showType: SHOW_TYPE.HIGHLIGHT,
+                    isFilteredByLocation: false,
+                    PieSelectedTypes: [], 
+                });
+                this.isFetchingRefactoring_dc = false;
+            } else {
+                this.isFetchingRefactoring_dc = false;
+                this.setState({
+                    refactorings: [],
+                    showType: SHOW_TYPE.HIGHLIGHT,
+                    isFilteredByLocation: false,
+                    PieSelectedTypes: [], 
+                });
+            }
+        } catch (error) {
+            this.isFetchingRefactoring_dc = false;
+            console.error('Error fetching data:', error);
+            message.error('Error fetching data.');
+        }finally {
+            this.setState({ detecting: false });
+        }
+    };
+
     //通知后端从数据库读取数据并展示
     loadRefactoringFromDB = async (commitId) => {
         const { repository } = this.state;
-        this.setState({ loadingFromDB: true });
 
         try {
             const response = await fetch('http://localhost:8080/api/getFromDB', {
@@ -707,8 +940,6 @@ class MainPage extends React.Component {
 
         } catch (error) {
             message.error(`Error loading data from dataset`);
-        } finally {
-            this.setState({ loadingFromDB: false });
         }
     };
 
@@ -911,9 +1142,10 @@ class MainPage extends React.Component {
     handlePageChange = (direction) => {
         const {refactoringCurrentIndex, commitsCache} = this.state;
         let newindex = refactoringCurrentIndex;
+        let Page = refactoringCurrentIndex - 1;
 
         if(direction === 0){ // 向前翻页
-            const currentCommitID = commitsCache[newindex - 1];
+            const currentCommitID = commitsCache[Page - 1];
             if(this.state.commitcount >= newindex - 1){
                 this.loadRefactoringFromDB(currentCommitID);
             }
@@ -923,7 +1155,7 @@ class MainPage extends React.Component {
             
         }
         else{ //向后翻页
-            const currentCommitID = commitsCache[newindex + 1];
+            const currentCommitID = commitsCache[Page + 1];
             if(this.state.commitcount >= newindex + 1){
                 this.loadRefactoringFromDB(currentCommitID);
             }
@@ -931,19 +1163,24 @@ class MainPage extends React.Component {
                 refactoringCurrentIndex: newindex + 1,
             });
         }
+        this.setState({
+            treeFilterRefactorings:[],
+            isFilteredbyTree: false,
+            PieSelectedTypes:[],
+            selectedKeys: [],
+        });
     };
 
     render() {
-        const { diffResults, selectedKeys, commitid, commits,highlightedFiles, loading,fileUpload,detecting,
-            loadingFromDB, refactoringCurrentIndex,
-            commitAuthor, commitMessage, latestDate, earliestDate, refactoringData, filteredRefactoring,
+        const { diffResults, selectedKeys, commitid, commits,highlightedFiles, loading,fileUpload,detecting, refactoringCurrentIndex,
+            commitAuthor, commitMessage, latestDate, earliestDate, refactoringData, filteredRefactoring, tags, startTag, endTag,
             isFilteredByLocation, refactorings, showType, isDetect, dateRange, currentPage, commitMap, commitsCache,
             detecttype, dateRange_dc1, dateRange_dc2, startCommitId, endCommitId, isScrollVisible} = this.state;
 
         const totalChanges = calculateTotalChanges(diffResults);
         const fileCountMap = fileCount(refactorings);
 
-        const currentCommitID = commitsCache[refactoringCurrentIndex];
+        const currentCommitID = commitsCache[refactoringCurrentIndex-1];
         const currentCommitInfo = commitMap[currentCommitID];
         
         
@@ -1049,6 +1286,9 @@ class MainPage extends React.Component {
                                 </Button>
                             </div>
                         </div>
+                    </div>
+                    
+                    <div className={s.detecttype}>
                         <div className={s.detecttypelabel}>DetectType :</div>
                         <div className={s.detcttypeselect}>
                             <Select
@@ -1072,7 +1312,11 @@ class MainPage extends React.Component {
                                         latestDate_dc1:latestDate,
                                         latestDate_dc2:latestDate,
                                         startCommitId: '',
-                                        endCommitId: ''
+                                        endCommitId: '',
+                                        startTag:'',
+                                        endTag:'',
+                                        filteredTags_1:tags,
+                                        filteredTags_2:tags,
                                     });
                                 }}
                                 className={s.detcttypeselectbody}
@@ -1082,7 +1326,7 @@ class MainPage extends React.Component {
                                       label: <span>Commit</span>,
                                       title: 'Commit',
                                       options: [
-                                        { label: <span>Between the previous commit</span>, value: 'defaut' },
+                                        { label: <span>Previous commit</span>, value: 'defaut' },
                                         { label: <span>Between two commits</span>, value: 'dc' },
                                         { label: <span>All between two commits</span>, value: 'dac' },
                                       ],
@@ -1103,9 +1347,9 @@ class MainPage extends React.Component {
                     {/* 比较连续版本 */}
                     {detecttype === 'defaut' && commits.length > 0 && (
                         <div className={s.defaut}>
-                            <div className={s.dataSelect}>
-                                <div className={s.dataSelectlabel}>DateRange :</div>
-                                <div className={s.dataSelectPicker}>
+                            <div className={s.dateSelect}>
+                                <div className={s.dateSelectlabel}>DateRange :</div>
+                                <div className={s.dateSelectPicker}>
                                     <RangePicker 
                                         onChange={this.handleDateRangeChange}
                                         value={dateRange}
@@ -1131,9 +1375,9 @@ class MainPage extends React.Component {
                     {/* 比较两个commit之间 */}
                     {(detecttype === 'dc' || detecttype === 'dac') && commits.length > 0 && (
                         <div className={s.dc}>
-                            <div className={s.dataSelect}>
-                                <div className={s.dataSelectlabel}>DateRange :</div>
-                                <div className={s.dataSelectPicker}>
+                            <div className={s.dateSelect}>
+                                <div className={s.dateSelectlabel}>DateRange :</div>
+                                <div className={s.dateSelectPicker}>
                                     <RangePicker 
                                         onChange={this.handleDateRangeChange_dc1}
                                         value={dateRange_dc1}
@@ -1150,9 +1394,9 @@ class MainPage extends React.Component {
                                 </div>
                             </div>
 
-                            <div className={s.dataSelect}>
-                                <div className={s.dataSelectlabel}>DateRange :</div>
-                                <div className={s.dataSelectPicker}>
+                            <div className={s.dateSelect}>
+                                <div className={s.dateSelectlabel}>DateRange :</div>
+                                <div className={s.dateSelectPicker}>
                                     <RangePicker 
                                         onChange = {this.handleDateRangeChange_dc2}
                                         value={dateRange_dc2}
@@ -1182,9 +1426,32 @@ class MainPage extends React.Component {
                     )}
 
                     {/* 比较两个版本之间 */}
-                    {detecttype === 'dt' && commits.length > 0 && (
-                        <div>
+                    {(detecttype === 'dt' || detecttype === 'dat') && tags.length > 0 && (
+                        <div className={s.dt}>
 
+                            <div className={s.tagselectandlebal}>
+                                <div className={s.taglebal}>Start Tag :</div>
+                                <div className={s.tagselect}>
+                                    {this.renderTagSelect(true)}
+                                </div>
+                            </div>
+
+                            <div className={s.tagselectandlebalandbutton}>
+                                <div className={s.taglebal}>End Tag :</div>
+                                <div className={s.tagselect}>
+                                    {this.renderTagSelect(false)}
+                                </div>
+                                <div>
+                                    <Button 
+                                        type="primary" 
+                                        onClick={detecttype === 'dt' ? this.fetchRefactoring_dt : {}} 
+                                        className={s.button} 
+                                        disabled={!startTag || !endTag || (detecttype === 'dt'? detecting : this.state.ongoingTasks)}
+                                    >
+                                        {detecttype === 'dt' ? 'Detect' : 'Detect All'}
+                                    </Button>
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -1254,7 +1521,7 @@ class MainPage extends React.Component {
                 )}
 
                 {/* 显示重构总结和重构列表 */}
-                {(detecttype === 'defaut' ||  detecttype === 'dc') && isDetect && !isFilteredByLocation && (
+                {(detecttype === 'defaut' ||  detecttype === 'dc' || detecttype === 'dt') && isDetect && !isFilteredByLocation && (
                     detecting ? 
                     (
                         <div className={s.spin}>

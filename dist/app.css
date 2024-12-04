@@ -9,31 +9,33 @@
     padding-bottom: 20px;
 }
 
-.index__formItem--1pMJq {
-    display: flex;
-    justify-content: space-between; /* 让内容和 label 在两边 */
-    align-items: center; /* 垂直居中对齐 */
-    width: 100%; /* 使 formItem 填满父容器 */
-}
-
-/* 使用 position: relative 和 top 调整 Upload JSON 标签的位置 */
-.index__formItem--1pMJq .index__ant-form-item-label--TwOlJ {
-    display: flex;
-    align-items: center; /* 垂直居中对齐标签 */
-    position: relative; /* 使用相对定位进行调整 */
-    top: 50px; /* 根据需要调整 top 值 */
-}
-
 .index__button--1wJb1{
     border-radius: 4px !important; /* 圆角 */
     margin-left: 4%;
 }
 
-.index__handleSubmit--2lzLt{
-    display: grid;
-    grid-template-rows: 60px;
+.index__detecttype--2JYtm{
+    display: flex;
+    margin-right: 2%;
+    margin-left: 2%;
 }
 
+.index__handleSubmit--2lzLt{
+    display: grid;
+    grid-template-rows: 60px 60px;
+}
+
+.index__repositorylabel--1eZYy{
+    width: 90px;
+    white-space: nowrap;
+}
+
+.index__inputandbutton--wmeJP{
+    display: flex;
+    margin-left: 20px;
+    margin-right: 2%;
+
+}
 
 .index__selectbotton--1uzr2{
     border-radius: 0 4px 4px 0 !important;
@@ -47,30 +49,14 @@
     background-color: white !important;
 }
 
-.index__flexRow--3LtbZ {
-    gap: 20px; /* 设置选择框和按钮之间的间距 */
-}
-
 .index__buttonandtext--1jsU2 {
     display: flex;
     margin-right: 2%;
     margin-left: 2%;
 }
 
-.index__repositorylabel--1eZYy{
-    width: 90px;
-}
-
-.index__inputandbutton--wmeJP{
-    display: flex;
-    margin-left: 20px;
-    margin-right: 2%;
-
-}
-
 .index__detecttypelabel--11Tly{
     width: 90px;
-    margin-left: 4%;
 }
 
 .index__detcttypeselect--xsVjU{
@@ -123,6 +109,11 @@
     grid-template-rows: 60px 60px 60px 60px;
 }
 
+.index__dt--175UT{
+    display: grid;
+    grid-template-rows: 60px 60px;
+}
+
 .index__RefactoringSummary--2HMGu{
     margin-left: 2%;
     margin-right: 2%;
@@ -146,7 +137,7 @@
     border-right: 1px solid #eee;
 }
 
-.index__dataSelect--Gr3q9{
+.index__dateSelect--35Vc_{
     display: grid;
     grid-template-columns: 90px 250px;
     margin-right: 2%;
@@ -160,11 +151,11 @@
     margin-left: 2%;
 }
 
-.index__dataSelectlabel--1MgiM{
+.index__dateSelectlabel--1hU5l{
     margin-left: 2%;
 }
 
-.index__dataSelectPicker--1EhGx{
+.index__dateSelectPicker--227uN{
     margin-left: 20px;
 }
 
@@ -209,7 +200,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh; /* 使其占满整个视口高度 */
+    height: 70vh; /* 使其占满整个视口高度 */
 }
 
 .index__pagingarea--131b6{
@@ -279,7 +270,30 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh; /* 使其占满整个视口高度 */
+    height: 70vh; /* 使其占满整个视口高度 */
+}
+
+.index__tagselectandlebal--3Ljbo{
+    display: grid;
+    grid-template-columns: 90px 200px;
+    margin-left: 2%;
+    margin-right: 2%;
+}
+
+.index__tagselectandlebalandbutton--SxAXc{
+    display: grid;
+    grid-template-columns: 90px 200px auto;
+    margin-left: 2%;
+    margin-right: 2%;
+}
+
+.index__taglebal--35azP{
+    margin-left: 2%;
+}
+
+.index__tagselect--16olg{
+    margin-right: 0px;
+    margin-left: 20px;
 }
 .index__color--2ojbV {
     color: black;
