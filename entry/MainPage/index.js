@@ -853,6 +853,69 @@ class MainPage extends React.Component {
         }
     };
 
+    //通知后端，开始挖掘重构并存入数据库(all commits between two tags)
+    fetchRefactoring_dat = async () => {
+        if (ongoingTasks) {
+            message.warning('A process is currently running. Please wait.');
+            return;
+        }
+
+        const {startTag, endTag, repository, ongoingTasks, commitMap, commits, tagsMap} = this.state;
+        let startCommitId = tagsMap[startTag].commitId;
+        let endCommitId = tagsMap[endTag].commitId;
+
+        console.log(startCommitId);
+        console.log(endCommitId);
+
+        this.setState({
+            startCommitId,
+            endCommitId,
+        });
+
+        const taskKey = `${repository}-${startCommitId}-${endCommitId}`;
+
+        this.setState({
+            ongoingTasks:taskKey,
+            commitcount:0,
+        });
+
+        try {
+            const response = await fetch('http://localhost:8080/api/detectAC', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ repository: repository, startCommitId: startCommitId, endCommitId: endCommitId}),
+            });
+
+            const responseMessage = await response.text();
+            const commitsf = commits.slice(commitMap[endCommitId].commitIndex, commitMap[startCommitId].commitIndex);
+            console.log(commitsf);
+            
+            if (response.ok) {
+                this.setState({
+                        refactoringCurrentIndex: 1, //当前页面的当前id
+                        refactorings:[],
+                        isDetect: true, 
+                        isFilteredByLocation: false,
+                        PieSelectedTypes: [], 
+                        treeFilterRefactorings:[],
+                        isFilteredbyTree: false,
+                        selectedKeys: [],
+                        showType: SHOW_TYPE.HIGHLIGHT,
+                        commitsCache: commitsf.map(commit => commit.commitId).slice().reverse(), //只需要id并反转，按时间增序
+                });
+            } else {
+                message.error(`Failed: ${responseMessage}`); // 失败信息
+                this.resetTask(taskKey);
+            }
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            message.error('Error fetching data.');
+            this.resetTask(taskKey);
+        }
+    };
+
     //TODO：用于从后端获取重构(between two tags)
     fetchRefactoring_dt = async () => {
         const { startTag, endTag, repository } = this.state;
@@ -1176,13 +1239,10 @@ class MainPage extends React.Component {
             commitAuthor, commitMessage, latestDate, earliestDate, refactoringData, filteredRefactoring, tags, startTag, endTag,
             isFilteredByLocation, refactorings, showType, isDetect, dateRange, currentPage, commitMap, commitsCache,
             detecttype, dateRange_dc1, dateRange_dc2, startCommitId, endCommitId, isScrollVisible} = this.state;
-
         const totalChanges = calculateTotalChanges(diffResults);
         const fileCountMap = fileCount(refactorings);
-
         const currentCommitID = commitsCache[refactoringCurrentIndex-1];
         const currentCommitInfo = commitMap[currentCommitID];
-        
         
         //文件树的点击操作
         const onSelect = (keys, event) => {
@@ -1265,8 +1325,6 @@ class MainPage extends React.Component {
             },
         ];
         
-        
-
         return (
             <div className={s.wrapper}>
                 <div className={s.handleSubmit}>
@@ -1317,6 +1375,7 @@ class MainPage extends React.Component {
                                         endTag:'',
                                         filteredTags_1:tags,
                                         filteredTags_2:tags,
+                                        refactorings:[],
                                     });
                                 }}
                                 className={s.detcttypeselectbody}
@@ -1444,7 +1503,7 @@ class MainPage extends React.Component {
                                 <div>
                                     <Button 
                                         type="primary" 
-                                        onClick={detecttype === 'dt' ? this.fetchRefactoring_dt : {}} 
+                                        onClick={detecttype === 'dt' ? this.fetchRefactoring_dt : this.fetchRefactoring_dat} 
                                         className={s.button} 
                                         disabled={!startTag || !endTag || (detecttype === 'dt'? detecting : this.state.ongoingTasks)}
                                     >
@@ -1456,7 +1515,6 @@ class MainPage extends React.Component {
                     )}
 
                 </div>
-
 
                 {/* 显示diff文件 */}
                 {!isDetect && (
@@ -1613,8 +1671,8 @@ class MainPage extends React.Component {
                     </>
                 )}
 
-                {/* 显示DAC模式 */}
-                {isDetect && detecttype === 'dac' && !isFilteredByLocation &&(
+                {/* 显示DAC DAT模式 */}
+                {isDetect && (detecttype === 'dac' || detecttype === 'dat') && !isFilteredByLocation &&(
                     <div>
                         <div className={s.pagingarea}>
                             <div className={s.pageButton}>
@@ -1653,7 +1711,7 @@ class MainPage extends React.Component {
                             </div>
                         ):(<div>
                             <Tabs 
-                                items={items} 
+                                items={items}
                                 tabBarStyle={{marginLeft: '2%', marginRight: '2%'}} 
                                 defaultActiveKey = "refactorings"
                             />

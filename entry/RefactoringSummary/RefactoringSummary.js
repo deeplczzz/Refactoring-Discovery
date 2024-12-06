@@ -18,12 +18,12 @@ const RefactoringSummary = ({ data, fileCountMap}) => {
             
             <div className = {s.statistic}>
                 <Statistic 
-                    title="Refactoring Count" 
+                    title="Refactorings" 
                     value={totalRefactorings} 
                     prefix={<AimOutlined />}
                 />
                 <Statistic 
-                    title="Files Count" 
+                    title="Involved Files" 
                     value={fileData.length}
                     prefix={<FileOutlined />}
                 />
@@ -42,12 +42,12 @@ const RefactoringSummary = ({ data, fileCountMap}) => {
                 size="small"
             >
                 <Column 
-                    title="TYPE" 
+                    title="Type" 
                     dataIndex="type" 
                     key="type" 
                 />
                 <Column 
-                    title="COUNT" 
+                    title="Numbers" 
                     dataIndex="value" 
                     key="value" 
                     sorter={(a, b) => a.value - b.value}
