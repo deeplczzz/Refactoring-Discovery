@@ -1,5 +1,6 @@
 // electron.js
 const { app, BrowserWindow, dialog, ipcMain} = require('electron');
+const { Worker } = require('worker_threads');
 const path = require('path');
 
 let mainWindow;
@@ -72,14 +73,19 @@ ipcMain.on('dialog:selectDirectory', async (event) => {
 });
 
 ipcMain.handle('perform-diff', (event, oldCode, newCode) => {
-  try {
-    const diffModule = lazyModules.loadDiff();
-    const diffResult = diffModule.diffLines(oldCode, newCode);
-    return diffResult;  // 将 diff 结果返回给渲染进程
-  } catch (error) {
-    console.error('Error computing diff:', error);
-    return { error: 'Error computing diff' };
-  }
+  return new Promise((resolve, reject) => {
+    // 将任务委托给 Worker 线程
+    const workerPath = path.join(__dirname, 'worker', 'diffWorker.js');
+    const worker = new Worker(workerPath, {
+      workerData: { oldCode, newCode },
+    });
+
+    worker.on('message', (result) => resolve(result)); // 返回结果
+    worker.on('error', (error) => reject(error)); // 处理错误
+    worker.on('exit', (code) => {
+      if (code !== 0) reject(new Error(`Worker stopped with exit code ${code}`));
+    });
+  });
 });
 
 function terminateSpringBoot() {
