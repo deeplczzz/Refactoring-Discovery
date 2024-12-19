@@ -1,6 +1,6 @@
 {
     "name": "refactoring-discovery",
-    "version": "v1.3.1",
+    "version": "v1.3.2",
     "main": "electron.js",
     "scripts": {
         "start": "node ./bin/start",
@@ -59,7 +59,8 @@
         "files": [
             "dist/**/*",
             "electron.js",
-            "preload.js"
+            "preload.js",
+            "worker/**/*"
         ],
         "win": {
             "target": [

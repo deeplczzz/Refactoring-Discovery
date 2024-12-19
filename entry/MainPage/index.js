@@ -720,7 +720,7 @@ class MainPage extends React.Component {
             return;
         }
 
-        this.setState({isDetect: true});
+        this.setState({ detecting: true, isDetect: true });
 
         try {
             const response = await fetch('http://localhost:8080/api/detect', {
@@ -754,6 +754,8 @@ class MainPage extends React.Component {
             }else{
                 console.log("请求中断！");
             }
+        }finally{
+            this.setState({ detecting: false });
         }
     };
 
