@@ -4,11 +4,11 @@ import SockJS from 'sockjs-client';
 import { Stomp } from '@stomp/stompjs';
 import {Spin, Button, Form, message, Select, DatePicker, Affix, Input, Tabs, Result} from 'antd';
 import ContentDiff from '../contentDiff';
-import NewRefactoringList from '../RefactoringList/NewRefactoringList'; 
+import RefactoringList from '../RefactoringList/RefactoringList'; 
 import RefactoringSummary from '../RefactoringSummary/RefactoringSummary'; 
 import RefactoringDetail from '../RefactoringDetail/RefactoringDetail';
 import moment from 'moment';
-import {ArrowLeftOutlined, ArrowUpOutlined, FolderOpenOutlined} from '@ant-design/icons'; 
+import {ArrowLeftOutlined, ArrowUpOutlined, FolderOpenOutlined, FieldNumberOutlined, FrownOutlined} from '@ant-design/icons'; 
 import { calculateTotalChanges } from '../utils/diffUtils';
 import { getRefactoringTypeData, fileCount } from '../utils/refactoringUtils';
 import PieChart from '../Pie-Chart/PieChart';
@@ -17,8 +17,6 @@ import CommitInfo from '../Module/CommitInfo'
 
 const { RangePicker } = DatePicker;
 const FormItem = Form.Item;
-
-const CACHE_SIZE = 9;
 
 const SHOW_TYPE = {
     HIGHLIGHT: 0,
@@ -75,6 +73,7 @@ class MainPage extends React.Component {
         endTag: '',
         filteredTags_1:[], //选择框1显示的Tags
         filteredTags_2:[], //选择框2显示的Tags
+        
     }
 
     isFetchingRefactoring = false; //标识是否正在进行重构挖掘
@@ -143,16 +142,28 @@ class MainPage extends React.Component {
         window.electronAPI.selectDirectory();
         window.electronAPI.onDirectorySelected((path) => {
             console.log('Directory selected:', path);  // 调试日志
-            this.setState({ repository: path ,
-                            isFilteredByLocation: false,
-                            showType:SHOW_TYPE.NORMAL,
-                            commitid:'',
-                            startCommitId:'',
-                            endCommitId:'',
-                            isDetect:false,
-                            loading:false,
-                            detecting:false,
-                            diffResults:[],
+            this.setState({ 
+                repository: path ,
+                isFilteredByLocation: false,
+                showType:SHOW_TYPE.NORMAL,
+                commitid:'',
+                startCommitId:'',
+                endCommitId:'',
+                isDetect:false,
+                loading:false,
+                detecting:false,
+                diffResults:[],
+                fileUpload:false,
+                refactoring:[],
+                commits: [],
+                filteredCommits: [], //存储过滤后的 commits（选择框真正显示的commits）
+                filteredCommits_dc1: [],
+                filteredCommits_dc2: [],
+                tags:[],
+                startTag: '',
+                endTag: '',
+                filteredTags_1:[], //选择框1显示的Tags
+                filteredTags_2:[], //选择框2显示的Tags
             });
             this.fetchCommits(path);
             this.fetchTags(path);
@@ -250,9 +261,14 @@ class MainPage extends React.Component {
                     startTag: '',
                     endTag: '',
                 });
-                //console.log(TagsList);
             } else {
-                message.warning('Not found release tags');
+                this.setState({ 
+                    tags: [],
+                    filteredTags_1: [],
+                    filteredTags_2: [],
+                    startTag: '',
+                    endTag: '',
+                });
             }
         } catch (error) {
             console.error('Error fetching tags:', error);
@@ -357,7 +373,6 @@ class MainPage extends React.Component {
                             },this.fetchDiffFile);
                         }
                     }}
-                    //disabled = {this.state.loading === true}
                     style={{ width: '100%'}}
                     showSearch
                     filterOption={(input, option) => {
@@ -388,6 +403,7 @@ class MainPage extends React.Component {
                         this.setState({ 
                             [isStart ? 'startCommitId' : 'endCommitId']: value ,
                             fileUpload : false,
+                            isDetect : false,
                         });
                         if(isStart){
                             const [startDate, endDate] = dateRange_dc2;
@@ -466,7 +482,6 @@ class MainPage extends React.Component {
                             });
                         }
                     }}
-                    //disabled = {this.state.loading === true}
                     style={{ width: '100%' }}
                     showSearch
                     filterOption={(input, option) => {
@@ -916,7 +931,6 @@ class MainPage extends React.Component {
         }
     };
 
-    //TODO：用于从后端获取重构(between two tags)
     fetchRefactoring_dt = async () => {
         const { startTag, endTag, repository } = this.state;
         
@@ -1201,6 +1215,15 @@ class MainPage extends React.Component {
         });
     };
 
+    //没有检测到重构返回diff界面
+    backToDiff = () => {
+        this.setState({
+            isDetect : false,
+            showType: SHOW_TYPE.NORMAL,
+
+        });
+    };
+
     //翻页按钮的函数
     handlePageChange = (direction) => {
         const {refactoringCurrentIndex, commitsCache} = this.state;
@@ -1234,39 +1257,49 @@ class MainPage extends React.Component {
         });
     };
 
+    //文件树的点击操作
+    onSelectFileTree = (keys, event, side) => {
+        const {selectedKeys, refactorings} = this.state;
+        if (event.node.isLeaf){
+            // 如果当前选中的键已经在 selectedKeys 中，则移除它
+            if (selectedKeys.includes(keys[0])) {
+                this.setState({
+                    selectedKeys: selectedKeys.filter(key => key !== keys[0]),
+                });
+                this.handleCleanTreeFilterRefactorings();
+            }
+            else {
+                this.setState({
+                    selectedKeys: keys,
+                });
+                const selectedFilePath = event.node.fullPath; //点击文件的完整路径
+                let fileTreeRefactorings;
+                if(side === 0){
+                    fileTreeRefactorings = refactorings.filter(refactoring =>
+                        refactoring.leftSideLocation.some(location => this.isFileMatched(selectedFilePath, location.filePath))
+                    );
+                }
+                else{
+                    fileTreeRefactorings = refactorings.filter(refactoring =>
+                        refactoring.rightSideLocation.some(location => this.isFileMatched(selectedFilePath, location.filePath))
+                    );
+                }
+                this.handleTreeFilterRefactorings(fileTreeRefactorings);
+            }
+        }
+    };
+
     render() {
         const { diffResults, selectedKeys, commitid, commits,highlightedFiles, loading,fileUpload,detecting, refactoringCurrentIndex,
             commitAuthor, commitMessage, latestDate, earliestDate, refactoringData, filteredRefactoring, tags, startTag, endTag,
             isFilteredByLocation, refactorings, showType, isDetect, dateRange, currentPage, commitMap, commitsCache,
             detecttype, dateRange_dc1, dateRange_dc2, startCommitId, endCommitId, isScrollVisible} = this.state;
         const totalChanges = calculateTotalChanges(diffResults);
-        const fileCountMap = fileCount(refactorings);
+        const fileCountMap_left = fileCount(refactorings, "left");
+        const fileCountMap_right = fileCount(refactorings, "right");
+        const fileCountMap = fileCount(refactorings, "all");
         const currentCommitID = commitsCache[refactoringCurrentIndex-1];
         const currentCommitInfo = commitMap[currentCommitID];
-        
-        //文件树的点击操作
-        const onSelect = (keys, event) => {
-            const { selectedKeys } = this.state;
-            if (event.node.isLeaf){
-                // 如果当前选中的键已经在 selectedKeys 中，则移除它
-                if (selectedKeys.includes(keys[0])) {
-                    this.setState({
-                        selectedKeys: selectedKeys.filter(key => key !== keys[0]),
-                    });
-                    this.handleCleanTreeFilterRefactorings();
-                } else {
-                    this.setState({
-                        selectedKeys: keys,
-                    });
-                    const selectedFilePath = event.node.fullPath; //点击文件的完整路径
-                    const fileTreeRefactorings = refactorings.filter(refactoring =>
-                        refactoring.leftSideLocation.some(location => this.isFileMatched(selectedFilePath, location.filePath)) ||
-                        refactoring.rightSideLocation.some(location => this.isFileMatched(selectedFilePath, location.filePath))
-                    );
-                    this.handleTreeFilterRefactorings(fileTreeRefactorings);
-                }
-            }
-        };
         
         const items = [
             { 
@@ -1299,11 +1332,11 @@ class MainPage extends React.Component {
                             fileCountMap={fileCountMap} 
                         />
                         <div className={s.pieandtree}>
-                            <div className={s.filetree}>
-                                <FileTree
-                                    fileCountMap={fileCountMap}
-                                    selectedKeys={selectedKeys}
-                                    onTreeSelect={onSelect}
+                            <div className={s.filetreetabs}>
+                                <Tabs 
+                                    type="card" 
+                                    items={filetreeitems} 
+                                    defaultActiveKey = "newv"
                                 />
                             </div>
                             <div className={s.pie}>
@@ -1315,7 +1348,7 @@ class MainPage extends React.Component {
                         </div>
                     </div>
 
-                    <NewRefactoringList 
+                    <RefactoringList 
                         refactorings={this.getFilteredRefactorings()} 
                         onHighlightDiff={this.handleHighlightDiff} 
                         currentPage={currentPage}
@@ -1325,6 +1358,33 @@ class MainPage extends React.Component {
             },
         ];
         
+        const filetreeitems= [
+            { 
+                label: 'Old Version', 
+                key: 'oldv', 
+                children: 
+                    <div className={s.filetree}>
+                        <FileTree
+                            fileCountMap={fileCountMap_left}
+                            selectedKeys={selectedKeys}
+                            onTreeSelect={(keys, event) => this.onSelectFileTree(keys, event, 0)}
+                        />
+                    </div>
+            }, 
+            {
+                label: 'New Version', 
+                key: 'newv', 
+                children: 
+                    <div className={s.filetree}>
+                        <FileTree
+                            fileCountMap={fileCountMap_right}
+                            selectedKeys={selectedKeys}
+                            onTreeSelect={(keys, event) => this.onSelectFileTree(keys, event, 1)}
+                        />
+                    </div>
+            },
+        ];
+
         return (
             <div className={s.wrapper}>
                 <div className={s.handleSubmit}>
@@ -1336,7 +1396,7 @@ class MainPage extends React.Component {
                                     value={this.state.repository} 
                                     className={s.repositoryinput} 
                                     disabled
-                                    placeholder='Select a repository'
+                                    placeholder='Please select a local repository'
                                 />
                             </div>
                             <div>
@@ -1382,20 +1442,20 @@ class MainPage extends React.Component {
                                 style={{borderRadius: '4px'}}
                                 options={[
                                     {
-                                      label: <span>Commit</span>,
+                                      label: <span>Commit Level</span>,
                                       title: 'Commit',
                                       options: [
-                                        { label: <span>Previous commit</span>, value: 'defaut' },
-                                        { label: <span>Between two commits</span>, value: 'dc' },
-                                        { label: <span>All between two commits</span>, value: 'dac' },
+                                        { label: <span>Single Commit</span>, value: 'defaut' },
+                                        { label: <span>Commit-to-Commit</span>, value: 'dc' },
+                                        { label: <span>Commit Range</span>, value: 'dac' },
                                       ],
                                     },
                                     {
-                                      label: <span>Tag</span>,
+                                      label: <span>Tag Level</span>,
                                       title: 'Tag',
                                       options: [
-                                        { label: <span>Between two tags</span>, value: 'dt' },
-                                        { label: <span>All between two tags</span>, value: 'dat' },
+                                        { label: <span>Tag-to-Tag</span>, value: 'dt' },
+                                        { label: <span>Tag Range</span>, value: 'dat' },
                                       ],
                                     },
                                   ]}
@@ -1404,7 +1464,7 @@ class MainPage extends React.Component {
                     </div>
                     
                     {/* 比较连续版本 */}
-                    {detecttype === 'defaut' && commits.length > 0 && (
+                    {detecttype === 'defaut' && (
                         <div className={s.defaut}>
                             <div className={s.dateSelect}>
                                 <div className={s.dateSelectlabel}>DateRange :</div>
@@ -1413,7 +1473,6 @@ class MainPage extends React.Component {
                                         onChange={this.handleDateRangeChange}
                                         value={dateRange}
                                         disabledDate={this.disabledDate}
-                                        //disabled={loading}
                                     />
                                 </div>
                             </div>
@@ -1432,7 +1491,7 @@ class MainPage extends React.Component {
                     )}
 
                     {/* 比较两个commit之间 */}
-                    {(detecttype === 'dc' || detecttype === 'dac') && commits.length > 0 && (
+                    {(detecttype === 'dc' || detecttype === 'dac') && (
                         <div className={s.dc}>
                             <div className={s.dateSelect}>
                                 <div className={s.dateSelectlabel}>DateRange :</div>
@@ -1477,7 +1536,7 @@ class MainPage extends React.Component {
                                         className={s.button} 
                                         disabled={!startCommitId || !endCommitId || (detecttype === 'dc'? detecting : this.state.ongoingTasks)}
                                     >
-                                        {detecttype === 'dc' ? 'Detect' : 'Detect All'}
+                                        {'Detect'}
                                     </Button>
                                 </div>
                             </div>
@@ -1485,7 +1544,7 @@ class MainPage extends React.Component {
                     )}
 
                     {/* 比较两个版本之间 */}
-                    {(detecttype === 'dt' || detecttype === 'dat') && tags.length > 0 && (
+                    {(detecttype === 'dt' || detecttype === 'dat') && (
                         <div className={s.dt}>
 
                             <div className={s.tagselectandlebal}>
@@ -1507,7 +1566,7 @@ class MainPage extends React.Component {
                                         className={s.button} 
                                         disabled={!startTag || !endTag || (detecttype === 'dt'? detecting : this.state.ongoingTasks)}
                                     >
-                                        {detecttype === 'dt' ? 'Detect' : 'Detect All'}
+                                        {'Detect'}
                                     </Button>
                                 </div>
                             </div>
@@ -1571,7 +1630,8 @@ class MainPage extends React.Component {
                         </> ) : ( //没有diff文件，显示结果提示
                             <div className={s.errorresult}>
                                 <Result
-                                    title="No diff files found in commit."
+                                    icon={<FieldNumberOutlined />}
+                                    title="No Java files were changed!"
                                 />
                             </div>
                         )
@@ -1593,11 +1653,11 @@ class MainPage extends React.Component {
                                     fileCountMap={fileCountMap} 
                                 />
                                 <div className={s.pieandtree}>
-                                    <div className={s.filetree}>
-                                        <FileTree
-                                            fileCountMap={fileCountMap}
-                                            selectedKeys={selectedKeys}
-                                            onTreeSelect={onSelect}
+                                    <div className={s.filetreetabs}>
+                                        <Tabs 
+                                            type="card" 
+                                            items={filetreeitems} 
+                                            defaultActiveKey = "newv"
                                         />
                                     </div>
                                     <div className={s.pie}>
@@ -1609,7 +1669,7 @@ class MainPage extends React.Component {
                                 </div>
                             </div>
 
-                            <NewRefactoringList 
+                            <RefactoringList 
                                 refactorings={this.getFilteredRefactorings()} 
                                 onHighlightDiff={this.handleHighlightDiff} 
                                 currentPage={currentPage}
@@ -1619,7 +1679,9 @@ class MainPage extends React.Component {
                     ):(
                         <div className={s.errorresult}>
                                 <Result
-                                    title="No refactorings were discovered in this commit."
+                                    icon={<FrownOutlined />}
+                                    title="No refactorings detected!"
+                                    extra={<Button key="back" onClick={this.backToDiff}>Back</Button>}
                                 />
                         </div>
                     ))

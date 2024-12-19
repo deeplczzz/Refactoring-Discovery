@@ -127,14 +127,24 @@
     justify-content: space-between; /* 均匀分布 */
 }
 
-.index__pie--YbGNm {
-    flex: 0 0 70%; /* 设置饼图占 60% */
+.index__pie--YbGNm{
+    flex: 0 0 70%; /*饼图占据宽度70%*/
     margin-left: 10px;
 }
 
-.index__filetree--1ANic {
-    flex: 0 0 30%; /* 设置文件目录占 40% */
+.index__filetreetabs--3IPcb{
+    flex: 0 0 30%; /*文件树占据宽度30%*/
     border-right: 1px solid #eee;
+    overflow: hidden;
+}
+
+.index__filetree--1ANic{
+    max-width: 100%;
+    min-width: 0;
+    max-height: 550px;
+    overflow-x: auto;
+    overflow-y: auto;
+    white-space: nowrap;
 }
 
 .index__dateSelect--35Vc_{
@@ -610,6 +620,26 @@
 
 .refactoringlist__card--3VRhe{
     margin-bottom: 10px;
+}
+
+.refactoringlist__cardrow--EuKKy{
+    display: flex; /* 使用 flex 布局 */
+    flex-wrap: wrap; /* 允许内容换行 */
+    margin-bottom: 4px; /* 行间距 */
+}
+
+.refactoringlist__cardtitle--1xoAP{
+    flex: 0 0 auto; /* 标题大小固定，不缩放 */
+    font-weight: bold; /* 标题加粗 */
+    margin-right: 8px; /* 标题与内容间隔 */
+    white-space: nowrap; /* 标题不换行 */
+}
+
+.refactoringlist__cardcontent--2T628{
+    flex: 1; /* 内容占据剩余空间 */
+    min-width: 0; /* 防止内容挤压标题 */
+    word-break: break-word; /* 单词自动换行 */
+    overflow-wrap: break-word; /* 解决超长路径换行问题 */
 }
 .summary__summarytitle--2KvLW {
     font-family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';

@@ -42,3 +42,23 @@
 .card{
     margin-bottom: 10px;
 }
+
+.cardrow{
+    display: flex; /* 使用 flex 布局 */
+    flex-wrap: wrap; /* 允许内容换行 */
+    margin-bottom: 4px; /* 行间距 */
+}
+
+.cardtitle{
+    flex: 0 0 auto; /* 标题大小固定，不缩放 */
+    font-weight: bold; /* 标题加粗 */
+    margin-right: 8px; /* 标题与内容间隔 */
+    white-space: nowrap; /* 标题不换行 */
+}
+
+.cardcontent{
+    flex: 1; /* 内容占据剩余空间 */
+    min-width: 0; /* 防止内容挤压标题 */
+    word-break: break-word; /* 单词自动换行 */
+    overflow-wrap: break-word; /* 解决超长路径换行问题 */
+}

@@ -7,6 +7,7 @@ const FileTree = ({ fileCountMap, selectedKeys, onTreeSelect }) => {
     
     const buildTreeData = (fileCountMap) => {
         const tree = {};
+
         Object.entries(fileCountMap).forEach(([filePath, count]) => {
             const parts = filePath.split('/');
             let currentLevel = tree;
@@ -47,7 +48,7 @@ const FileTree = ({ fileCountMap, selectedKeys, onTreeSelect }) => {
     return (
         <DirectoryTree
             treeData={treeData}
-            defaultExpandAll
+            //defaultExpandAll
             selectedKeys={selectedKeys}
             onSelect={(keys, event) => onTreeSelect(keys, event)}
         />

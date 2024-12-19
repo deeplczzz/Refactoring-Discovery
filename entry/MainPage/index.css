@@ -127,14 +127,24 @@
     justify-content: space-between; /* 均匀分布 */
 }
 
-.pie {
-    flex: 0 0 70%; /* 设置饼图占 60% */
+.pie{
+    flex: 0 0 70%; /*饼图占据宽度70%*/
     margin-left: 10px;
 }
 
-.filetree {
-    flex: 0 0 30%; /* 设置文件目录占 40% */
+.filetreetabs{
+    flex: 0 0 30%; /*文件树占据宽度30%*/
     border-right: 1px solid #eee;
+    overflow: hidden;
+}
+
+.filetree{
+    max-width: 100%;
+    min-width: 0;
+    max-height: 550px;
+    overflow-x: auto;
+    overflow-y: auto;
+    white-space: nowrap;
 }
 
 .dateSelect{

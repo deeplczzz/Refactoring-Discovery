@@ -38,29 +38,27 @@ export default class RefactoringList extends React.Component {
 
     renderDetail = (refactoring) => (
         <>
-            <div className={s.leftsidetitle}>Left Side Location:</div>
+            <div className={s.leftsidetitle}>Before Refactoring</div>
             {refactoring.leftSideLocation.map((location, locIndex) => (
                 <div className={s.card}>
-                    <Card size="small" key={locIndex} title={location.codeElement} hoverable = "true">
-                        <div>description: {location.description}</div>
-                        <div>filePath: {location.filePath}</div>
-                        <div>codeElementType: {location.codeElementType}</div>
-                        <div>startLine: {location.startLine}</div>
-                        <div>endLine: {location.endLine}</div>
+                    <Card size="small" key={locIndex} title={<span style={{ fontWeight: 'bold' }}>{location.codeElement}</span>} hoverable = "true">
+                        <div className={s.cardrow}> <span class={s.cardtitle}>Description:</span> <span class={s.cardcontent}>{location.description}</span></div>
+                        <div className={s.cardrow}> <span class={s.cardtitle}>File Path:</span> <span class={s.cardcontent}>{location.filePath}</span></div>
+                        <div className={s.cardrow}> <span class={s.cardtitle}>Code Element Type:</span> <span class={s.cardcontent}>{location.codeElementType}</span></div>
+                        <div className={s.cardrow}> <span class={s.cardtitle}>Lines:</span> <span class={s.cardcontent}>{location.startLine} - {location.endLine}</span></div>
                     </Card>
                 </div>
             ))}
 
             
-            <div className={s.rightsidetitle}>Right Side Location:</div>
+            <div className={s.rightsidetitle}>After Refactoring</div>
             {refactoring.rightSideLocation.map((location, locIndex) => (
                 <div className={s.card}>
-                    <Card size="small" key={locIndex} title={location.codeElement} hoverable = "true">
-                        <div>description: {location.description}</div>
-                        <div>filePath: {location.filePath}</div>
-                        <div>codeElementType: {location.codeElementType}</div>
-                        <div>startLine: {location.startLine}</div>
-                        <div>endLine: {location.endLine}</div>
+                    <Card size="small" key={locIndex} title={<span style={{ fontWeight: 'bold' }}>{location.codeElement}</span>} hoverable = "true">
+                        <div className={s.cardrow}> <span class={s.cardtitle}>Description:</span> <span class={s.cardcontent}>{location.description}</span></div>
+                        <div className={s.cardrow}> <span class={s.cardtitle}>File Path:</span> <span class={s.cardcontent}>{location.filePath}</span></div>
+                        <div className={s.cardrow}> <span class={s.cardtitle}>Code Element Type:</span> <span class={s.cardcontent}>{location.codeElementType}</span></div>
+                        <div className={s.cardrow}> <span class={s.cardtitle}>Lines:</span> <span class={s.cardcontent}>{location.startLine} - {location.endLine}</span></div>
                     </Card>
                 </div>
             ))}

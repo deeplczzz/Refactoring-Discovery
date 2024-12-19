@@ -10,17 +10,29 @@
     }
 
     // 计算重构列表里包含的文件及其涉及的重构数量
-    export const fileCount = (refactorings) => {
+    export const fileCount = (refactorings, side) => {
         const fileCountMap = {};
         
         refactorings.forEach(refactoring => {
             const uniqueFiles = new Set();
-            refactoring.leftSideLocation.forEach(location => {
-                uniqueFiles.add(location.filePath);
-            });
-            refactoring.rightSideLocation.forEach(location => {
-                uniqueFiles.add(location.filePath);
-            });
+            if(side === "left"){
+                refactoring.leftSideLocation.forEach(location => {
+                    uniqueFiles.add(location.filePath);
+                });
+            }
+            else if(side === "right"){
+                refactoring.rightSideLocation.forEach(location => {
+                    uniqueFiles.add(location.filePath);
+                });
+            }
+            else{
+                refactoring.leftSideLocation.forEach(location => {
+                    uniqueFiles.add(location.filePath);
+                });
+                refactoring.rightSideLocation.forEach(location => {
+                    uniqueFiles.add(location.filePath);
+                });
+            }
             uniqueFiles.forEach(filePath => {
                 fileCountMap[filePath] = (fileCountMap[filePath] || 0) + 1;
             });

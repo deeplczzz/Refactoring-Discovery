@@ -14,7 +14,7 @@ export default class RefactoringDetail extends React.Component {
                 <div className={s.content}>{refactoring.description}</div>
                 <div className={s.list}>
                     <div className={s.leftSide}>
-                        <div className={s.sidelocation}>Left Side Location:</div>
+                        <div className={s.sidelocation}>Before:</div>
                             {refactoring.leftSideLocation.map((location, locIndex) => (
                                 <div key={locIndex} className={locIndex === 0 ? s.removedetailblock : s.detailblock}>
                                     <div>filePath: {location.filePath}</div>
@@ -29,7 +29,7 @@ export default class RefactoringDetail extends React.Component {
                
 
                     <div className={s.rightSide}>
-                        <div className={s.sidelocation}>Right Side Location:</div>
+                        <div className={s.sidelocation}>After:</div>
                             {refactoring.rightSideLocation.map((location, locIndex) => (
                                 <div key={locIndex} className={locIndex === 0 ? s.adddetailblock : s.detailblock}>
                                     <div>filePath: {location.filePath}</div>
