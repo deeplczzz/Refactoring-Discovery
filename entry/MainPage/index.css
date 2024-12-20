@@ -130,6 +130,11 @@
 .pie{
     flex: 0 0 70%; /*饼图占据宽度70%*/
     margin-left: 10px;
+    height: 400px;
+    max-width: 95%;
+    align-items: center; /* 垂直居中 */
+    justify-content: center; /* 水平居中 */
+    box-sizing: border-box;
 }
 
 .filetreetabs{
