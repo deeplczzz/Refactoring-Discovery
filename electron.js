@@ -17,9 +17,10 @@ let jsDiff;
 let childProcess;
 let springBootProcess;
 let jarPath;
+let loadingWindow = null;
 
+// 创建主程序窗口
 function createWindow() {
-  // 创建浏览器窗口
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 768,
@@ -32,6 +33,27 @@ function createWindow() {
     },
   });
   mainWindow.loadFile(path.join(app.getAppPath(), 'dist/index.html'));
+}
+
+//创建加载窗口
+function createLoadingWindow() {
+  loadingWindow = new BrowserWindow({
+    width: 300,
+    height: 200,
+    frame: false, // 无边框窗口
+    resizable: false,
+    alwaysOnTop: true, // 始终置顶
+    transparent: true, // 窗口透明
+    webPreferences: {
+      nodeIntegration: false, // 如果需要加载本地 JS，则开启
+    },
+  });
+
+  loadingWindow.loadFile('dist/loading.html');
+
+  loadingWindow.on('closed', () => {
+    loadingWindow = null;
+  });
 }
 
 // 懒加载模块

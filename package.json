@@ -69,7 +69,11 @@
                 "portable"
             ],
             "icon": "build/icon.ico",
-            "compression": "maximum"
+            "compression": "maximum",
+            "nsis": {
+                "oneClick": false,
+                "allowToChangeInstallationDirectory": true
+            }
         }
     }
 }

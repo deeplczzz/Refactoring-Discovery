@@ -992,6 +992,7 @@ class MainPage extends React.Component {
 
     //通知后端从数据库读取数据并展示
     loadRefactoringFromDB = async (commitId) => {
+        this.setState({loading : true});
         const { repository } = this.state;
 
         try {
@@ -1019,6 +1020,8 @@ class MainPage extends React.Component {
 
         } catch (error) {
             message.error(`Error loading data from dataset`);
+        } finally{
+            this.setState({loading : false});
         }
     };
 
@@ -1308,55 +1311,73 @@ class MainPage extends React.Component {
                 label: 'Diff', 
                 key: 'diff', 
                 children: 
-                <div>
-                    {diffResults.map((result, index) => (
-                        <div key={index}>
-                            <ContentDiff
-                                isFile={this.isFile}
-                                diffArr={result.diff}
-                                highlightedLines={[]}
-                                showType={SHOW_TYPE.NORMAL}
-                                fileName={result.fileName}  
-                                commitId = {currentCommitID} 
+                    diffResults.length > 0 ? (
+                        <div>
+                            {diffResults.map((result, index) => (
+                                <div key={index}>
+                                    <ContentDiff
+                                        isFile={this.isFile}
+                                        diffArr={result.diff}
+                                        highlightedLines={[]}
+                                        showType={SHOW_TYPE.NORMAL}
+                                        fileName={result.fileName}  
+                                        commitId = {currentCommitID} 
+                                    />
+                                </div>
+                            ))}
+                        </div> 
+                    ) : ( //没有diff文件，显示结果提示
+                        <div className={s.errorresult}>
+                            <Result
+                                icon={<FieldNumberOutlined />}
+                                title="No Java files were changed!"
                             />
                         </div>
-                    ))}
-                </div> 
+                    )
             }, 
             {
                 label: 'Refactorings', 
                 key: 'refactorings', 
                 children: 
-                <div>
-                    <div className={s.RefactoringSummary}>
-                        <RefactoringSummary 
-                            data={refactoringData}
-                            fileCountMap={fileCountMap} 
-                        />
-                        <div className={s.pieandtree}>
-                            <div className={s.filetreetabs}>
-                                <Tabs 
-                                    type="card" 
-                                    items={filetreeitems} 
-                                    defaultActiveKey = "newv"
+                    refactorings.length > 0 ? (
+                        <div>
+                            <div className={s.RefactoringSummary}>
+                                <RefactoringSummary 
+                                    data={refactoringData}
+                                    fileCountMap={fileCountMap} 
                                 />
+                                <div className={s.pieandtree}>
+                                    <div className={s.filetreetabs}>
+                                        <Tabs 
+                                            type="card" 
+                                            items={filetreeitems} 
+                                            defaultActiveKey = "newv"
+                                        />
+                                    </div>
+                                    <div className={s.pie}>
+                                        <PieChart
+                                            piedata={this.state.refactoringData} 
+                                            onPieSelect={this.handlePieSelect}
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                            <div className={s.pie}>
-                                <PieChart
-                                    piedata={this.state.refactoringData} 
-                                    onPieSelect={this.handlePieSelect}
-                                />
-                            </div>
-                        </div>
-                    </div>
 
-                    <RefactoringList 
-                        refactorings={this.getFilteredRefactorings()} 
-                        onHighlightDiff={this.handleHighlightDiff} 
-                        currentPage={currentPage}
-                        onPageChange={(page) => this.setState({ currentPage: page })}
-                    />
-                </div> 
+                            <RefactoringList 
+                                refactorings={this.getFilteredRefactorings()} 
+                                onHighlightDiff={this.handleHighlightDiff} 
+                                currentPage={currentPage}
+                                onPageChange={(page) => this.setState({ currentPage: page })}
+                            />
+                        </div> 
+                    ) : (
+                        <div className={s.errorresult}>
+                            <Result
+                                icon={<FrownOutlined />}
+                                title="No refactorings detected!"
+                            />
+                        </div>
+                    )
             },
         ];
         
@@ -1768,7 +1789,7 @@ class MainPage extends React.Component {
                                 </Button>
                             </div>
                         </div>
-                        {this.state.commitcount < refactoringCurrentIndex ? 
+                        {(this.state.commitcount < refactoringCurrentIndex || this.state.loading) ? 
                         (
                             <div className={s.spin}>
                                 <Spin size="large" />
