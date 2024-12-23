@@ -1,0 +1,14 @@
+Spring Boot error: SLF4J(W): Class path contains multiple SLF4J providers.
+SLF4J(W): Found provider [ch.qos.logback.classic.spi.LogbackServiceProvider@9629756]
+SLF4J(W): Found provider [org.slf4j.simple.SimpleServiceProvider@62ee68d8]
+SLF4J(W): See https://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+
+Spring Boot error: SLF4J(I): Actual provider is of type [ch.qos.logback.classic.spi.LogbackServiceProvider@9629756]
+
+Spring Boot error: SLF4J(W): Class path contains multiple SLF4J providers.
+SLF4J(W): Found provider [ch.qos.logback.classic.spi.LogbackServiceProvider@9629756]
+SLF4J(W): Found provider [org.slf4j.simple.SimpleServiceProvider@62ee68d8]
+SLF4J(W): See https://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+
+Spring Boot error: SLF4J(I): Actual provider is of type [ch.qos.logback.classic.spi.LogbackServiceProvider@9629756]
+

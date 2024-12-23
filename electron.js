@@ -1,7 +1,16 @@
 // electron.js
 const { app, BrowserWindow, dialog, ipcMain} = require('electron');
 const { Worker } = require('worker_threads');
+const fs = require('fs');
 const path = require('path');
+const kill = require('tree-kill');
+
+//console写入文件
+// const logFile = fs.createWriteStream('./electron-main.log', { flags: 'a' });
+// const errorFile = fs.createWriteStream('./electron-error.log', { flags: 'a' });
+
+// process.stdout.write = logFile.write.bind(logFile);
+// process.stderr.write = errorFile.write.bind(errorFile);
 
 let mainWindow;
 let jsDiff;
@@ -14,6 +23,8 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 768,
+    minWidth: 768,
+    minHeight: 576,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false, //禁用node整合
@@ -44,11 +55,15 @@ const lazyModules = {
 function startSpringBootServer() {
   const { spawn } = lazyModules.loadChildProcess(); 
   if (app.isPackaged) {
-    // 打包后的路径
-    jarPath = path.join(process.resourcesPath, 'server', 'RefactoringDiscovery-1.0.2.jar');
+    jarPath = path.join(process.resourcesPath, 'server', 'RefactoringDiscovery-1.0.2.jar'); // 打包后的路径
   } else {
-    // 开发模式下的路径
-    jarPath = path.join(app.getAppPath(), 'server', 'RefactoringDiscovery-1.0.2.jar');
+    jarPath = path.join(app.getAppPath(), 'server', 'RefactoringDiscovery-1.0.2.jar'); // 开发模式下的路径
+  }
+  
+  // 检查 JAR 文件是否存在
+  if (!fs.existsSync(jarPath)) {
+    console.error(`JAR 文件不存在: ${jarPath}`);
+    return;
   }
 
   springBootProcess = spawn('java', ['-jar', jarPath], {
@@ -88,27 +103,45 @@ ipcMain.handle('perform-diff', (event, oldCode, newCode) => {
   });
 });
 
-function terminateSpringBoot() {
-  return new Promise((resolve) => {
-    if (springBootProcess) {
-      const timeout = setTimeout(() => {
-        springBootProcess.kill('SIGKILL');
-        resolve();
-      }, 3000);
-
-      springBootProcess.once('exit', () => {
-        clearTimeout(timeout);
-        resolve();
+//关闭后端进程
+async function terminateSpringBoot() {
+  if (springBootProcess) {
+    return new Promise((resolve) => {
+      kill(springBootProcess.pid, 'SIGTERM', (err) => {
+        if (err) {
+          console.error('Unable to terminate Spring Boot process:', err);
+          resolve();
+        } else {
+          console.log('Spring Boot server has been successfully shut down.');
+          resolve();
+        }
       });
+    });
+  } else {
+    console.log('Spring Boot process does not exist.');
+    return Promise.resolve();
+  }
+}
 
-      const killed = springBootProcess.kill();
-      if (!killed) {
-        springBootProcess.kill('SIGKILL');
-      }
-    } else {
-      resolve();
+//删除数据库文件
+function deleteDatabase() {
+  let dbPath;
+  if (app.isPackaged) {
+    dbPath = path.join(process.resourcesPath, 'refactoring.db'); // 打包后的路径
+  } else {
+    dbPath = path.join(app.getAppPath(), 'refactoring.db'); // 开发模式下的路径
+  }
+
+  if (fs.existsSync(dbPath)) {
+    try {
+      fs.unlinkSync(dbPath);
+      console.log('Database file deleted successfully');
+    } catch (err) {
+      console.error('Error while deleting database file:', err);
     }
-  });
+  } else {
+    console.log('The database file does not exist and does not need to be deleted.');
+  }
 }
 
 app.on('ready', () => {
@@ -116,17 +149,13 @@ app.on('ready', () => {
   createWindow(); // 创建 Electron 窗口
 });
 
-app.on('will-quit', () => {
-  // 在应用退出前关闭 Spring Boot 服务器
-  if (springBootProcess) {
-    const killed = springBootProcess.kill();
-    if (!killed) {
-      springBootProcess.kill('SIGKILL');// 如果正常结束失败，强制结束进程
-    }
-  }
+app.on('will-quit', async () => {
+  //await terminateSpringBoot();
+  //deleteDatabase();
 });
 
 app.on('window-all-closed', async() => {
   await terminateSpringBoot();
+  deleteDatabase();
   app.quit();
 });

@@ -1,8 +1,8 @@
 .wrapper {
-    margin-left: 2%;
-    margin-right: 2%;
-    margin-top: 2%;
-    margin-bottom: 2%;
+    margin-left: 1%;
+    margin-right: 1%;
+    margin-top: 1%;
+    margin-bottom: 1%;
     background-color: #ffffff;
     border-radius: 4px;
     padding-top: 30px;
@@ -131,7 +131,7 @@
     flex: 0 0 70%; /*饼图占据宽度70%*/
     margin-left: 10px;
     height: 400px;
-    max-width: 95%;
+    max-width: 100%;
     align-items: center; /* 垂直居中 */
     justify-content: center; /* 水平居中 */
     box-sizing: border-box;
