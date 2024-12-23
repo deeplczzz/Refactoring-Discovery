@@ -73,9 +73,7 @@ class MainPage extends React.Component {
         endTag: '',
         filteredTags_1:[], //选择框1显示的Tags
         filteredTags_2:[], //选择框2显示的Tags
-        
     }
-
     isFetchingRefactoring = false; //标识是否正在进行重构挖掘
     isFetchingRefactoring_dc = false; //标识是否正在进行重构挖掘
     lastRequestParams = {}; //记录上一次请求访问的参数
@@ -103,7 +101,7 @@ class MainPage extends React.Component {
         window.removeEventListener('scroll', this.handleScroll);
     }
 
-    // 处理滚动事件
+    //处理滚动事件
     handleScroll = () => {
         const { isDetect } = this.state;
         if(!isDetect){
@@ -1295,7 +1293,7 @@ class MainPage extends React.Component {
     };
 
     render() {
-        const { diffResults, selectedKeys, commitid, commits,highlightedFiles, loading,fileUpload,detecting, refactoringCurrentIndex,
+        const {diffResults, selectedKeys, commitid, commits,highlightedFiles, loading,fileUpload,detecting, refactoringCurrentIndex,
             commitAuthor, commitMessage, latestDate, earliestDate, refactoringData, filteredRefactoring, tags, startTag, endTag,
             isFilteredByLocation, refactorings, showType, isDetect, dateRange, currentPage, commitMap, commitsCache,
             detecttype, dateRange_dc1, dateRange_dc2, startCommitId, endCommitId, isScrollVisible} = this.state;
@@ -1803,7 +1801,6 @@ class MainPage extends React.Component {
                         </div>)}
                     </div>
                 )}
-                
             </div>
         );
     }

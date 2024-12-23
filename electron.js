@@ -1,6 +1,7 @@
 // electron.js
 const { app, BrowserWindow, dialog, ipcMain} = require('electron');
 const { Worker } = require('worker_threads');
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const fs = require('fs');
 const path = require('path');
 const kill = require('tree-kill');
@@ -98,6 +99,28 @@ function startSpringBootServer() {
   });
 }
 
+async function waitForBackendReady() {
+  const healthCheckUrl = 'http://localhost:8080/api/health';
+
+  const checkStatus = async () => {
+    try {
+      const response = await fetch(healthCheckUrl);
+      if (response.ok) {
+        console.log('SpringBoot backend started');
+        clearInterval(intervalId); // 停止轮询
+        if (loadingWindow) {
+          loadingWindow.close(); // 关闭加载窗口
+        }
+        createWindow(); // 创建主窗口
+      }
+    } catch (error) {
+      console.log('The backend is not started, continue checking...');
+    }
+  };
+
+  const intervalId = setInterval(checkStatus, 1000); // 每秒检查一次
+}
+
 // 监听渲染进程发送的选择目录请求
 ipcMain.on('dialog:selectDirectory', async (event) => {
   const result = await dialog.showOpenDialog(mainWindow, {
@@ -167,8 +190,9 @@ function deleteDatabase() {
 }
 
 app.on('ready', () => {
+  createLoadingWindow();
   startSpringBootServer(); // 启动 Spring Boot 服务器
-  createWindow(); // 创建 Electron 窗口
+  waitForBackendReady();
 });
 
 app.on('will-quit', async () => {
