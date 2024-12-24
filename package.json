@@ -63,7 +63,8 @@
             "dist/**/*",
             "electron.js",
             "preload.js",
-            "worker/**/*"
+            "worker/**/*",
+            "locales/**/*"
         ],
         "win": {
             "target": [
@@ -71,11 +72,12 @@
                 "portable"
             ],
             "icon": "build/icon.ico",
-            "compression": "maximum",
-            "nsis": {
-                "oneClick": false,
-                "allowToChangeInstallationDirectory": true
-            }
+            "compression": "maximum"
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true,
+            "installerLanguages": ["en", "zh_CN", "zh_TW"]
         }
     }
 }

@@ -7,6 +7,7 @@ export const PieConfig = (refactoringData) => {
         radius: 0.7,
         innerRadius: 0.6,
         statistic: false,
+        autoFit: true,
         label: {
             type: 'spider',
             content: '{name}({value})',
