@@ -75,6 +75,7 @@ class MainPage extends React.Component {
         endTag: '',
         filteredTags_1:[], //选择框1显示的Tags
         filteredTags_2:[], //选择框2显示的Tags
+        diffLoadedCount: 10, //懒加载diff
     }
     isFetchingRefactoring = false; //标识是否正在进行重构挖掘
     isFetchingRefactoring_dc = false; //标识是否正在进行重构挖掘
@@ -95,7 +96,7 @@ class MainPage extends React.Component {
             this.setState({ language: lang });
         });
 
-        window.addEventListener('scroll', this.handleScroll);
+        window.addEventListener('scroll', this.handleScroll); // 监听滚动事件
         this.connectWebSocket();
         this.updateRefactoringData();
     }
@@ -111,20 +112,40 @@ class MainPage extends React.Component {
     }
 
     componentWillUnmount() {
-        window.removeEventListener('scroll', this.handleScroll);
+        window.removeEventListener('scroll', this.handleScroll); // 移除滚动事件监听
     }
 
     //处理滚动事件
     handleScroll = () => {
-        const { isDetect } = this.state;
-        if(!isDetect){
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            const isVisible = scrollTop > 300;
-            this.setState(prevState => {
-                if (prevState.isScrollVisible !== isVisible) {
-                    return { isScrollVisible: isVisible };
-                }
-                return null; 
+        const { isDetect, fileUpload } = this.state;
+        if (!isDetect && fileUpload) {
+            this.handleScrollVisibility();
+            this.handleScrollLazyLoad();
+        }
+    };
+
+    //处理滚动事件(回到顶部)
+    handleScrollVisibility = () => {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const isVisible = scrollTop > 300;
+        this.setState(prevState => {
+            if (prevState.isScrollVisible !== isVisible) {
+                return { isScrollVisible: isVisible };
+            }
+            return null; 
+        });
+    }
+
+    //处理滚动事件(懒加载)
+    handleScrollLazyLoad = () => {
+        const { diffLoadedCount, diffResults} = this.state;
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const {clientHeight, scrollHeight } = document.documentElement;
+        if (scrollTop + clientHeight >= scrollHeight - 30) {
+            this.setState((prevState) => {
+                const newCount = Math.min(prevState.diffLoadedCount + 10, diffResults.length);
+                
+                return { diffLoadedCount: newCount };
             });
         }
     }
@@ -553,8 +574,9 @@ class MainPage extends React.Component {
                     fileUpload: true,
                     isFilteredByLocation: false,
                     showType: SHOW_TYPE.NORMAL,
-                    isDetect:false,
+                    isDetect: false,
                     loading: false,
+                    diffLoadedCount: 10
                 });
             }
             this.AbortController = null;
@@ -608,6 +630,7 @@ class MainPage extends React.Component {
                     showType: SHOW_TYPE.NORMAL,
                     fileUpload:true,
                     isDetect:false,
+                    diffLoadedCount: 10
                 });
             } else {
                 this.setState({
@@ -616,6 +639,7 @@ class MainPage extends React.Component {
                     showType: SHOW_TYPE.NORMAL,
                     fileUpload:true,
                     isDetect:false,
+                    diffLoadedCount: 10
                 });
             }
             this.AbortController = null;
@@ -671,6 +695,7 @@ class MainPage extends React.Component {
                     showType: SHOW_TYPE.NORMAL,
                     fileUpload:true,
                     isDetect:false,
+                    diffLoadedCount: 10
                 });
             } else {
                 this.setState({
@@ -679,6 +704,7 @@ class MainPage extends React.Component {
                     showType: SHOW_TYPE.NORMAL,
                     fileUpload:true,
                     isDetect:false,
+                    diffLoadedCount: 10
                 });
             }
             this.AbortController = null;
@@ -1308,7 +1334,7 @@ class MainPage extends React.Component {
     render() {
         const {diffResults, selectedKeys, commitid, commits,highlightedFiles, loading,fileUpload,detecting, refactoringCurrentIndex,
             commitAuthor, commitMessage, latestDate, earliestDate, refactoringData, filteredRefactoring, tags, startTag, endTag,
-            isFilteredByLocation, refactorings, showType, isDetect, dateRange, currentPage, commitMap, commitsCache,
+            isFilteredByLocation, refactorings, showType, isDetect, dateRange, currentPage, commitMap, commitsCache, diffLoadedCount,
             detecttype, dateRange_dc1, dateRange_dc2, startCommitId, endCommitId, isScrollVisible} = this.state;
         const totalChanges = calculateTotalChanges(diffResults);
         const fileCountMap_left = fileCount(refactorings, "left");
@@ -1649,7 +1675,7 @@ class MainPage extends React.Component {
                                 />
                             )}
 
-                            {diffResults.map((result, index) => (
+                            {diffResults.slice(0, diffLoadedCount).map((result, index) => (
                                 <div key={index}>
                                     <ContentDiff
                                         isFile={this.isFile}
@@ -1661,6 +1687,13 @@ class MainPage extends React.Component {
                                     />
                                 </div>
                             ))}
+
+                            {this.state.diffLoadedCount < this.state.diffResults.length && (
+                                <div style={{ textAlign: 'center', margin: '20px 0' }}>
+                                    <Spin/>
+                                </div>
+                            )}
+
                         </> ) : ( //没有diff文件，显示结果提示
                             <div className={s.errorresult}>
                                 <Result

@@ -387,11 +387,13 @@ class ContentDiff extends React.Component {
             const targetBlock = this.state.lineGroup[i];
             const { type, content: { hidden } } = targetBlock;
             if (type === ' ') {
-                contentList.push(<div key={i}>
-                    {this.getSplitCode(targetBlock)}
-                    {hidden.length && this.getHiddenBtn(hidden, i) || null}
-                    {this.getSplitCode(targetBlock, false)}
-                </div>)
+                contentList.push(
+                    <div key={i}>
+                        {this.getSplitCode(targetBlock)}
+                        {hidden.length && this.getHiddenBtn(hidden, i) || null}
+                        {this.getSplitCode(targetBlock, false)}
+                    </div>
+                )
             } else if (type === '-') {
                 const nextTarget = this.state.lineGroup[i + 1] || { content: {}};
                 const nextIsPlus = nextTarget.type === '+';
