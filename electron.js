@@ -1,17 +1,16 @@
 // electron.js
-const { app, BrowserWindow, dialog, ipcMain} = require('electron');
+const { app, BrowserWindow, Menu, dialog, ipcMain} = require('electron');
 const { Worker } = require('worker_threads');
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const fs = require('fs');
 const path = require('path');
 const kill = require('tree-kill');
-
-//console写入文件
-// const logFile = fs.createWriteStream('./electron-main.log', { flags: 'a' });
-// const errorFile = fs.createWriteStream('./electron-error.log', { flags: 'a' });
-
-// process.stdout.write = logFile.write.bind(logFile);
-// process.stderr.write = errorFile.write.bind(errorFile);
+const Store = require('electron-store');
+const store = new Store();
+const languages = { // 加载语言文件
+  en: require('./locales/en.json'),
+  zh: require('./locales/zh.json')
+};
 
 let mainWindow;
 let jsDiff;
@@ -19,6 +18,72 @@ let childProcess;
 let springBootProcess;
 let jarPath;
 let loadingWindow = null;
+let currentLang = store.get('language', 'en'); //当前语言,从存储中读取，默认是 'en'
+
+//设置语言
+function setLanguage(lang) {
+  currentLang = lang;
+  store.set('language', lang); // 保存用户选择的语言
+  createMenu(); // 更新菜单
+  BrowserWindow.getAllWindows().forEach((win) => {
+    win.webContents.send('language-changed', lang); // 通知渲染进程语言切换
+  });
+}
+
+//获取翻译
+function getTranslation(key) {
+  return languages[currentLang][key] || key;
+}
+
+// 创建菜单
+function createMenu() {
+  const menuTemplate = [
+    {
+      label: getTranslation('menu_file'),
+      submenu: [
+        // { label: getTranslation('menu_exit'), role: 'quit' }
+      ]
+    },
+    {
+      label: getTranslation('menu_language'),
+      submenu: [
+        {
+          label: 'English',
+          type: 'radio',
+          checked: currentLang === 'en',
+          click: () => setLanguage('en')
+        },
+        {
+          label: '简体中文',
+          type: 'radio',
+          checked: currentLang === 'zh',
+          click: () => setLanguage('zh')
+        }
+      ]
+    },
+    {
+      label: 'View', // 添加 View 菜单
+      submenu: [
+        {
+          label: 'Reload',
+          role: 'reload' // 快速重载窗口
+        },
+        {
+          label: 'Toggle Developer Tools',
+          accelerator: 'Ctrl+Shift+I', // 添加快捷键
+          click: (menuItem, browserWindow) => {
+            if (browserWindow) {
+              browserWindow.webContents.toggleDevTools();
+            }
+          }
+        }
+      ]
+    }
+  ];
+
+  const menu = Menu.buildFromTemplate(menuTemplate);
+  Menu.setApplicationMenu(menu);
+}
 
 // 创建主程序窗口
 function createWindow() {
@@ -121,6 +186,9 @@ async function waitForBackendReady() {
   const intervalId = setInterval(checkStatus, 1000); // 每秒检查一次
 }
 
+// 提供当前语言给渲染进程
+ipcMain.handle('get-language', () => currentLang);
+
 // 监听渲染进程发送的选择目录请求
 ipcMain.on('dialog:selectDirectory', async (event) => {
   const result = await dialog.showOpenDialog(mainWindow, {
@@ -192,7 +260,9 @@ function deleteDatabase() {
 app.on('ready', () => {
   createLoadingWindow();
   startSpringBootServer(); // 启动 Spring Boot 服务器
+  createMenu(); //创建菜单，会基于当前语言创建
   waitForBackendReady();
+  //console.log('GPU Feature Status:', app.getGPUFeatureStatus());
 });
 
 app.on('will-quit', async () => {

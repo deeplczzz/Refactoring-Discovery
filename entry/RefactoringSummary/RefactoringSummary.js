@@ -1,10 +1,25 @@
-import React,  { memo }  from 'react';
+import React,  { memo, useState, useEffect }  from 'react';
 import s from './summary.css';
 import { Table, Statistic} from 'antd';
 const { Column } = Table;
 import {AimOutlined, BarsOutlined, FileOutlined} from '@ant-design/icons'; 
+import { t, setLanguage } from '../../i18n';
 
 const RefactoringSummary = ({ data, fileCountMap}) => {
+    const [language, setLangState] = useState("en");
+
+    useEffect(() => {
+        window.electronAPI.getLanguage().then((lang) => { // 初始化语言
+            setLanguage(lang);
+            setLangState(lang);
+        });
+    
+        window.electronAPI.onLanguageChanged((lang) => { // 监听语言切换事件
+            setLanguage(lang);
+            setLangState(lang);
+        });
+    }, []);
+
     const fileData = Object.entries(fileCountMap).map(([fileName, count]) => ({
         fileName,
         count,
@@ -14,21 +29,21 @@ const RefactoringSummary = ({ data, fileCountMap}) => {
 
     return (
         <div style={{ textAlign: 'left'}}>
-            <div className = {s.summarytitle}>Summary</div>
+            <div className = {s.summarytitle}>{t('summary')}</div>
             
             <div className = {s.statistic}>
                 <Statistic 
-                    title="Refactorings" 
+                    title={t('refactorings')}
                     value={totalRefactorings} 
                     prefix={<AimOutlined />}
                 />
                 <Statistic 
-                    title="Involved Files" 
+                    title={t('involved_files')}
                     value={fileData.length}
                     prefix={<FileOutlined />}
                 />
                 <Statistic 
-                    title="Refactoring Type" 
+                    title={t('refactoring_type')} 
                     value={data.length} 
                     prefix={<BarsOutlined />}
                 />
@@ -42,12 +57,12 @@ const RefactoringSummary = ({ data, fileCountMap}) => {
                 size="small"
             >
                 <Column 
-                    title="Type" 
+                    title= {t('table_type')}
                     dataIndex="type" 
                     key="type" 
                 />
                 <Column 
-                    title="Numbers" 
+                    title={t('amount')}  
                     dataIndex="value" 
                     key="value" 
                     sorter={(a, b) => a.value - b.value}

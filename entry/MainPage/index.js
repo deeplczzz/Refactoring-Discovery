@@ -2,18 +2,19 @@ import React from 'react';
 import s from './index.css';
 import SockJS from 'sockjs-client';
 import { Stomp } from '@stomp/stompjs';
-import {Spin, Button, Form, message, Select, DatePicker, Affix, Input, Tabs, Result} from 'antd';
+import { Spin, Button, Form, message, Select, DatePicker, Affix, Input, Tabs, Result} from 'antd';
 import ContentDiff from '../contentDiff';
 import RefactoringList from '../RefactoringList/RefactoringList'; 
 import RefactoringSummary from '../RefactoringSummary/RefactoringSummary'; 
 import RefactoringDetail from '../RefactoringDetail/RefactoringDetail';
 import moment from 'moment';
-import {ArrowLeftOutlined, ArrowUpOutlined, FolderOpenOutlined, FieldNumberOutlined, FrownOutlined} from '@ant-design/icons'; 
+import { ArrowLeftOutlined, ArrowUpOutlined, FolderOpenOutlined, FieldNumberOutlined, FrownOutlined} from '@ant-design/icons'; 
 import { calculateTotalChanges } from '../utils/diffUtils';
 import { getRefactoringTypeData, fileCount } from '../utils/refactoringUtils';
 import PieChart from '../Pie-Chart/PieChart';
 import FileTree from '../RefactoringSummary/FileTree';
 import CommitInfo from '../Module/CommitInfo'
+import { t, setLanguage } from '../../i18n';
 
 const { RangePicker } = DatePicker;
 const FormItem = Form.Item;
@@ -25,6 +26,7 @@ const SHOW_TYPE = {
 
 class MainPage extends React.Component {
     state = {
+        language:'en',
         diffResults: [], // 用于存储所有文件的 diff 结果
         fileUpload:false,
         repository:'',
@@ -82,6 +84,17 @@ class MainPage extends React.Component {
     
 
     componentDidMount() {
+        // 同步初始语言
+        window.electronAPI.getLanguage().then((lang) => {
+            setLanguage(lang);
+            this.setState({ language: lang });
+        });
+        // 监听语言切换事件
+        window.electronAPI.onLanguageChanged((lang) => {
+            setLanguage(lang);
+            this.setState({ language: lang });
+        });
+
         window.addEventListener('scroll', this.handleScroll);
         this.connectWebSocket();
         this.updateRefactoringData();
@@ -1381,7 +1394,7 @@ class MainPage extends React.Component {
         
         const filetreeitems= [
             { 
-                label: 'Old Version', 
+                label: t('old_version'), 
                 key: 'oldv', 
                 children: 
                     <div className={s.filetree}>
@@ -1393,7 +1406,7 @@ class MainPage extends React.Component {
                     </div>
             }, 
             {
-                label: 'New Version', 
+                label: t('new_version'), 
                 key: 'newv', 
                 children: 
                     <div className={s.filetree}>
@@ -1410,14 +1423,14 @@ class MainPage extends React.Component {
             <div className={s.wrapper}>
                 <div className={s.handleSubmit}>
                     <div className={s.buttonandtext}>
-                        <div className={s.repositorylabel}>Repository :</div>
+                        <div className={s.repositorylabel}>{t('repository_label')}</div>
                         <div className={s.inputandbutton}>
                             <div>
                                 <Input 
                                     value={this.state.repository} 
                                     className={s.repositoryinput} 
                                     disabled
-                                    placeholder='Please select a local repository'
+                                    placeholder= {t('select_a_repository')}
                                 />
                             </div>
                             <div>
@@ -1428,7 +1441,7 @@ class MainPage extends React.Component {
                     </div>
                     
                     <div className={s.detecttype}>
-                        <div className={s.detecttypelabel}>DetectType :</div>
+                        <div className={s.detecttypelabel}>{t('detect_type_label')}</div>
                         <div className={s.detcttypeselect}>
                             <Select
                                 defaultValue = 'defaut'
@@ -1463,20 +1476,20 @@ class MainPage extends React.Component {
                                 style={{borderRadius: '4px'}}
                                 options={[
                                     {
-                                      label: <span>Commit Level</span>,
+                                      label: <span>{t('commit_level')}</span>,
                                       title: 'Commit',
                                       options: [
-                                        { label: <span>Single Commit</span>, value: 'defaut' },
-                                        { label: <span>Commit-to-Commit</span>, value: 'dc' },
-                                        { label: <span>Commit Range</span>, value: 'dac' },
+                                        { label: <span>{t('single_commit')}</span>, value: 'defaut' },
+                                        { label: <span>{t('commit_to_commit')}</span>, value: 'dc' },
+                                        { label: <span>{t('commit_range')}</span>, value: 'dac' },
                                       ],
                                     },
                                     {
-                                      label: <span>Tag Level</span>,
+                                      label: <span>{t('tag_level')}</span>,
                                       title: 'Tag',
                                       options: [
-                                        { label: <span>Tag-to-Tag</span>, value: 'dt' },
-                                        { label: <span>Tag Range</span>, value: 'dat' },
+                                        { label: <span>{t('tag_to_tag')}</span>, value: 'dt' },
+                                        { label: <span>{t('tag_range')}</span>, value: 'dat' },
                                       ],
                                     },
                                   ]}
@@ -1488,7 +1501,7 @@ class MainPage extends React.Component {
                     {detecttype === 'defaut' && (
                         <div className={s.defaut}>
                             <div className={s.dateSelect}>
-                                <div className={s.dateSelectlabel}>DateRange :</div>
+                                <div className={s.dateSelectlabel}>{t('date_range_label')}</div>
                                 <div className={s.dateSelectPicker}>
                                     <RangePicker 
                                         onChange={this.handleDateRangeChange}
@@ -1498,13 +1511,13 @@ class MainPage extends React.Component {
                                 </div>
                             </div>
                             <div  className={s.CommitselectAndBotton}>
-                                <div className={s.Commitlabel}>Commit ID :</div>
+                                <div className={s.Commitlabel}>{t('commit_id_label')}</div>
                                 <div className ={s.commitselect}>
                                     {this.renderCommitSelect()}
                                 </div>
                                 <div>
                                     <Button type="primary" onClick = {this.fetchRefactoring} className={s.button} disabled={!commitid}>
-                                        Detect
+                                        {t('detect_label')}
                                     </Button>
                                 </div>
                             </div>
@@ -1515,7 +1528,7 @@ class MainPage extends React.Component {
                     {(detecttype === 'dc' || detecttype === 'dac') && (
                         <div className={s.dc}>
                             <div className={s.dateSelect}>
-                                <div className={s.dateSelectlabel}>DateRange :</div>
+                                <div className={s.dateSelectlabel}>{t('date_range_1')}</div>
                                 <div className={s.dateSelectPicker}>
                                     <RangePicker 
                                         onChange={this.handleDateRangeChange_dc1}
@@ -1527,14 +1540,14 @@ class MainPage extends React.Component {
                             </div>
 
                             <div  className={s.dc_commitselect}>
-                                <div className={s.Commitlabel}>Start ID:</div>
+                                <div className={s.Commitlabel}>{t('start_id')}</div>
                                 <div className ={s.commitselect}>
                                     {this.renderCommitSelect_dc(true)}
                                 </div>
                             </div>
 
                             <div className={s.dateSelect}>
-                                <div className={s.dateSelectlabel}>DateRange :</div>
+                                <div className={s.dateSelectlabel}>{t('date_range_2')}</div>
                                 <div className={s.dateSelectPicker}>
                                     <RangePicker 
                                         onChange = {this.handleDateRangeChange_dc2}
@@ -1546,7 +1559,7 @@ class MainPage extends React.Component {
                             </div>
 
                             <div  className={s.dc_commitselectandbutton}>
-                                <div className={s.Commitlabel}>End ID :</div>
+                                <div className={s.Commitlabel}>{t('end_id')}</div>
                                 <div className ={s.commitselect}>
                                     {this.renderCommitSelect_dc(false)}
                                 </div>
@@ -1557,7 +1570,7 @@ class MainPage extends React.Component {
                                         className={s.button} 
                                         disabled={!startCommitId || !endCommitId || (detecttype === 'dc'? detecting : this.state.ongoingTasks)}
                                     >
-                                        {'Detect'}
+                                        {t('detect_label')}
                                     </Button>
                                 </div>
                             </div>
@@ -1569,14 +1582,14 @@ class MainPage extends React.Component {
                         <div className={s.dt}>
 
                             <div className={s.tagselectandlebal}>
-                                <div className={s.taglebal}>Start Tag :</div>
+                                <div className={s.taglebal}>{t('start_tag')}</div>
                                 <div className={s.tagselect}>
                                     {this.renderTagSelect(true)}
                                 </div>
                             </div>
 
                             <div className={s.tagselectandlebalandbutton}>
-                                <div className={s.taglebal}>End Tag :</div>
+                                <div className={s.taglebal}>{t('end_tag')}</div>
                                 <div className={s.tagselect}>
                                     {this.renderTagSelect(false)}
                                 </div>
@@ -1587,7 +1600,7 @@ class MainPage extends React.Component {
                                         className={s.button} 
                                         disabled={!startTag || !endTag || (detecttype === 'dt'? detecting : this.state.ongoingTasks)}
                                     >
-                                        {'Detect'}
+                                        {t('detect_label')}
                                     </Button>
                                 </div>
                             </div>
@@ -1608,11 +1621,11 @@ class MainPage extends React.Component {
                                 <div className={s.affixContainer}>
                                     <div>
                                         <span className={s.fileCount}>
-                                            {diffResults.length} files changed
+                                            {diffResults.length} {t('files_changed')}
                                         </span>
                                         <span className={s.additionsline}>+{totalChanges.additions}</span>
                                         <span className={s.deletionsline}>-{totalChanges.deletions}</span>
-                                        <span className={s.lineschanged}>lines changed</span>
+                                        <span className={s.lineschanged}>{t('lines_changed')}</span>
                                     </div>
                                     {isScrollVisible && (
                                         <Button 
@@ -1621,7 +1634,7 @@ class MainPage extends React.Component {
                                             className={s.backTopButton}
                                             onClick={this.scrollToTop}
                                         >
-                                            Top
+                                            {t('top')}
                                         </Button>
                                     )}
                                 </div>
@@ -1652,7 +1665,7 @@ class MainPage extends React.Component {
                             <div className={s.errorresult}>
                                 <Result
                                     icon={<FieldNumberOutlined />}
-                                    title="No Java files were changed!"
+                                    title={t('result_diff')}
                                 />
                             </div>
                         )
@@ -1701,8 +1714,8 @@ class MainPage extends React.Component {
                         <div className={s.errorresult}>
                                 <Result
                                     icon={<FrownOutlined />}
-                                    title="No refactorings detected!"
-                                    extra={<Button key="back" onClick={this.backToDiff}>Back</Button>}
+                                    title={t('result_ref')}
+                                    extra={<Button key="back" onClick={this.backToDiff}>{t('back')}</Button>}
                                 />
                         </div>
                     ))
@@ -1727,7 +1740,7 @@ class MainPage extends React.Component {
                             }}
                             className={s.backButton}
                         >
-                            BACK
+                            {t('location_back')}
                         </Button>
 
                         <RefactoringDetail

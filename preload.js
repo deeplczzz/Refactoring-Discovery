@@ -12,6 +12,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
     performDiff: async (oldCode, newCode) => {
         return await ipcRenderer.invoke('perform-diff', oldCode, newCode);
-    }
+    },
+    onLanguageChanged: (callback) => {
+        ipcRenderer.on('language-changed', (event, lang) => callback(lang));
+    },
+    getLanguage: () => ipcRenderer.invoke('get-language') // 新增方法获取语言
 });
 

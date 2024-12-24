@@ -1,9 +1,24 @@
-import React from 'react';
+import React,  { useState, useEffect }  from 'react';
 import { Button, Tooltip } from 'antd';
 import { CopyOutlined } from '@ant-design/icons';
 import s from './commitinfo.css'; 
+import { t, setLanguage } from '../../i18n';
 
 const CommitInfo = ({ commitMessage, commitAuthor, commitid, copyToClipboard}) => {
+    const [language, setLangState] = useState("en");
+
+    useEffect(() => {
+        window.electronAPI.getLanguage().then((lang) => { // 初始化语言
+            setLanguage(lang);
+            setLangState(lang);
+        });
+    
+        window.electronAPI.onLanguageChanged((lang) => { // 监听语言切换事件
+            setLanguage(lang);
+            setLangState(lang);
+        });
+    }, []);
+
     const tooltipStyle = {
         fontSize: '12px',
         whiteSpace: 'nowrap',
@@ -21,12 +36,12 @@ const CommitInfo = ({ commitMessage, commitAuthor, commitid, copyToClipboard}) =
             </div>
             <div className={s.authorandcommit}>
                 <div className={s.author}>
-                    <span style={{ color: 'gray' }}>author:</span>
+                    <span style={{ color: 'gray' }}>{t('author')}</span>
                     &nbsp;&nbsp;&nbsp;
                     {commitAuthor}
                 </div>
                 <div className={s.commit}>
-                    <span style={{ color: 'gray', marginLeft: '20px' }}>commit</span>
+                    <span style={{ color: 'gray', marginLeft: '20px' }}>{t('commit')}</span>
                     &nbsp;
                     {commitid.substring(0, 7)}
                     <Tooltip 
