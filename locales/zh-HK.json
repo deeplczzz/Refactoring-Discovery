@@ -3,6 +3,7 @@
     "repository_label": "代碼倉庫：",
     "menu_exit": "退出",
     "menu_language": "語言",
+    "menu_view" : "查看",
     "detect_type_label": "檢測方式：",
     "date_range_label": "提交時間：",
     "detect_label": "檢測",

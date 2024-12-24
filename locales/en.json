@@ -3,6 +3,7 @@
     "repository_label": "Repository:",
     "menu_exit": "Exit",
     "menu_language": "Language",
+    "menu_view" : "View",
     "detect_type_label": "DetectType:",
     "date_range_label": "DateRange :",
     "detect_label": "Detect",

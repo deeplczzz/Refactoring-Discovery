@@ -69,7 +69,7 @@ function createMenu() {
       ]
     },
     {
-      label: 'View', // 添加 View 菜单
+      label: getTranslation('menu_view'), // 添加 View 菜单
       submenu: [
         {
           label: 'Reload',
