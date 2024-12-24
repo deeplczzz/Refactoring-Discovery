@@ -9,7 +9,8 @@ const Store = require('electron-store');
 const store = new Store();
 const languages = { // 加载语言文件
   en: require('./locales/en.json'),
-  zh: require('./locales/zh.json')
+  zh: require('./locales/zh.json'),
+  zhHK: require('./locales/zh-HK.json'),
 };
 
 let mainWindow;
@@ -58,6 +59,12 @@ function createMenu() {
           type: 'radio',
           checked: currentLang === 'zh',
           click: () => setLanguage('zh')
+        },
+        {
+          label: '繁體中文',
+          type: 'radio',
+          checked: currentLang === 'zhHK',
+          click: () => setLanguage('zhHK')
         }
       ]
     },

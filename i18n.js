@@ -1,7 +1,8 @@
 //i18n.js
 const languages = {
     en: require('./locales/en.json'),
-    zh: require('./locales/zh.json')
+    zh: require('./locales/zh.json'),
+    zhHK: require('./locales/zh-HK.json'),
   };
   
 let currentLang = 'en'; // 默认语言
