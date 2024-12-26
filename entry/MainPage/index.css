@@ -129,7 +129,7 @@
     flex: 0 0 70%; /*饼图占据宽度70%*/
     margin-left: 10px;
     height: 400px;
-    max-width: 100%;
+    width: 100%;
     align-items: center; /* 垂直居中 */
     justify-content: center; /* 水平居中 */
     box-sizing: border-box;
@@ -153,7 +153,6 @@
 .dateSelect{
     display: grid;
     grid-template-columns: 100px 250px;
-    margin-right: 2%;
     margin-left: 2%;
 }
 

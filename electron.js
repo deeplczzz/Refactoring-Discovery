@@ -106,6 +106,7 @@ function createWindow() {
     },
   });
   mainWindow.loadFile(path.join(app.getAppPath(), 'dist/index.html'));
+  //mainWindow.loadURL('chrome://gpu');
 }
 
 //创建加载窗口
@@ -269,7 +270,6 @@ app.on('ready', () => {
   startSpringBootServer(); // 启动 Spring Boot 服务器
   createMenu(); //创建菜单，会基于当前语言创建
   waitForBackendReady();
-  //console.log('GPU Feature Status:', app.getGPUFeatureStatus());
 });
 
 app.on('will-quit', async () => {

@@ -533,7 +533,7 @@ class ContentDiff extends React.Component {
                             onClick={this.toggleExpand}
                             className={s.expandButton}
                         />
-                        {fileName}
+                        <div className={s.filenametext}>{fileName}</div>
                         <Button
                             type="text"
                             icon={<CopyOutlined />}

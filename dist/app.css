@@ -129,7 +129,7 @@
     flex: 0 0 70%; /*饼图占据宽度70%*/
     margin-left: 10px;
     height: 400px;
-    max-width: 100%;
+    width: 100%;
     align-items: center; /* 垂直居中 */
     justify-content: center; /* 水平居中 */
     box-sizing: border-box;
@@ -153,7 +153,6 @@
 .index__dateSelect--35Vc_{
     display: grid;
     grid-template-columns: 100px 250px;
-    margin-right: 2%;
     margin-left: 2%;
 }
 
@@ -458,7 +457,7 @@
     background-color: #f8f7f7;
     border: 1px solid #dcdcdc;
     font-size: 14px;
-    line-height: 0.9;
+    line-height: 20px;
     color: #333;
     max-width: 100%;
     overflow-wrap: break-word; /* Ensures long lines break properly */
@@ -473,8 +472,18 @@
 }
 
 .index__fileHeader--3f6wr {
+    width: '100%';
     display: flex;
     align-items: center;
+}
+
+.index__filenametext--3N5C-{
+    width: 50%;               /* 占父组件宽度的50% */
+    white-space: nowrap;      /* 禁止换行 */
+    overflow: hidden;         /* 超出隐藏 */
+    text-overflow: ellipsis;  /* 超出部分显示省略号 */
+    direction: rtl;           /* 设置从右到左的文本方向 */
+    text-align: left;
 }
 
 .index__expandButton--3TcOj {

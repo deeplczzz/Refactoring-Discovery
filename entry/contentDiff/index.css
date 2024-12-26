@@ -148,7 +148,7 @@
     background-color: #f8f7f7;
     border: 1px solid #dcdcdc;
     font-size: 14px;
-    line-height: 0.9;
+    line-height: 20px;
     color: #333;
     max-width: 100%;
     overflow-wrap: break-word; /* Ensures long lines break properly */
@@ -163,8 +163,18 @@
 }
 
 .fileHeader {
+    width: '100%';
     display: flex;
     align-items: center;
+}
+
+.filenametext{
+    width: 50%;               /* 占父组件宽度的50% */
+    white-space: nowrap;      /* 禁止换行 */
+    overflow: hidden;         /* 超出隐藏 */
+    text-overflow: ellipsis;  /* 超出部分显示省略号 */
+    direction: rtl;           /* 设置从右到左的文本方向 */
+    text-align: left;
 }
 
 .expandButton {

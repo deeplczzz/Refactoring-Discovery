@@ -1333,7 +1333,7 @@ class MainPage extends React.Component {
 
     render() {
         const {diffResults, selectedKeys, commitid, commits,highlightedFiles, loading,fileUpload,detecting, refactoringCurrentIndex,
-            commitAuthor, commitMessage, latestDate, earliestDate, refactoringData, filteredRefactoring, tags, startTag, endTag,
+            commitAuthor, commitMessage, latestDate, earliestDate, refactoringData, filteredRefactoring, tags, startTag, endTag, repository,
             isFilteredByLocation, refactorings, showType, isDetect, dateRange, currentPage, commitMap, commitsCache, diffLoadedCount,
             detecttype, dateRange_dc1, dateRange_dc2, startCommitId, endCommitId, isScrollVisible} = this.state;
         const totalChanges = calculateTotalChanges(diffResults);
@@ -1342,7 +1342,6 @@ class MainPage extends React.Component {
         const fileCountMap = fileCount(refactorings, "all");
         const currentCommitID = commitsCache[refactoringCurrentIndex-1];
         const currentCommitInfo = commitMap[currentCommitID];
-        
         const items = [
             { 
                 label: 'Diff', 
@@ -1524,7 +1523,7 @@ class MainPage extends React.Component {
                     </div>
                     
                     {/* 比较连续版本 */}
-                    {detecttype === 'defaut' && (
+                    {detecttype === 'defaut' && repository &&(
                         <div className={s.defaut}>
                             <div className={s.dateSelect}>
                                 <div className={s.dateSelectlabel}>{t('date_range_label')}</div>
@@ -1551,7 +1550,7 @@ class MainPage extends React.Component {
                     )}
 
                     {/* 比较两个commit之间 */}
-                    {(detecttype === 'dc' || detecttype === 'dac') && (
+                    {(detecttype === 'dc' || detecttype === 'dac') && repository &&(
                         <div className={s.dc}>
                             <div className={s.dateSelect}>
                                 <div className={s.dateSelectlabel}>{t('date_range_1')}</div>
@@ -1602,7 +1601,7 @@ class MainPage extends React.Component {
                     )}
 
                     {/* 比较两个版本之间 */}
-                    {(detecttype === 'dt' || detecttype === 'dat') && (
+                    {(detecttype === 'dt' || detecttype === 'dat') && repository &&(
                         <div className={s.dt}>
 
                             <div className={s.tagselectandlebal}>
