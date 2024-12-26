@@ -33,8 +33,6 @@
 .index__inputandbutton--wmeJP{
     display: flex;
     margin-left: 20px;
-    margin-right: 2%;
-
 }
 
 .index__selectbotton--1uzr2{
@@ -773,4 +771,7 @@
     margin-left: 8px;
     margin-right: 8px;
     background: none; /* 取消背景 */
+}
+.index__layout--38-fd{
+    width: 100%;
 }

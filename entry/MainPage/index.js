@@ -217,7 +217,8 @@ class MainPage extends React.Component {
                 throw new Error('Failed to fetch commit list.');
             }
 
-            const commitList = await response.json();
+            const commitList_all = await response.json();
+            const commitList = commitList_all.slice(0, commitList_all.length - 1) || [];
             if (commitList.length > 0) {
                 const earliestDate = moment(commitList[commitList.length - 1].commitTime, 'YYYY-MM-DD'); // 假设 commitList 按照时间顺序排列
                 const latestDate = moment(commitList[0].commitTime, 'YYYY-MM-DD'); // 假设 commitList 按照时间顺序排列
@@ -462,7 +463,6 @@ class MainPage extends React.Component {
                             });
                         }
                     }}
-                    disabled = {this.state.loading === true}
                     style={{ width: '100%' }}
                     showSearch
                     filterOption={(input, option) => {
@@ -591,9 +591,9 @@ class MainPage extends React.Component {
         }
     };
 
-    //负责仅从后端获取oldode以及newcode （两个commit版本）
+    //获取oldode、newcode （两个commit版本）
     fetchDiffFile_dc = async () => {
-        if(this.AbortController){ //中断之前的请求
+        if(this.AbortController){
             this.AbortController.abort();
         }
         const abortController = new AbortController();
@@ -1075,7 +1075,7 @@ class MainPage extends React.Component {
                 const messageJson = JSON.parse(messageOutput.body);
                 
                 if (messageJson.status === 'success'){
-                    message.success(`Task completed for ${messageJson.taskKey}`);
+                    message.success(`Detection completed for ${messageJson.taskKey}`);
                     console.log(messageJson.taskKey);
                     this.resetTask(messageJson.taskKey);
                 }else if (messageJson.status === 'failure') {
@@ -1560,7 +1560,6 @@ class MainPage extends React.Component {
                                         onChange={this.handleDateRangeChange_dc1}
                                         value={dateRange_dc1}
                                         disabledDate={this.disabledDate_dc1}
-                                        disabled={loading}
                                     />
                                 </div>
                             </div>
@@ -1579,7 +1578,6 @@ class MainPage extends React.Component {
                                         onChange = {this.handleDateRangeChange_dc2}
                                         value={dateRange_dc2}
                                         disabledDate={this.disabledDate_dc2}
-                                        disabled={loading}
                                     />
                                 </div>
                             </div>
