@@ -7,7 +7,9 @@ import ContentDiff from '../contentDiff';
 import RefactoringList from '../RefactoringList/RefactoringList'; 
 import RefactoringSummary from '../RefactoringSummary/RefactoringSummary'; 
 import RefactoringDetail from '../RefactoringDetail/RefactoringDetail';
-import moment from 'moment';
+import dayjs from 'dayjs';
+import dayjsGenerateConfig from 'rc-picker/lib/generate/dayjs';
+import isBetween from 'dayjs/plugin/isBetween';
 import { ArrowLeftOutlined, ArrowUpOutlined, FolderOpenOutlined, FieldNumberOutlined, FrownOutlined} from '@ant-design/icons'; 
 import { calculateTotalChanges } from '../utils/diffUtils';
 import { getRefactoringTypeData, fileCount } from '../utils/refactoringUtils';
@@ -16,6 +18,7 @@ import FileTree from '../RefactoringSummary/FileTree';
 import CommitInfo from '../Module/CommitInfo'
 import { t, setLanguage } from '../../i18n';
 
+
 const { RangePicker } = DatePicker;
 const FormItem = Form.Item;
 
@@ -23,6 +26,8 @@ const SHOW_TYPE = {
     HIGHLIGHT: 0,
     NORMAL: 1
 }
+
+dayjs.extend(isBetween);
 
 class MainPage extends React.Component {
     state = {
@@ -220,8 +225,8 @@ class MainPage extends React.Component {
             const commitList_all = await response.json();
             const commitList = commitList_all.slice(0, commitList_all.length - 1) || [];
             if (commitList.length > 0) {
-                const earliestDate = moment(commitList[commitList.length - 1].commitTime, 'YYYY-MM-DD'); // 假设 commitList 按照时间顺序排列
-                const latestDate = moment(commitList[0].commitTime, 'YYYY-MM-DD'); // 假设 commitList 按照时间顺序排列
+                const earliestDate = dayjs(commitList[commitList.length - 1].commitTime); // 假设 commitList 按照时间顺序排列
+                const latestDate = dayjs(commitList[0].commitTime); // 假设 commitList 按照时间顺序排列
 
                 const commitMap = {};
                 commitList.forEach((commit,index) => {
@@ -229,7 +234,7 @@ class MainPage extends React.Component {
                         commitMessage: commit.message,
                         commitAuthor: commit.author,
                         commitIndex: index,
-                        commitTime: moment(commit.commitTime, 'YYYY-MM-DD'),
+                        commitTime: dayjs(commit.commitTime),
                     };
                 });
 
@@ -311,6 +316,8 @@ class MainPage extends React.Component {
 
     //处理时间范围的函数
     handleDateRangeChange = (dates, dateStrings) => {
+        //console.log(dates);
+        //console.log('Is dayjs instance:', dayjs.isDayjs(dates[0]));
         this.setState({ dateRange:dates }, () => { this.filterCommits()});
     }
     handleDateRangeChange_dc1 = (dates, dateStrings) => {
@@ -342,8 +349,8 @@ class MainPage extends React.Component {
 
         const [startDate, endDate] = dateRange;
         const filteredCommits = commits.filter(commit => {
-            const commitDate = moment(commit.commitTime, 'YYYY-MM-DD');
-            return commitDate.isBetween(startDate, endDate, null, '[]');
+            const commitDate = dayjs(commit.commitTime);
+            return commitDate.isBetween(startDate, endDate, 'day', '[]');
         });
 
         this.setState({ filteredCommits, commitid: '' });
@@ -368,8 +375,8 @@ class MainPage extends React.Component {
             pre_filteredCommits = type === 'dateRange_dc1' ? commits.slice(commitindex + 1,) : commits.slice(0 , commitindex);
         }
         const filteredCommits = pre_filteredCommits.filter(commit => {
-            const commitDate = moment(commit.commitTime, 'YYYY-MM-DD');
-            return commitDate.isBetween(startDate, endDate, null, '[]');
+            const commitDate = dayjs(commit.commitTime);
+            return commitDate.isBetween(startDate, endDate, 'day', '[]');
         });
         if( type === 'dateRange_dc1'){
             if (!filteredCommits.some(commit => commit.commitId === startCommitId)) {
@@ -1523,6 +1530,7 @@ class MainPage extends React.Component {
                                 <div className={s.dateSelectlabel}>{t('date_range_label')}</div>
                                 <div className={s.dateSelectPicker}>
                                     <RangePicker 
+                                        generateConfig={dayjsGenerateConfig}
                                         onChange={this.handleDateRangeChange}
                                         value={dateRange}
                                         disabledDate={this.disabledDate}
@@ -1550,6 +1558,7 @@ class MainPage extends React.Component {
                                 <div className={s.dateSelectlabel}>{t('date_range_1')}</div>
                                 <div className={s.dateSelectPicker}>
                                     <RangePicker 
+                                        generateConfig={dayjsGenerateConfig}
                                         onChange={this.handleDateRangeChange_dc1}
                                         value={dateRange_dc1}
                                         disabledDate={this.disabledDate_dc1}
@@ -1568,6 +1577,7 @@ class MainPage extends React.Component {
                                 <div className={s.dateSelectlabel}>{t('date_range_2')}</div>
                                 <div className={s.dateSelectPicker}>
                                     <RangePicker 
+                                        generateConfig={dayjsGenerateConfig}
                                         onChange = {this.handleDateRangeChange_dc2}
                                         value={dateRange_dc2}
                                         disabledDate={this.disabledDate_dc2}

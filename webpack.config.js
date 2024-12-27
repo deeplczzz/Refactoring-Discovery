@@ -1,5 +1,7 @@
 const path = require('path');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const AntdDayjsWebpackPlugin = require('antd-dayjs-webpack-plugin');
+//const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 
 module.exports = {
     mode:"production",
@@ -31,6 +33,8 @@ module.exports = {
         },
     },
     plugins: [
+        //new BundleAnalyzerPlugin(),
+        new AntdDayjsWebpackPlugin(),
         new MiniCssExtractPlugin({      //对css进行打包，webpack4推荐语法
             filename: "[name].css",
             chunkFilename: "[name].css"
