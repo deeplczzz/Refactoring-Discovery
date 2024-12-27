@@ -412,13 +412,11 @@ class MainPage extends React.Component {
                         const commitInfo = option?.children?.toString().toLowerCase() || '';
                         return commitInfo.indexOf(input.toLowerCase()) >= 0;
                     }}
-                >
-                    {filteredCommits.map((commit, index) => (
-                        <Select.Option key={index} value={commit.commitId}>
-                            [{commit.commitTime}]{" "}{commit.commitId}
-                        </Select.Option>
-                    ))}
-                </Select>
+                    options={filteredCommits.map((commit) => ({
+                        label: `[${commit.commitTime}] ${commit.commitId}`,
+                        value: commit.commitId,
+                    }))}
+                />
             </FormItem>
         );
     };
@@ -469,13 +467,11 @@ class MainPage extends React.Component {
                         const commitInfo = option?.children?.toString().toLowerCase() || '';
                         return commitInfo.indexOf(input.toLowerCase()) >= 0;
                     }}
-                >
-                    {filteredCommitsByDate.map((commit, index) => (
-                        <Select.Option key={index} value={commit.commitId}>
-                            [{commit.commitTime}]{" "}{commit.commitId}
-                        </Select.Option>
-                    ))}
-                </Select>
+                    options={filteredCommitsByDate.map((commit) => ({
+                        label: `[${commit.commitTime}] ${commit.commitId}`,
+                        value: commit.commitId,
+                    }))}
+                />
             </FormItem>
         );
     };
@@ -520,13 +516,11 @@ class MainPage extends React.Component {
                         const tagInfo = option?.children?.toString().toLowerCase() || '';
                         return tagInfo.indexOf(input.toLowerCase()) >= 0;
                     }}
-                >
-                    {filteredTags.map((tag, index) => (
-                        <Select.Option key={index} value={tag.tagName}>
-                            {tag.tagName.split('/').pop()}
-                        </Select.Option>
-                    ))}
-                </Select>
+                    options={filteredTags.map((tag) => ({
+                        label: tag.tagName.split('/').pop(), // 显示最后的部分
+                        value: tag.tagName, // 原始的 tagName 作为 value
+                    }))}
+                />
             </FormItem>
         );
     };
